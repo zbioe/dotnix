@@ -1,0 +1,1 @@
+[ ./firefox.nix ./chromium.nix ]
