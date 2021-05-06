@@ -4,7 +4,6 @@
 
   environment = {
     systemPackages = with pkgs; [
-      gitFull
       gcc
       zig
       lua
@@ -18,6 +17,7 @@
       nixfmt
       cachix
       gnumake
+      gitFull
       spotify
       luarocks
       wakatime
