@@ -22,6 +22,7 @@ let
     sqlite
     xsel
     arandr
+    sshfs
 
     # GTK theme
     numix-icon-theme
@@ -83,8 +84,11 @@ let
 
     # Music
     playerctl
-    spotify
+    # spotify
     youtube-dl
+
+    # Call
+    # teams
 
     # Web
     google-chrome
@@ -95,6 +99,7 @@ let
 
     # API
     azure-cli
+    wakatime
 
   ];
 
@@ -163,17 +168,17 @@ in {
 
   # configure monitors outputs
   services.grobi = {
-    enable = true;
+    enable = false;
     rules = let
       internal = "eDP-1";
       external = "HDMI-1";
     in [
       {
         name = "Two Monitors";
-        outputs_connected = [ external ];
+        outputs_connected = [ external internal ];
         configure_column = [ external internal ];
         primary = external;
-        atomic = true;
+        atomic = false;
       }
       {
         name = "One Monitor";

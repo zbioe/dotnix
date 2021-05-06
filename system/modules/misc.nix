@@ -8,6 +8,8 @@
     user = "zbioe";
   };
 
+  services.teamviewer.enable = true;
+
   virtualisation = {
     libvirtd.enable = true;
     docker.enable = true;
@@ -15,6 +17,7 @@
       enable = true;
       zfsSupport = true;
     };
+
     lxc = {
       enable = true;
       lxcfs.enable = true;
@@ -42,5 +45,12 @@
   services.dbus.packages = with pkgs; [ gnome2.GConf ];
 
   programs.dconf.enable = true;
+
+  services = {
+    openssh = {
+      enable = true;
+      allowSFTP = true;
+    };
+  };
 
 }
