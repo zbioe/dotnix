@@ -1,6 +1,7 @@
 { config, pkgs, ... }:
 
 {
+  nix = { trustedUsers = [ "@wheel" ]; };
   nixpkgs.config.allowUnfree = true;
   services.nixops-dns = {
     enable = true;

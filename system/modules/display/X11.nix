@@ -57,6 +57,19 @@ in {
   services.pipewire.enable = true;
   services.flatpak.enable = true;
   security.rtkit.enable = true;
+  services.autorandr = {
+    enable = true;
+    defaultTarget = "dual";
+  };
+  systemd.user.services.boot-autorandr = {
+    description = "Autorandr service";
+    partOf = [ "graphical-session.target" ];
+    wantedBy = [ "graphical-session.target" ];
+    serviceConfig = {
+      ExecStart = "${pkgs.autorandr}/bin/autorandr -c";
+      Type = "oneshot";
+    };
+  };
   xdg.portal = {
     enable = true;
     gtkUsePortal = false;

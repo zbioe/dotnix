@@ -7,6 +7,7 @@
       gcc
       zig
       lua
+      act
       wget
       curl
       qemu

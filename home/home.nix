@@ -167,46 +167,35 @@ in {
   };
 
   # configure monitors outputs
-  services.grobi = {
-    enable = false;
-    rules = let
-      internal = "eDP-1";
-      external = "HDMI-1";
-    in [
-      {
-        name = "Two Monitors";
-        outputs_connected = [ external internal ];
-        configure_column = [ external internal ];
-        primary = external;
-        atomic = false;
-      }
-      {
-        name = "One Monitor";
-        outputs_disconnected = [ external ];
-        configure_single = internal;
-        primary = true;
-        atomic = true;
-      }
-    ];
+  programs.autorandr = {
+    enable = true;
+    profiles = {
+      "dual" = {
+        fingerprint = {
+          internal = "eDP-1";
+          external = "HDMI-1";
+        };
+        config = {
+          internal = {
+            enable = true;
+            crtc = 0;
+            primary = true;
+            position = "0x1080";
+            mode = "1920x1080";
+            rotate = "normal";
+          };
+          external = {
+            enable = true;
+            crtc = 1;
+            position = "0x0";
+            mode = "2560x1080";
+            rotate = "normal";
+          };
+        };
+        hooks.postswitch = builtins.readFile ~/.fehbg;
+      };
+    };
   };
-
-  # services.grobi = {
-  #   enable = true;
-  #   rules = let
-  #     internal = "eDP-1";
-  #     external = "HDMI-1";
-  #     useAll = name: outputs: {
-  #       inherit name;
-  #       outputs_connected = outputs;
-  #       configure_column = lib.reverseList outputs;
-  #       primary = builtins.head outputs;
-  #       atomic = false;
-  #     };
-  #   in [
-  #     (useAll "Two screen" [ internal external ])
-  #     (useAll "One screen" [ internal ])
-  #   ];
-  # };
 
   services.dunst = {
     enable = true;

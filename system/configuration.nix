@@ -10,7 +10,6 @@
     ./modules/fonts/fonts.nix
     ./modules/display/X11.nix
     ./hardware-configuration.nix
-    # ./modules/display/wayland.nix
     ./modules/hardware/hardware.nix
     ./modules/environment/packages.nix
     ./modules/networking/networking.nix
