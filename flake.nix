@@ -27,7 +27,9 @@
   outputs = inputs@{ self, nixpkgs, nixpkgs-unstable, ... }: {
     nixosModules = {
       overlays = {
-        nixpkgs.overlays = inputs.emacs-overlay.overlay;
+        nixpkgs.overlays = [
+          inputs.emacs-overlay.overlay
+        ];
       };
       binaryCaches = {
         nix.binaryCachePublicKeys = [
@@ -38,14 +40,14 @@
     nixosConfigurations.nv = nixpkgs.lib.nixosSystem {
       system = "x86_64-linux";
       modules = [
-        ./hardaware/nv.nix
+        ./hardware/nv.nix
         ./system.nix
-        inputs.self.nixosModules.overlays
-        inputs.self.nixosModules.binaryCaches
+        self.nixosModules.overlays
+        self.nixosModules.binaryCaches
         inputs.home-manager.nixosModules.home-manager
-        inputs.nixos-harware.nixosModules.common-gpu-nvidia
-        inputs.nixos-harware.nixosModules.common-cpu-intel
-        inputs.nixos-harware.nixosModules.common-pc-laptop-ssd
+        inputs.nixos-hardware.nixosModules.common-gpu-nvidia
+        inputs.nixos-hardware.nixosModules.common-cpu-intel
+        inputs.nixos-hardware.nixosModules.common-pc-laptop-ssd
       ];
     };
   };

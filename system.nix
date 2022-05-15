@@ -18,12 +18,6 @@ let
   #  exec -a "$0" "$@"
   #'';
 in {
-  imports =
-    [ 
-      <home-manager/nixos>
-      # Include the results of the hardware scan.
-      ./hardware-configuration.nix
-    ];
 
   # Use the systemd-boot EFI boot loader.
   boot.loader.grub.enable = true;
@@ -122,16 +116,16 @@ in {
     #];
   };
 
-#  hardware.nvidia.prime = {
-#    sync.enable = true;
-#
-#    # Bus ID of the NVIDIA GPU. You can find it using lspci, either under 3D or VGA
-#    nvidiaBusId = "PCI:1:0:0";
-#
-#    # Bus ID of the Intel GPU. You can find it using lspci, either under 3D or VGA
-#    intelBusId = "PCI:0:2:0";
-#
-#  };
+  hardware.nvidia.prime = {
+    # sync.enable = true;
+
+    # Bus ID of the NVIDIA GPU. You can find it using lspci, either under 3D or VGA
+    nvidiaBusId = "PCI:1:0:0";
+
+    # Bus ID of the Intel GPU. You can find it using lspci, either under 3D or VGA
+    intelBusId = "PCI:0:2:0";
+
+  };
  
   #hardware.nvidia.package = config.boot.kernelPackages.nvidiaPackages.stable;
 
@@ -341,17 +335,14 @@ in {
   #'programs.steam.enable = true;
 
   # Home-Manager
-   home-manager.users.zbioe = { config, pkgs, ... }: {
+  home-manager.useUserPackages = true;
+  home-manager.users.zbioe = { config, pkgs, lib, ... }: {
      #nixpkgs.overlays = [
      #  (import (builtins.fetchTarball {
      #    url = https://github.com/nix-community/emacs-overlay/archive/master.tar.gz;
      #  }))
      #];
-     nixpkgs.config.packageOverrides = pkgs: {
-       nur = import <nur> {
-         inherit pkgs;
-       };
-     };
+     home.stateVersion = "21.05";
      nixpkgs.config.allowUnfreePredicate = pkg: builtins.elem (lib.getName pkg) [
        "discord"
        "dropbox"
@@ -459,16 +450,16 @@ in {
            tagbar
            vim-fugitive
          ];
-         extraConfig = builtins.readFile /home/zbioe/.extraConfig.vim;
+         extraConfig = builtins.readFile ./extraConfig.vim;
        };
        firefox = {
          enable = true;
-         extensions = with pkgs.nur.repos.rycee.firefox-addons; [
-           ublock-origin
-           browserpass
-           tridactyl
-           sidebery
-         ];
+         # extensions = with pkgs.nur.repos.rycee.firefox-addons; [
+         #   ublock-origin
+         #   browserpass
+         #   tridactyl
+         #   sidebery
+         # ];
          #package = pkgs.firefox.override {
          #  cfg = { enableTridactylNative = true; };
          #};
@@ -518,9 +509,9 @@ in {
     options kvm_intel nested=1
   '';
 
-  security.pki.certificateFiles = [
-    /etc/ssl/consul/test/ca.crt
-  ];
+  # security.pki.certificateFiles = [
+  #   /etc/ssl/consul/test/ca.crt
+  # ];
 
 
 
