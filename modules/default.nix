@@ -3,11 +3,28 @@ with lib;
 with lib.my;
 {
   imports = [
+    ./wm
     ./boot
     ./system.nix
+    ./network.nix
+    ./keyboard.nix
+    ./bluetooth.nix
   ];
   options = with types; {
-    user = mkOpt attrs {};
+    user.uid          = mkOpt int 1000;
+    user.name         = mkOpt str "default";
+    user.shell        = mkOpt package pkgs.fish;
+    user.description  = mkOpt str "${config.user.name} account";
+    user.extraGroups  = mkOpt (listOf str) ["wheel"];
+    user.isNormalUser = mkBoolOpt true;
+    user.home         = mkOpt str "/home/${config.user.name}";
+    user.group        = mkOpt str "users";
+
+    host.name = mkOpt str "nixos";
+    host.i18n = mkOpt str "pt_BR.UTF-8";
+
+    time.zone = mkOpt str "America/Sao_Paulo";
+
     dotfiles = {
       dir        = mkOpt path "/etc/dotnix";
       binDir     = mkOpt path "${config.dotfiles.dir}/bin";
@@ -16,18 +33,7 @@ with lib.my;
     };
   };
   config = {
-    user = let
-      user = config.user.name;
-      name = if elem user [ "" "default" ] then "zbioe" else user;
-    in {
-      inherit name;
-      description = "The primary user account";
-      extraGroups = [ "wheel" ];
-      isNormalUser = true;
-      home = "/home/${name}";
-      group = "users";
-      uid = 1000;
-    };
+    security.sudo.wheelNeedsPassword = false;
 
     home-manager = {
       useUserPackages = true;
@@ -38,10 +44,14 @@ with lib.my;
       };
     };
 
+    i18n.defaultLocale = config.host.i18n;
+
     users.users.${config.user.name} = config.user;
     nix = let users = [ "root" config.user.name]; in {
       trustedUsers = users;
       allowedUsers = users;
     };
+
+    time.timeZone = config.time.zone;
   };
 }

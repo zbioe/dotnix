@@ -27,5 +27,13 @@
     [ { device = "/dev/disk/by-uuid/3fa674aa-fee5-40b2-824e-d2b4051f5897"; }
     ];
 
+  hardware.nvidia.prime = {
+    # Bus ID of the NVIDIA GPU. You can find it using lspci, either under 3D or VGA
+    nvidiaBusId = "PCI:1:0:0";
+
+    # Bus ID of the Intel GPU. You can find it using lspci, either under 3D or VGA
+    intelBusId = "PCI:0:2:0";
+  };
+
   powerManagement.cpuFreqGovernor = lib.mkDefault "powersave";
 }

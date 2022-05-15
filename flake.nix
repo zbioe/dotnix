@@ -9,6 +9,8 @@
     # Main package channels
     nixpkgs.url = "nixpkgs/nixos-21.11";
     nixpkgs-unstable.url = "nixpkgs/nixos-unstable";
+    nur.url = "github:nix-community/NUR";
+    nur.inputs.nixpkgs.follows = "nixpkgs";
 
     # Extra packages
     home-manager.url = "github:rycee/home-manager/release-21.11";
@@ -24,23 +26,35 @@
     # Hardware
     nixos-hardware.url = "github:nixos/nixos-hardware";
   };
-  outputs = inputs@{ self, nixpkgs, nixpkgs-unstable, ... }: with self; {
+  outputs = inputs@{ self, nixpkgs, nixpkgs-unstable, nur, ... }: with self; {
     system = "x86_64-linux";
-    pkgs = import nixpkgs { inherit system; };
-    pkgs' = import nixpkgs-unstable { inherit system;};
-    lib=nixpkgs.lib.extend
+    pkgs = import nixpkgs { inherit system; overlay=overlay; };
+    unstable-pkgs = import nixpkgs-unstable { inherit system; overlay=overlay; };
+    # unstable-pkgs = import nixpkgs-unstable { inherit system;};
+    nur-pkgs = import nur { inherit pkgs; };
+    # TODO: fix this
+    lib = nixpkgs.lib.extend
       (self: super: { my = import ./lib { inherit pkgs inputs; lib = self; }; });
 
     overlay = final: prev: {
-      unstable = pkgs';
+      unstable = unstable-pkgs;
+      nur = nur-pkgs;
     };
 
     nixosModules = {
       overlays = {
         nixpkgs.overlays = [
           inputs.emacs-overlay.overlay
+          nur.overlay
         ];
       };
+      overrides = {
+        nixpkgs.config.packageOverrides = pkgs: {
+          nur = nur-pkgs;
+          unstable = unstable-pkgs;
+        };
+      };
+
       binaryCaches = {
         nix.binaryCachePublicKeys = [
           "zbioe.cachix.org-1:7KHSSucix5ZpqsbtlJJcabTZohn7OPJxTWerdQlZIfw="
@@ -53,13 +67,15 @@
     };
     nixosConfigurations.nv = nixpkgs.lib.nixosSystem {
       inherit system;
-      specialArgs = { inherit lib inputs system; };
+      specialArgs = { inherit lib; };
       modules = [
+        ./modules
         ./hosts/nv
         # self.nixosModules.options
-        self.nixosModules.overlays
-        self.nixosModules.binaryCaches
         self.nixosModules.unfree
+        self.nixosModules.overlays
+        self.nixosModules.overrides
+        self.nixosModules.binaryCaches
         inputs.home-manager.nixosModules.home-manager
         inputs.nixos-hardware.nixosModules.common-cpu-intel
         inputs.nixos-hardware.nixosModules.common-gpu-nvidia
