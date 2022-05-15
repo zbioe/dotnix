@@ -24,7 +24,17 @@
     # Hardware
     nixos-hardware.url = "github:nixos/nixos-hardware";
   };
-  outputs = inputs@{ self, nixpkgs, nixpkgs-unstable, ... }: {
+  outputs = inputs@{ self, nixpkgs, nixpkgs-unstable, ... }: with self; {
+    system = "x86_64-linux";
+    pkgs = import nixpkgs { inherit system; };
+    pkgs' = import nixpkgs-unstable { inherit system;};
+    lib=nixpkgs.lib.extend
+      (self: super: { my = import ./lib { inherit pkgs inputs; lib = self; }; });
+
+    overlay = final: prev: {
+      unstable = pkgs';
+    };
+
     nixosModules = {
       overlays = {
         nixpkgs.overlays = [
@@ -38,17 +48,20 @@
       };
     };
     nixosConfigurations.nv = nixpkgs.lib.nixosSystem {
-      system = "x86_64-linux";
+      inherit system;
+      specialArgs = { inherit lib inputs system; };
       modules = [
-        ./hardware/nv.nix
-        ./system.nix
+        ./hosts/nv
+        # self.nixosModules.options
         self.nixosModules.overlays
         self.nixosModules.binaryCaches
         inputs.home-manager.nixosModules.home-manager
-        inputs.nixos-hardware.nixosModules.common-gpu-nvidia
         inputs.nixos-hardware.nixosModules.common-cpu-intel
+        inputs.nixos-hardware.nixosModules.common-gpu-nvidia
         inputs.nixos-hardware.nixosModules.common-pc-laptop-ssd
       ];
     };
+    #defaultPackage.${system} = self.nixosConfigurations.nv.config.system.build.vm;
+    #defaultPackage.${system} = self.nixosConfigurations.nv;
   };
 }
