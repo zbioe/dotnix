@@ -9,10 +9,10 @@ in {
   ];
   options.modules.boot = with types; {
     enable = mkBoolOpt false;
-    timeout = mkOpt' int 0 "GRUB timeout";
+    timeout = mkOpt' int 1 "GRUB timeout";
   };
   config = mkIf cfg.enable {
     boot.loader.grub.enable = true;
-    boot.loader.grub.timeout = mkIf cfg.timeout;
+    boot.loader.timeout = cfg.timeout;
   };
 }

@@ -46,6 +46,10 @@
           "zbioe.cachix.org-1:7KHSSucix5ZpqsbtlJJcabTZohn7OPJxTWerdQlZIfw="
         ];
       };
+      unfree = {
+        nixpkgs.config.allowUnfreePredicate = pkg:
+          builtins.elem (lib.getName pkg) (import ./nixpkgs/unfree.nix);
+      };
     };
     nixosConfigurations.nv = nixpkgs.lib.nixosSystem {
       inherit system;
@@ -55,6 +59,7 @@
         # self.nixosModules.options
         self.nixosModules.overlays
         self.nixosModules.binaryCaches
+        self.nixosModules.unfree
         inputs.home-manager.nixosModules.home-manager
         inputs.nixos-hardware.nixosModules.common-cpu-intel
         inputs.nixos-hardware.nixosModules.common-gpu-nvidia
