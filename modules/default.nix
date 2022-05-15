@@ -5,6 +5,7 @@ with lib.my;
   imports = [
     ./wm
     ./boot
+    ./audio.nix
     ./system.nix
     ./network.nix
     ./keyboard.nix

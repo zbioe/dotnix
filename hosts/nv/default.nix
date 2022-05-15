@@ -25,6 +25,10 @@
       options = ["ctrl:nocaps"];
     };
 
+    network.enable = true;
+    audio.enable = true;
+    bluetooth.enable = true;
+
     wm = {
       enable = true;
       herbstluft.enable = true;
