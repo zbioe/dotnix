@@ -41,6 +41,11 @@ in {
   #    "bornlogic.cachix.org-1:WrP3tyzc07oHOzAD0VvsUEvbxHpwn+dAEoY8ECgW7kc="
   #  ];
   #};
+  nix = {
+    package = pkgs.nixFlakes;
+    extraOptions = lib.optionalString (config.nix.package == pkgs.nixFlakes)
+    "experimental-features = nix-command flakes";
+  };
 
   ## virtualization
   #virtualisation.kvmgt.enable = true;
@@ -111,16 +116,23 @@ in {
 #	  wantedBy = [ "multi-user.target" ];
 #	  serviceConfig.ExecStart = "${pkgs.linuxPackages.nvidia_x11}/bin/nvidia-smi";
 #  };
- 
+  nixpkgs.config.allowBroken = true; 
   # List packages installed in system profile. To search, run:
   # $ nix search wget
   environment.systemPackages = with pkgs; [
+    # rustracer # rust racer
+    shfmt
+    nixpkgs-fmt
+    gopls # go lsp server
+    godef # go def
+    libtool
     emacs # editor for all
     cachix # custom cache
     twurl # twitter cli oauth
     webcamoid # web cam tool
     #emacs-with-pkgs # mainly editor
     # telegram # chat
+    asciinema # record term
     neovim # alternative editor
     kubernetes-helm # Helm
     go-2fa # 2fa auth wallet
@@ -169,6 +181,9 @@ in {
     gnome.adwaita-icon-theme # gnome themes
     lutris # game runner
     vulkan-tools # vulkan requirements
+    nix-direnv
+    nix-direnv-flakes
+    chromedriver
     #dxvk
     #nvidia-offload
     # (steam.override { nativeOnly = true; }).run
@@ -223,7 +238,7 @@ in {
           # enablePepperPDF = true;
         };
       };
-      home.sessionPath = [ "${config.home.homeDirectory}/.doom-emacs/bin" ];
+      home.sessionPath = [ "${config.home.homeDirectory}/.emacs.d/bin" ];
       home.packages = with pkgs; [
         spotify
         discord
@@ -371,9 +386,9 @@ in {
     options kvm_intel nested=1
   '';
 
-  # security.pki.certificateFiles = [
-  #   /etc/ssl/consul/test/ca.crt
-  # ];
+  security.pki.certificateFiles = [
+    ../../ca/consul.crt
+  ];
 
 
 

@@ -7,10 +7,16 @@
 
   inputs = {
     # Main package channels
-    nixpkgs.url = "nixpkgs/nixos-21.11";
-    nixpkgs-unstable.url = "nixpkgs/nixos-unstable";
+    nixpkgs.url = "nixpkgs";
+    nixpkgs-unstable.url = "nixpkgs-unstable";
     nur.url = "github:nix-community/NUR";
     nur.inputs.nixpkgs.follows = "nixpkgs";
+
+    # doom emacs
+    doomemacs = {
+      url = "github:doomemacs/doomemacs";
+      flake = false;
+    };
 
     # Extra packages
     home-manager.url = "github:rycee/home-manager/release-21.11";
@@ -26,7 +32,12 @@
     # Hardware
     nixos-hardware.url = "github:nixos/nixos-hardware";
   };
-  outputs = inputs@{ self, nixpkgs, nixpkgs-unstable, nur, ... }: with self; {
+  outputs = inputs@{ self
+    , nixpkgs
+    , nixpkgs-unstable
+    , nur
+    , doomemacs
+    , ... }: with self; {
     system = "x86_64-linux";
     pkgs = import nixpkgs { inherit system; overlay=overlay; };
     unstable-pkgs = import nixpkgs-unstable { inherit system; overlay=overlay; };
@@ -54,7 +65,9 @@
           unstable = unstable-pkgs;
         };
       };
-
+      default = {
+        nix.extraOptions = ''experimental-features = nix-command flakes'';
+      };
       binaryCaches = {
         nix.binaryCachePublicKeys = [
           "zbioe.cachix.org-1:7KHSSucix5ZpqsbtlJJcabTZohn7OPJxTWerdQlZIfw="
@@ -65,6 +78,7 @@
           builtins.elem (lib.getName pkg) (import ./nixpkgs/unfree.nix);
       };
     };
+
     nixosConfigurations.nv = nixpkgs.lib.nixosSystem {
       inherit system;
       specialArgs = { inherit lib; };
@@ -72,6 +86,7 @@
         ./modules
         ./hosts/nv
         # self.nixosModules.options
+        self.nixosModules.default
         self.nixosModules.unfree
         self.nixosModules.overlays
         self.nixosModules.overrides

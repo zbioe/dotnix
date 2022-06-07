@@ -12,6 +12,7 @@ in {
     networking.hostName = config.host.name; # Define your hostname.
     networking.networkmanager.enable = true;  # Enables wireless support via wpa_supplicant.
     networking.nameservers = cfg.dns;
+    networking.search = cfg.dns;
     users.users.${config.user.name}.extraGroups = [
       "networkmanager"
     ];
