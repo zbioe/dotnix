@@ -5,7 +5,7 @@ let
   cfg = config.modules.system;
 in {
   options.modules.system = with types; {
-    stateVersion = mkOpt' nonEmptyStr "21.05" "system and home state version";
+    stateVersion = mkOpt' nonEmptyStr "22.11" "system and home state version";
   };
   
   config = {

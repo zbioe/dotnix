@@ -81,6 +81,12 @@ in {
         vimAlias = true;
       };
     })
+    (self: super: {
+      emacsWithConfig = super.emacsWithPackages (epkgs:
+        (with epkgs.melpaPackages; [
+          pdf-tools
+        ]));
+    })
       #(self: super: {
       #  emacs = (super.emacs.override {
       #    nativeComp = true;
@@ -126,7 +132,7 @@ in {
     gopls # go lsp server
     godef # go def
     libtool
-    emacs # editor for all
+    emacsWithConfig # editor for all
     cachix # custom cache
     twurl # twitter cli oauth
     webcamoid # web cam tool
@@ -290,7 +296,7 @@ in {
         direnv.enable = true;
         neovim = {
           enable = true;
-	  # package = pkgs.neovim.overrideAttrs (old: {patches = (old.patches or []) ++ [ /home/zbioe/.config/nvim/undo.patch ];});
+          # package = pkgs.neovim.overrideAttrs (old: {patches = (old.patches or []) ++ [ /home/zbioe/.config/nvim/undo.patch ];});
           plugins = with pkgs.vimPlugins; [
            # Syntax / Language Support
            vim-nix
@@ -360,8 +366,7 @@ in {
        #emacs.package = emacs-with-pkgs;
        #emacs.client.enable = true;
        #emacs.client.arguments = [ "--no-wait" ];
-       lorri.enable = true;
-       dropbox.enable = true;
+       # dropbox.enable = true;
      };
      xsession.enable = true;
      #systemd.user.services.emacs = {
@@ -386,9 +391,9 @@ in {
     options kvm_intel nested=1
   '';
 
-  security.pki.certificateFiles = [
-    ../../ca/consul.crt
-  ];
+  # security.pki.certificateFiles = [
+  #   ../../ca/consul.crt
+  # ];
 
 
 

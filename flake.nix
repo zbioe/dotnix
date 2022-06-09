@@ -19,7 +19,7 @@
     };
 
     # Extra packages
-    home-manager.url = "github:rycee/home-manager/release-21.11";
+    home-manager.url = "github:rycee/home-manager";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
 
     # Age encrypt secrets for nixos, ecnrypt secrets with your keygen
