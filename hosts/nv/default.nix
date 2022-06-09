@@ -12,7 +12,7 @@
   };
 
   modules = {
-    system.stateVersion = "21.05";
+    system.stateVersion = "22.11";
 
     boot = {
       enable = true;
@@ -27,7 +27,6 @@
 
     network.enable = true;
     audio.enable = true;
-    bluetooth.enable = true;
 
     wm = {
       enable = true;

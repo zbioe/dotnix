@@ -1,7 +1,3 @@
-# Edit this configuration file to define what should be installed on
-# your system.  Help is available in the configuration.nix(5) man page
-# and in the NixOS manual (accessible by running ‘nixos-help’).
-
 { config, pkgs, lib, ... }:
 let
   unfree = (import ../../nixpkgs/unfree.nix);
@@ -25,33 +21,11 @@ in {
     ];
   };
 
-  #nix.trustedUsers = ["@wheel" "zbioe"];
-  #nix.package = pkgs.nixFlakes;
-  #nix.extraOptions = "experimental-features = nix-command flakes";
-  #nix = {
-  #  binaryCaches = [
-  #    "https://cache.nixos.org"
-  #    "https://cache.ngi0.nixos.org"
-  #    "https://nix-community.cachix.org"
-  #    "https://bornlogic.cachix.org/" 
-  #  ];
-  #  binaryCachePublicKeys = [
-  #    "cache.ngi0.nixos.org-1:KqH5CBLNSyX184S9BKZJo1LxrxJ9ltnY2uAs5c/f1MA="
-  #    "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
-  #    "bornlogic.cachix.org-1:WrP3tyzc07oHOzAD0VvsUEvbxHpwn+dAEoY8ECgW7kc="
-  #  ];
-  #};
   nix = {
     package = pkgs.nixFlakes;
     extraOptions = lib.optionalString (config.nix.package == pkgs.nixFlakes)
     "experimental-features = nix-command flakes";
   };
-
-  ## virtualization
-  #virtualisation.kvmgt.enable = true;
-  #virtualisation.libvirtd.enable = true;
-  ##virtualisation.virtualbox.host.enable = true;
-  ##virtualisation.virtualbox.host.enableExtensionPack = true;
 
   # docker env
   virtualisation.docker.enable = false;
@@ -107,24 +81,8 @@ in {
       #})
   ];
 
-  #nixpkgs.config.packageOverrides = pkgs: {
-  #  vaapiintel = pkgs.vaapiintel.override { enablehybridcodec = true; };
-  #  steam = pkgs.steam.override {
-  #    extraPkgs = pkgs: with pkgs; [
-  #      libgdiplus
-  #    ];
-  #  };
-  # };
-
-  #'boot.blacklistedKernelModules = ["nouveau"];
-  #services.xserver.videoDrivers = [ "nvidia" ];  
-#  systemd.services.nvidia-control-devices = {
-#	  wantedBy = [ "multi-user.target" ];
-#	  serviceConfig.ExecStart = "${pkgs.linuxPackages.nvidia_x11}/bin/nvidia-smi";
-#  };
   nixpkgs.config.allowBroken = true; 
-  # List packages installed in system profile. To search, run:
-  # $ nix search wget
+
   environment.systemPackages = with pkgs; [
     # rustracer # rust racer
     shfmt
@@ -395,34 +353,4 @@ in {
   #   ../../ca/consul.crt
   # ];
 
-
-
-  # Some programs need SUID wrappers, can be configured further or are
-  # started in user sessions.
-  # programs.mtr.enable = true;
-  # programs.gnupg.agent = {
-  #   enable = true;
-  #   enableSSHSupport = true;
-  # };
-
-  # List services that you want to enable:
-
-  # Enable the OpenSSH daemon.
-  # services.openssh.enable = true;
-
-  # Open ports in the firewall.
-  # networking.firewall.allowedTCPPorts = [ ... ];
-  # networking.firewall.allowedUDPPorts = [ ... ];
-  # Or disable the firewall altogether.
-  # networking.firewall.enable = false;
-
-  # This value determines the NixOS release from which the default
-  # settings for stateful data, like file locations and database versions
-  # on your system were taken. It‘s perfectly fine and recommended to leave
-  # this value at the release version of the first install of this system.
-  # Before changing this value read the documentation for this option
-  # (e.g. man configuration.nix or on https://nixos.org/nixos/options.html).
-  system.stateVersion = "21.05"; # Did you read the comment?
-
 }
-
