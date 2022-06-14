@@ -1,8 +1,5 @@
-{...}: {
-  imports = [
-    ./hardware.nix
-    ./config.nix
-  ];
+{ ... }: {
+  imports = [ ./hardware.nix ./config.nix ];
 
   user.name = "zbioe";
   time.zone = "America/Sao_Paulo";
@@ -12,7 +9,7 @@
   };
 
   modules = {
-    system.stateVersion = "22.11";
+    system.stateVersion = "22.05";
 
     boot = {
       enable = true;
@@ -22,7 +19,7 @@
 
     keyboard = {
       layout = "br";
-      options = ["ctrl:nocaps"];
+      options = [ "ctrl:nocaps" ];
     };
 
     network.enable = true;

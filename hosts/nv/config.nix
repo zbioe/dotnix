@@ -10,6 +10,15 @@ in {
   # Define a user account. Don't forget to set a password with ‘passwd’.
   users.users.${config.user.name} = {
     extraGroups = [
+      "input"
+      "kvm"
+      "dbus"
+      "polkituser"
+      "nixbld"
+      "rtkit"
+      "users"
+      "floppy"
+      "messagebus"
       "audio"
       "bluetooth"
       "wheel"
@@ -19,6 +28,7 @@ in {
       "qemu-libvirtd"
       "libvirtd"
       "vboxusers"
+      "adbusers"
     ];
   };
 
@@ -42,6 +52,7 @@ in {
 
   # fonts
   fonts.fonts = with pkgs; [ noto-fonts noto-fonts-cjk noto-fonts-emoji ];
+  fonts.fontconfig.enable = true;
 
   # nixpkgs changes
   nixpkgs.overlays = [
@@ -67,6 +78,7 @@ in {
           nose
           pytest
           setuptools
+          protonvpn-nm-lib
           pip
         ]));
     })
@@ -141,6 +153,15 @@ in {
       nodejs-16_x
       node2nix
 
+      # sec
+      bitwarden
+      bitwarden-cli
+      protonmail-bridge # protonmail bridge client
+      protonvpn-cli # protonvpn command line
+      dbus
+
+      # others
+
       libtool
       cachix # custom cache
       twurl # twitter cli oauth
@@ -174,7 +195,6 @@ in {
       lens # kubernetes interfac
       openssl # openssl tooling
       openvpn # vpn
-      protonvpn-cli # protonvpn command line
       azure-cli # azure communication by command line
       cachix # cachix
       # linkerd_stable # service mesh
@@ -396,6 +416,9 @@ in {
 
   environment.interactiveShellInit = ''
     alias hc='herbstclient'
+    alias ec='emacsclient'
+    alias pvc='protonvpn-cli'
+    alias pmb='protonmail-bridge'
   '';
 
   boot.extraModprobeConfig = ''
