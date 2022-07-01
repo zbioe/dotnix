@@ -9,8 +9,8 @@
 
   inputs = {
     # Main package channels
-    nixpkgs.url = "github:NixOS/nixpkgs/1f8d88087a375";
-    nixpkgs-unstable.url = "github:NixOS/nixpkgs/1f8d88087a375";
+    nixpkgs.url = "github:NixOS/nixpkgs/29d09efbd5da";
+    nixpkgs-unstable.url = "github:NixOS/nixpkgs/29d09efbd5da";
     nur.url = "github:nix-community/NUR/834d53bf16ac";
     nur.inputs.nixpkgs.follows = "nixpkgs";
 

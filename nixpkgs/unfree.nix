@@ -1,4 +1,5 @@
 [
+  "symbola"
   "nvidia-x11"
   "nvidia-settings"
   "discord"

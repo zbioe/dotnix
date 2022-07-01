@@ -1,7 +1,19 @@
 { config, pkgs, lib, ... }:
 let
   unfree = (import ../../nixpkgs/unfree.nix);
-  hlibs = with pkgs; [ ];
+  elmPkgs = with pkgs.elmPackages; [
+    elm
+    elm-analyse
+    elm-doc-preview
+    elm-format
+    elm-live
+    elm-test
+    elm-upgrade
+    elm-xref
+    elm-language-server
+    elm-verify-examples
+    elmi-to-json
+  ];
 in {
 
   # Enable touchpad support (enabled default in most desktopManager).
@@ -51,7 +63,12 @@ in {
   services.qemuGuest.enable = true;
 
   # fonts
-  fonts.fonts = with pkgs; [ noto-fonts noto-fonts-cjk noto-fonts-emoji ];
+  fonts.fonts = with pkgs; [
+    noto-fonts
+    noto-fonts-cjk
+    noto-fonts-emoji
+    symbola
+  ];
   fonts.fontconfig.enable = true;
 
   # nixpkgs changes
@@ -62,11 +79,14 @@ in {
         vimAlias = true;
       };
     })
+
     (self: super: {
       emacsWithConfig =
         ((super.emacsPackagesFor super.emacsNativeComp).emacsWithPackages
-          (epkgs: (with epkgs.melpaPackages; [ epkgs.vterm pdf-tools ])));
+          (epkgs:
+            (with epkgs.melpaPackages; [ vterm pdf-tools org-pdftools ])));
     })
+
     (self: super: {
       pythonWithConfig = super.python39.withPackages (ppkgs:
         (with ppkgs; [
@@ -82,6 +102,7 @@ in {
           pip
         ]));
     })
+
     #(self: super: {
     #  emacs = (super.emacs.override {
     #    nativeComp = true;
@@ -105,9 +126,9 @@ in {
   nixpkgs.config.allowBroken = true;
 
   environment.systemPackages = with pkgs;
-  # haskell libs
-    hlibs ++ [
-      emacsWithConfig # editor for all
+  # elm packages
+    elmPkgs ++ [
+      # emacsWithConfig # editor for all
       # emacs tools
       shfmt
       nixfmt
@@ -140,9 +161,10 @@ in {
       unstable.stack
 
       # rust
-      rustc
-      cargo
+      # rustc
+      # cargo
       rust-analyzer
+      rustup
       # markdown
       multimarkdown
       # web
@@ -159,6 +181,13 @@ in {
       protonmail-bridge # protonmail bridge client
       protonvpn-cli # protonvpn command line
       dbus
+
+      # pdf
+      poppler
+      poppler_utils
+
+      # study
+      exercism
 
       # others
 
@@ -214,6 +243,8 @@ in {
       steam-run-native # steam start game
       gnome.adwaita-icon-theme # gnome themes
       lutris # game runner
+      dunst # notification daemon
+      libnotify # desktop send notifications
       vulkan-tools # vulkan requirements
       nix-direnv
       nix-direnv-flakes
@@ -278,7 +309,6 @@ in {
     home.sessionPath = [
       "${config.home.homeDirectory}/.emacs.d/bin"
       "${config.home.homeDirectory}/go/bin"
-      "${config.home.homeDirectory}/.cargo/bin"
       "${config.home.homeDirectory}/.local/bin"
       "${config.home.homeDirectory}/.npm-packages/bin"
     ];
@@ -317,10 +347,11 @@ in {
         enableFishIntegration = true;
       };
       chromium = { enable = true; };
-      #emacs = {
-      #  enable = true;
-      #  package = emacs-with-pkgs;
-      #};
+      emacs = {
+        enable = true;
+        # package = emacs-with-pkgs;
+        extraPackages = epkgs: with epkgs; [ pdf-tools org-pdftools vterm ];
+      };
       starship = {
         enable = true;
         enableBashIntegration = true;
