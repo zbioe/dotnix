@@ -249,6 +249,7 @@ in {
       dunst # notification daemon
       libnotify # desktop send notifications
       vulkan-tools # vulkan requirements
+      direnv
       nix-direnv
       nix-direnv-flakes
       chromedriver
