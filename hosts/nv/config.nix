@@ -15,6 +15,7 @@ let
     elmi-to-json
   ];
 in {
+  environment.pathsToLink = [ "/share/nix-direnv" ];
 
   # Enable touchpad support (enabled default in most desktopManager).
   services.xserver.libinput.enable = true;
@@ -79,7 +80,9 @@ in {
         vimAlias = true;
       };
     })
-
+    (self: super: {
+      nix-direnv = super.nix-direnv.override { enableFlakes = true; };
+    })
     (self: super: {
       emacsWithConfig =
         ((super.emacsPackagesFor super.emacsNativeComp).emacsWithPackages
@@ -357,7 +360,7 @@ in {
         enableBashIntegration = true;
         enableFishIntegration = true;
       };
-      direnv.enable = true;
+      # direnv.enable = true;
       neovim = {
         enable = true;
         # package = pkgs.neovim.overrideAttrs (old: {patches = (old.patches or []) ++ [ /home/zbioe/.config/nvim/undo.patch ];});
