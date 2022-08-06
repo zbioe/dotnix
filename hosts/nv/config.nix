@@ -403,7 +403,13 @@ in {
         enableFishIntegration = true;
         settings = {
           add_newline = true;
-          format = "$directory\${custom.shell}$all";
+          format =
+            "$all\${custom.shell}$line_break$jobs$battery$time$status$shell$character";
+          character = let char = "ƛ";
+          in {
+            success_symbol = "[${char}](bold cyan)";
+            error_symbol = "[${char}](bold red)";
+          };
           custom = let
             sparse = pkgs.writeScriptBin "shell-parse" ''
               #!/bin/sh
@@ -415,7 +421,7 @@ in {
               when = "true";
               shell = [ spbin ];
               format = "on [$output]($style) ";
-              style = "bold dimmed purple";
+              style = "bold dimmed bright-purple";
             };
           };
         };
