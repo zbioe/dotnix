@@ -401,28 +401,44 @@ in {
         enable = true;
         enableBashIntegration = true;
         enableFishIntegration = true;
-        settings = {
+        settings = let inherit (lib.strings) concatStrings;
+        in {
           add_newline = true;
-          format =
-            "$all\${custom.shell}$line_break$jobs$battery$time$status$shell$character";
-          character = let char = "ƛ";
+          format = concatStrings [
+            "$username"
+            "$hostname"
+            "$directory"
+            "$git_branch"
+            "$git_commit"
+            "$git_metrics"
+            "$git_status"
+            "$nix_shell"
+            "$shell"
+            "$memory_usage"
+            "$cmd_duration"
+            "$line_break"
+            "$jobs"
+            "$battery"
+            "$time"
+            "$status"
+            "$character"
+          ];
+          memory_usage = { disabled = false; };
+          character = let char = "≻";
           in {
             success_symbol = "[${char}](bold cyan)";
             error_symbol = "[${char}](bold red)";
           };
-          custom = let
-            sparse = pkgs.writeScriptBin "shell-parse" ''
-              #!/bin/sh
-              echo -n $STARSHIP_SHELL
-            '';
-            spbin = sparse.outPath + "/bin/shell-parse";
-          in {
-            shell = {
-              when = "true";
-              shell = [ spbin ];
-              format = "on [$output]($style) ";
-              style = "bold dimmed bright-purple";
-            };
+          shell = {
+            disabled = false;
+            style = "bold bright-blue";
+            format = "[λ](dimmed bold blue)[ $indicator]($style) ";
+          };
+          nix_shell = {
+            disabled = false;
+            impure_msg = "[nix](bold yellow)";
+            pure_msg = "[nix](bold green)";
+            format = "[❄ $state](bold blue) ";
           };
         };
       };
