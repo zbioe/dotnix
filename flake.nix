@@ -24,9 +24,9 @@
     home-manager.url = "github:rycee/home-manager/70824bb5c790";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
 
-    # Age encrypt secrets for nixos, ecnrypt secrets with your keygen
-    agenix.url = "github:ryantm/agenix/0.10.1";
-    agenix.inputs.nixpkgs.follows = "nixpkgs";
+    # Sops for nixos, ecnrypt secrets
+    sops-nix.url = "github:Mic92/sops-nix";
+    sops-nix.inputs.nixpkgs.follows = "nixpkgs";
 
     # Emacs 
     emacs-overlay.url = "github:nix-community/emacs-overlay/18caabdf606d1";
@@ -35,7 +35,8 @@
     # Hardware
     nixos-hardware.url = "github:nixos/nixos-hardware/0cab18a48de79";
   };
-  outputs = inputs@{ self, nixpkgs, nixpkgs-unstable, nur, doomemacs, ... }:
+  outputs =
+    inputs@{ self, nixpkgs, nixpkgs-unstable, nur, doomemacs, sops-nix, ... }:
     with self; {
       system = "x86_64-linux";
       pkgs = import nixpkgs {
@@ -91,6 +92,8 @@
         modules = [
           ./modules
           ./hosts/nv
+          # encrypt app
+          sops-nix.nixosModules.sops
           # self.nixosModules.options
           self.nixosModules.default
           self.nixosModules.unfree

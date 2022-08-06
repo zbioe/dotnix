@@ -40,28 +40,41 @@ in {
       "podman"
       "qemu-libvirtd"
       "libvirtd"
+      "video"
+      "disk"
       "vboxusers"
       "adbusers"
     ];
   };
+  boot.kernelModules = [ "kvm-amd" "kvm-intel" ];
 
   nix = {
     package = pkgs.nixFlakes;
     extraOptions = lib.optionalString (config.nix.package == pkgs.nixFlakes)
       "experimental-features = nix-command flakes";
   };
-
+  services.qemuGuest.enable = true;
   # docker env
-  virtualisation.docker.enable = false;
+  # virtualisation.docker.enable = true; # podman relace docker
+  virtualisation.libvirtd.enable = true;
+  virtualisation.libvirtd.qemu.runAsRoot = false;
   virtualisation.podman.enable = true;
   virtualisation.podman.dockerSocket.enable = true;
   virtualisation.podman.defaultNetwork.dnsname.enable = true;
 
   programs.dconf.enable = true;
 
-  programs.adb.enable = true;
+  networking.extraHosts = ''
+    10.0.62.11 c1r1
+    10.0.62.12 c1r2
+    10.0.62.13 c1r3
 
-  services.qemuGuest.enable = true;
+    10.0.62.14 c2r1
+    10.0.62.15 c2r2
+    10.0.62.16 c2r3
+  '';
+
+  programs.adb.enable = true;
 
   # fonts
   fonts.fonts = with pkgs; [
@@ -131,6 +144,8 @@ in {
   environment.systemPackages = with pkgs;
   # elm packages
     elmPkgs ++ [
+      # virtualiation
+      libvirt
       # emacsWithConfig # editor for all
       # emacs tools
       shfmt
@@ -162,6 +177,7 @@ in {
       unstable.haskellPackages.zlib
       unstable.pkgconfig
       unstable.stack
+      k9s
 
       # rust
       # rustc
@@ -184,6 +200,27 @@ in {
       protonmail-bridge # protonmail bridge client
       protonvpn-cli # protonvpn command line
       dbus
+
+      # rust tools alternative
+      bottom # btm: top alternative
+      bat # cat talternative
+      broot # tree alternative
+      choose # grep alternative
+      delta # diff alternative
+      du-dust # du alternative
+      exa # ls alternative
+      fd # find alternative
+      felix # dir manager
+      gitui # ui for git
+      grex # find regex patterns
+      htmlq # query in html jq like
+      jql # jq alternative
+      hyperfine # benchmark
+      just # make alternative
+      rm-improved # rip: rm improved with recovery in /tmp/graveyard-$USER
+      xcp # cp with some optimizations
+      tokei # code info
+      ripgrep # rg: grep replacement
 
       # pdf
       poppler
@@ -336,6 +373,10 @@ in {
         enableBashIntegration = true;
         enableFishIntegration = true;
       };
+      bash = {
+        enable = true;
+        historySize = -1;
+      };
       fish = {
         enable = true;
         shellAbbrs = { "hc" = "herbstclient"; };
@@ -360,8 +401,25 @@ in {
         enable = true;
         enableBashIntegration = true;
         enableFishIntegration = true;
+        settings = {
+          add_newline = true;
+          format = "$directory\${custom.shell}$all";
+          custom = let
+            sparse = pkgs.writeScriptBin "shell-parse" ''
+              #!/bin/sh
+              echo -n $STARSHIP_SHELL
+            '';
+            spbin = sparse.outPath + "/bin/shell-parse";
+          in {
+            shell = {
+              when = "true";
+              shell = [ spbin ];
+              format = "on [$output]($style) ";
+              style = "bold dimmed purple";
+            };
+          };
+        };
       };
-      # direnv.enable = true;
       neovim = {
         enable = true;
         # package = pkgs.neovim.overrideAttrs (old: {patches = (old.patches or []) ++ [ /home/zbioe/.config/nvim/undo.patch ];});
