@@ -10,5 +10,5 @@
   "steam"
   "steam-original"
   "steam-runtime"
-  # "Oracle_VM_VirtualBox_Extension_Pack"
+  "zoom"
 ]

@@ -1,4 +1,4 @@
-{ pkgs ? import <nixpkgs> {} }:
+{ pkgs ? import <nixpkgs> {}, unstable ? pkgs }:
 
 with pkgs;
 let nixBin =
@@ -8,7 +8,7 @@ let nixBin =
 in mkShell {
   buildInputs = [
     git
-    nix-zsh-completions
+    unstable.nix-zsh-completions
   ];
   shellHook = ''
     export FLAKE="$(pwd)"

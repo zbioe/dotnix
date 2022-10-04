@@ -14,11 +14,26 @@ let
     elm-verify-examples
     elmi-to-json
   ];
+  variables = {
+    TERMINAL = "alacritty";
+    EDITOR = "nvim";
+    VISUAL = "nvim";
+    GOPATH = "$HOME/go";
+    GOBIN = "$HOME/go/bin";
+    GOROOT = pkgs.go.outPath;
+    NODE_PATH = "$HOME/.node-packages/lib/node_modules";
+    PIP_TARGET = "$HOME/.local/";
+    GTK_IM_MODULE = "ibus";
+  };
 in {
   environment.pathsToLink = [ "/share/nix-direnv" ];
 
   # Enable touchpad support (enabled default in most desktopManager).
   services.xserver.libinput.enable = true;
+  boot.extraModulePackages = with config.boot.kernelPackages; [
+    v4l2loopback.out
+    akvcam.out
+  ];
 
   # Define a user account. Don't forget to set a password with ‘passwd’.
   users.users.${config.user.name} = {
@@ -46,8 +61,9 @@ in {
       "adbusers"
     ];
   };
-  boot.kernelModules = [ "kvm-amd" "kvm-intel" ];
-
+  boot.kernelModules =
+    [ "kvm-amd" "kvm-intel" "v4l2loopback" "snd-aloop" "akvcam" ];
+  # Set initial kernel module settings
   nix = {
     package = pkgs.nixFlakes;
     extraOptions = lib.optionalString (config.nix.package == pkgs.nixFlakes)
@@ -63,6 +79,8 @@ in {
   virtualisation.podman.defaultNetwork.dnsname.enable = true;
 
   programs.dconf.enable = true;
+
+  hardware.enableRedistributableFirmware = true;
 
   networking.extraHosts = ''
     10.0.62.11 c1r1
@@ -144,6 +162,11 @@ in {
   environment.systemPackages = with pkgs;
   # elm packages
     elmPkgs ++ [
+      # video
+      ffmpeg-full
+      simplescreenrecorder
+      # audio
+      vlc
       # virtualiation
       libvirt
       # emacsWithConfig # editor for all
@@ -158,6 +181,8 @@ in {
       gnuplot
       fd
       shellcheck
+      wmctrl
+
       # dics
       (aspellWithDicts (ds: with ds; [ en en-computers en-science pt_BR ]))
       # python
@@ -231,6 +256,7 @@ in {
 
       # others
 
+      gnome.nautilus
       libtool
       cachix # custom cache
       twurl # twitter cli oauth
@@ -290,6 +316,22 @@ in {
       nix-direnv
       nix-direnv-flakes
       chromedriver
+      file
+      #extra-shells
+      xonsh
+      elvish
+      ion
+      # win10 install iso
+      # woeusb
+      woeusb-ng
+      ntfs3g
+      gparted
+
+      # zoom meeting client
+      zoom-us
+      # notes
+      logseq
+
       #dxvk
       #nvidia-offload
       # (steam.override { nativeOnly = true; }).run
@@ -305,15 +347,8 @@ in {
     ];
 
   # Environment Variables
-  environment.variables = {
-    TERMINAL = "alacritty";
-    EDITOR = "nvim";
-    VISUAL = "nvim";
-    GOPATH = "$HOME/go";
-    GOBIN = "$HOME/go/bin";
-    GOROOT = pkgs.go.outPath;
-    NODE_PATH = "$HOME/.node-packages/lib/node_modules";
-  };
+  environment.variables = variables;
+  environment.sessionVariables = variables;
 
   nixpkgs.config.allowUnfreePredicate = pkg:
     builtins.elem (lib.getName pkg) unfree;
@@ -372,10 +407,19 @@ in {
         enable = true;
         enableBashIntegration = true;
         enableFishIntegration = true;
+        enableZshIntegration = true;
       };
       bash = {
         enable = true;
         historySize = -1;
+      };
+      zsh = {
+        enable = true;
+        enableAutosuggestions = true;
+        enableCompletion = true;
+        enableSyntaxHighlighting = true;
+        oh-my-zsh.enable = true;
+        prezto.enable = true;
       };
       fish = {
         enable = true;
@@ -386,10 +430,19 @@ in {
           [ -f $extraConfig ] && source $extraConfig
         '';
       };
+      nushell = {
+        enable = true;
+        settings = {
+          key_timeout = 10;
+          completion_mode = "circular";
+          startup = [ "source ~/.cache/starship/init.nu" ];
+        };
+      };
       fzf = {
         enable = true;
         enableBashIntegration = true;
         enableFishIntegration = true;
+        enableZshIntegration = true;
       };
       chromium = { enable = true; };
       emacs = {
@@ -401,6 +454,7 @@ in {
         enable = true;
         enableBashIntegration = true;
         enableFishIntegration = true;
+        enableZshIntegration = true;
         settings = let inherit (lib.strings) concatStrings;
         in {
           add_newline = true;
@@ -539,6 +593,7 @@ in {
   boot.extraModprobeConfig = ''
     options snd-hda-intel model=alc269-dmic 
     options kvm_intel nested=1
+    options v4l2loopback exclusive_caps=1 card_label="Virtual Camera"
   '';
 
   # security.pki.certificateFiles = [

@@ -18,7 +18,8 @@
     };
 
     keyboard = {
-      layout = "br";
+      layout = "us";
+      variant = "intl";
       options = [ "ctrl:nocaps" ];
     };
 
