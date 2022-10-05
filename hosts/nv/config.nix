@@ -24,6 +24,7 @@ let
     NODE_PATH = "$HOME/.node-packages/lib/node_modules";
     PIP_TARGET = "$HOME/.local/";
     GTK_IM_MODULE = "ibus";
+    GTK_USE_PORTAL = "1";
   };
 in {
   environment.pathsToLink = [ "/share/nix-direnv" ];
@@ -65,8 +66,8 @@ in {
     [ "kvm-amd" "kvm-intel" "v4l2loopback" "snd-aloop" "akvcam" ];
   # Set initial kernel module settings
   nix = {
-    package = pkgs.nixFlakes;
-    extraOptions = lib.optionalString (config.nix.package == pkgs.nixFlakes)
+    package = pkgs.nixStable;
+    extraOptions = lib.optionalString (config.nix.package == pkgs.nixStable)
       "experimental-features = nix-command flakes";
   };
   services.qemuGuest.enable = true;
@@ -200,7 +201,7 @@ in {
       # haskell
       unstable.haskell-language-server
       unstable.haskellPackages.zlib
-      unstable.pkgconfig
+      unstable.pkg-config
       unstable.stack
       k9s
 

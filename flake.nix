@@ -9,8 +9,8 @@
 
   inputs = {
     # Main package channels
-    nixpkgs.url = "github:NixOS/nixpkgs/29d09efbd5da";
-    nixpkgs-unstable.url = "github:NixOS/nixpkgs/29d09efbd5da";
+    nixpkgs.url = "github:NixOS/nixpkgs/fd54651f5ffb";
+    nixpkgs-unstable.url = "github:NixOS/nixpkgs/fd54651f5ffb";
     nur.url = "github:nix-community/NUR/834d53bf16ac";
     nur.inputs.nixpkgs.follows = "nixpkgs";
 
@@ -76,7 +76,7 @@
           nix.extraOptions = "experimental-features = nix-command flakes";
         };
         binaryCaches = {
-          nix.binaryCachePublicKeys = [
+          nix.settings.trusted-public-keys = [
             "zbioe.cachix.org-1:7KHSSucix5ZpqsbtlJJcabTZohn7OPJxTWerdQlZIfw="
           ];
         };

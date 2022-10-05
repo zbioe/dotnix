@@ -1,7 +1,6 @@
-{pkgs, config, lib, ...}:
+{ pkgs, config, lib, ... }:
 with lib;
-with lib.my;
-{
+with lib.my; {
   imports = [
     ./wm
     ./boot
@@ -12,14 +11,14 @@ with lib.my;
     ./bluetooth.nix
   ];
   options = with types; {
-    user.uid          = mkOpt int 1000;
-    user.name         = mkOpt str "default";
-    user.shell        = mkOpt package pkgs.fish;
-    user.description  = mkOpt str "${config.user.name} account";
-    user.extraGroups  = mkOpt (listOf str) ["wheel"];
+    user.uid = mkOpt int 1000;
+    user.name = mkOpt str "default";
+    user.shell = mkOpt package pkgs.fish;
+    user.description = mkOpt str "${config.user.name} account";
+    user.extraGroups = mkOpt (listOf str) [ "wheel" ];
     user.isNormalUser = mkBoolOpt true;
-    user.home         = mkOpt str "/home/${config.user.name}";
-    user.group        = mkOpt str "users";
+    user.home = mkOpt str "/home/${config.user.name}";
+    user.group = mkOpt str "users";
 
     host.name = mkOpt str "nixos";
     host.i18n = mkOpt str "pt_BR.UTF-8";
@@ -27,9 +26,9 @@ with lib.my;
     time.zone = mkOpt str "America/Sao_Paulo";
 
     dotfiles = {
-      dir        = mkOpt path "/etc/dotnix";
-      binDir     = mkOpt path "${config.dotfiles.dir}/bin";
-      configDir  = mkOpt path "${config.dotfiles.dir}/config";
+      dir = mkOpt path "/etc/dotnix";
+      binDir = mkOpt path "${config.dotfiles.dir}/bin";
+      configDir = mkOpt path "${config.dotfiles.dir}/config";
       modulesDir = mkOpt path "${config.dotfiles.dir}/modules";
     };
   };
@@ -39,18 +38,17 @@ with lib.my;
     home-manager = {
       useUserPackages = true;
       users.${config.user.name} = {
-        home = {
-          stateVersion = config.system.stateVersion;
-        };
+        home = { stateVersion = config.system.stateVersion; };
       };
     };
 
     i18n.defaultLocale = config.host.i18n;
 
     users.users.${config.user.name} = config.user;
-    nix = let users = [ "root" config.user.name]; in {
-      trustedUsers = users;
-      allowedUsers = users;
+    nix.settings = let users = [ "root" config.user.name ];
+    in {
+      trusted-users = users;
+      allowed-users = users;
     };
 
     time.timeZone = config.time.zone;
