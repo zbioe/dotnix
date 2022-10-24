@@ -92,8 +92,6 @@
         modules = [
           ./modules
           ./hosts/nv
-          # encrypt app
-          sops-nix.nixosModules.sops
           # self.nixosModules.options
           self.nixosModules.default
           self.nixosModules.unfree
@@ -104,6 +102,8 @@
           inputs.nixos-hardware.nixosModules.common-cpu-intel
           inputs.nixos-hardware.nixosModules.common-gpu-nvidia
           inputs.nixos-hardware.nixosModules.common-pc-laptop-ssd
+          # encrypt app
+          sops-nix.nixosModules.sops
         ];
       };
       #defaultPackage.${system} = self.nixosConfigurations.nv.config.system.build.vm;

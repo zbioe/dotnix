@@ -16,11 +16,12 @@ let
   ];
   variables = {
     TERMINAL = "alacritty";
-    EDITOR = "nvim";
-    VISUAL = "nvim";
+    EDITOR = "emacsclient";
+    ALTERNATE_EDITOR = "";
+    VISUAL = "emacsclient -c";
     GOPATH = "$HOME/go";
     GOBIN = "$HOME/go/bin";
-    GOROOT = pkgs.go.outPath;
+    GOROOT = "${pkgs.go.outPath}/share/go";
     NODE_PATH = "$HOME/.node-packages/lib/node_modules";
     PIP_TARGET = "$HOME/.local/";
     GTK_IM_MODULE = "ibus";
@@ -33,8 +34,10 @@ in {
   services.xserver.libinput.enable = true;
   boot.extraModulePackages = with config.boot.kernelPackages; [
     v4l2loopback.out
+    rtl8812au.out
     akvcam.out
   ];
+  boot.initrd.kernelModules = [ "8812au" ];
 
   # Define a user account. Don't forget to set a password with ‘passwd’.
   users.users.${config.user.name} = {
@@ -163,6 +166,12 @@ in {
   environment.systemPackages = with pkgs;
   # elm packages
     elmPkgs ++ [
+      # encryption
+      age
+      ssh-to-age
+      gnupg
+      ssh-to-pgp
+      sops
       # video
       ffmpeg-full
       simplescreenrecorder
@@ -183,6 +192,7 @@ in {
       fd
       shellcheck
       wmctrl
+      tectonic
 
       # dics
       (aspellWithDicts (ds: with ds; [ en en-computers en-science pt_BR ]))
@@ -210,6 +220,7 @@ in {
       # cargo
       rust-analyzer
       rustup
+      trunk
       # markdown
       multimarkdown
       # web
@@ -265,6 +276,7 @@ in {
       #emacs-with-pkgs # mainly editor
       # telegram # chat
       asciinema # record term
+      texmacs # alternative awesome editor
       neovim # alternative editor
       kubernetes-helm # Helm
       go-2fa # 2fa auth wallet
@@ -324,7 +336,7 @@ in {
       ion
       # win10 install iso
       # woeusb
-      woeusb-ng
+      # woeusb-ng
       ntfs3g
       gparted
 
