@@ -23,7 +23,7 @@ let
     GOBIN = "$HOME/go/bin";
     GOROOT = "${pkgs.go.outPath}/share/go";
     NODE_PATH = "$HOME/.node-packages/lib/node_modules";
-    PIP_TARGET = "$HOME/.local/";
+    # PIP_TARGET = "$HOME/.local/";
     GTK_IM_MODULE = "ibus";
     GTK_USE_PORTAL = "1";
   };
@@ -56,7 +56,7 @@ in {
       "wheel"
       "networkmanager"
       "docker"
-      "podman"
+      # "podman"
       "qemu-libvirtd"
       "libvirtd"
       "video"
@@ -75,12 +75,12 @@ in {
   };
   services.qemuGuest.enable = true;
   # docker env
-  # virtualisation.docker.enable = true; # podman relace docker
+  virtualisation.docker.enable = true; # podman relace docker
   virtualisation.libvirtd.enable = true;
   virtualisation.libvirtd.qemu.runAsRoot = false;
-  virtualisation.podman.enable = true;
-  virtualisation.podman.dockerSocket.enable = true;
-  virtualisation.podman.defaultNetwork.dnsname.enable = true;
+  # virtualisation.podman.enable = true;
+  # virtualisation.podman.dockerSocket.enable = true;
+  # virtualisation.podman.defaultNetwork.dnsname.enable = true;
 
   programs.dconf.enable = true;
 
@@ -166,6 +166,9 @@ in {
   environment.systemPackages = with pkgs;
   # elm packages
     elmPkgs ++ [
+      # image
+      imagemagick
+      inkscape
       # encryption
       age
       ssh-to-age
@@ -399,6 +402,8 @@ in {
       "${config.home.homeDirectory}/.emacs.d/bin"
       "${config.home.homeDirectory}/go/bin"
       "${config.home.homeDirectory}/.local/bin"
+      "${config.home.homeDirectory}/.local/bin"
+      "${config.home.homeDirectory}/.cargo/bin"
       "${config.home.homeDirectory}/.npm-packages/bin"
     ];
     home.packages = with pkgs; [
