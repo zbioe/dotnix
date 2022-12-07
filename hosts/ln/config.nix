@@ -44,6 +44,9 @@ in {
   services.fwupd.enable = true;
   hardware.enableAllFirmware = true;
   powerManagement.powertop.enable = true;
+  services.fprintd.enable = true;
+  # remove beep
+  boot.blacklistedKernelModules = [ "snd_pcsp" ];
   # Define a user account. Don't forget to set a password with ‘passwd’.
   users.users.${config.user.name} = {
     extraGroups = [
@@ -372,8 +375,8 @@ in {
   environment.sessionVariables = variables;
 
   nixpkgs.config.allowUnfree = true;
-  nixpkgs.config.allowUnfreePredicate = pkg:
-    builtins.elem (lib.getName pkg) unfree;
+  # nixpkgs.config.allowUnfreePredicate = pkg:
+  # builtins.elem (lib.getName pkg) unfree;
   # nixpkgs.config.allowUnfreePredicate = pkg: builtins.elem (lib.getName pkg) [
   #   "nvidia-settings"
   #   "nvidia-x11"
@@ -405,6 +408,7 @@ in {
       };
     };
     home.sessionPath = [
+      "${config.home.homeDirectory}/bin"
       "${config.home.homeDirectory}/.emacs.d/bin"
       "${config.home.homeDirectory}/go/bin"
       "${config.home.homeDirectory}/.local/bin"

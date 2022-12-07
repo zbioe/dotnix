@@ -399,6 +399,7 @@ in {
       };
     };
     home.sessionPath = [
+      "${config.home.homeDirectory}/bin"
       "${config.home.homeDirectory}/.emacs.d/bin"
       "${config.home.homeDirectory}/go/bin"
       "${config.home.homeDirectory}/.local/bin"
