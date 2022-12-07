@@ -6,6 +6,8 @@
 {
   imports =
     [ (modulesPath + "/installer/scan/not-detected.nix")
+
+    "${builtins.fetchTarball { url = "https://github.com/NixOS/nixos-hardware/archive/d7a12fcc071bff59bd0ead589c975d802952a064.tar.gz"; sha256 = "1a213sa4smqwwhkwjsm2ccrzbq7mb0qrrw54jc2ik7q0v4x93ypn"; }}/lenovo/thinkpad/x1/6th-gen"
     ];
 
   boot.initrd.availableKernelModules = [ "xhci_pci" "ahci" "usb_storage" "sd_mod" ];

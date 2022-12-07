@@ -10,7 +10,12 @@ in {
     options = mkOpt' (listOf str) [ "ctrl:nocaps" ] "XDB Options";
   };
   config = mkIf (cfg.layout != "") {
-    console.useXkbConfig = true;
+    console = {
+      font = "ter-v32n";
+      earlySetup = true;
+      useXkbConfig = true;
+      packages = [ pkgs.terminus_font ];
+    };
     services.xserver.layout = cfg.layout;
     services.xserver.xkbVariant = cfg.variant;
     services.xserver.xkbModel = cfg.model;

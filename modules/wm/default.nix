@@ -10,11 +10,12 @@ in {
     services.dbus.enable = true;
 
     xdg.portal.enable = true;
-    xdg.portal.extraPortals =
-      [ pkgs.xdg-desktop-portal-gtk ];
+    xdg.portal.extraPortals = [ pkgs.xdg-desktop-portal-gtk ];
 
     hardware.opengl.driSupport32Bit = true;
+    hardware.opengl.driSupport = true;
     hardware.opengl = { enable = true; };
+    hardware.opengl.extraPackages = with pkgs; [ intel-compute-runtime ];
     services.xserver.libinput.enable = true;
   };
 }

@@ -37,8 +37,13 @@ in {
   #  rtl8812au.out
   #  akvcam.out
   #];
- #  boot.initrd.kernelModules = [ "8812au" ];
-
+  #  boot.initrd.kernelModules = [ "8812au" ];
+  boot.initrd.availableKernelModules = [ "thinkpad_acpi" ];
+  hardware.cpu.intel.updateMicrocode = true;
+  services.xserver.dpi = 152;
+  services.fwupd.enable = true;
+  hardware.enableAllFirmware = true;
+  powerManagement.powertop.enable = true;
   # Define a user account. Don't forget to set a password with ‘passwd’.
   users.users.${config.user.name} = {
     extraGroups = [
@@ -366,6 +371,7 @@ in {
   environment.variables = variables;
   environment.sessionVariables = variables;
 
+  nixpkgs.config.allowUnfree = true;
   nixpkgs.config.allowUnfreePredicate = pkg:
     builtins.elem (lib.getName pkg) unfree;
   # nixpkgs.config.allowUnfreePredicate = pkg: builtins.elem (lib.getName pkg) [

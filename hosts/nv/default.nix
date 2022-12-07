@@ -15,6 +15,7 @@
       enable = true;
       timeout = 0;
       efi.enable = true;
+      efi.mountPoint = "/boot/efi";
     };
 
     keyboard = {

@@ -1,15 +1,12 @@
-{pkgs, config, lib, options, ...}:
+{ pkgs, config, lib, options, ... }:
 with lib;
 with lib.my;
-let 
-  cfg = config.modules.boot;
+let cfg = config.modules.boot;
 in {
-  imports = [
-    ./efi.nix
-  ];
+  imports = [ ./efi.nix ];
   options.modules.boot = with types; {
     enable = mkBoolOpt false;
-    timeout = mkOpt' int 1 "GRUB timeout";
+    timeout = mkOpt' int 0 "GRUB timeout";
   };
   config = mkIf cfg.enable {
     boot.loader.grub.enable = true;
