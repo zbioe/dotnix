@@ -6,6 +6,7 @@ let
 in {
   options.modules.boot.efi = with types; {
     enable = mkBoolOpt true;
+    device = mkOpt str "nodev" "grub device"
   };
   config = mkIf (config.modules.boot.enable && cfg.enable) {
     boot.loader.grub.efiSupport = true;

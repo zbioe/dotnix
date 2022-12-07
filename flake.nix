@@ -86,27 +86,48 @@
         };
       };
 
-      nixosConfigurations.nv = nixpkgs.lib.nixosSystem {
-        inherit system;
-        specialArgs = { inherit lib; };
-        modules = [
-          ./modules
-          ./hosts/nv
-          # self.nixosModules.options
-          self.nixosModules.default
-          self.nixosModules.unfree
-          self.nixosModules.overlays
-          self.nixosModules.overrides
-          self.nixosModules.binaryCaches
-          inputs.home-manager.nixosModules.home-manager
-          inputs.nixos-hardware.nixosModules.common-cpu-intel
-          inputs.nixos-hardware.nixosModules.common-gpu-nvidia
-          inputs.nixos-hardware.nixosModules.common-pc-laptop-ssd
-          # encrypt app
-          sops-nix.nixosModules.sops
-        ];
+      nixosConfigurations = {
+        nv = nixpkgs.lib.nixosSystem {
+          inherit system;
+          specialArgs = { inherit lib; };
+          modules = [
+            ./modules
+            ./hosts/nv
+            # self.nixosModules.options
+            self.nixosModules.default
+            self.nixosModules.unfree
+            self.nixosModules.overlays
+            self.nixosModules.overrides
+            self.nixosModules.binaryCaches
+            inputs.home-manager.nixosModules.home-manager
+            inputs.nixos-hardware.nixosModules.common-cpu-intel
+            inputs.nixos-hardware.nixosModules.common-gpu-nvidia
+            inputs.nixos-hardware.nixosModules.common-pc-laptop-ssd
+            # encrypt app
+            sops-nix.nixosModules.sops
+          ];
+        };
+        ln = nixpkgs.lib.nixosSystem {
+          inherit system;
+          specialArgs = { inherit lib; };
+          modules = [
+            ./modules
+            ./hosts/ln
+            # self.nixosModules.options
+            self.nixosModules.default
+            self.nixosModules.unfree
+            self.nixosModules.overlays
+            self.nixosModules.overrides
+            self.nixosModules.binaryCaches
+            inputs.home-manager.nixosModules.home-manager
+            inputs.nixos-hardware.nixosModules.lenovo-thinkpad-x1-6th-gen
+            # encrypt app
+            sops-nix.nixosModules.sops
+          ];
+        };
+
       };
       #defaultPackage.${system} = self.nixosConfigurations.nv.config.system.build.vm;
       #defaultPackage.${system} = self.nixosConfigurations.nv;
     };
-}
+  }

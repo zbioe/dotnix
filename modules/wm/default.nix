@@ -11,7 +11,7 @@ in {
 
     xdg.portal.enable = true;
     xdg.portal.extraPortals =
-      [ pkgs.xdg-desktop-portal-gtk pkgs.xdg-desktop-portal-wlr ];
+      [ pkgs.xdg-desktop-portal-gtk ];
 
     hardware.opengl.driSupport32Bit = true;
     hardware.opengl = { enable = true; };
