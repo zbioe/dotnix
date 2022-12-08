@@ -38,6 +38,8 @@ in {
   #  akvcam.out
   #];
   #  boot.initrd.kernelModules = [ "8812au" ];
+  boot.loader.grub.theme = pkgs.nixos-grub2-theme;
+
   boot.initrd.availableKernelModules = [ "thinkpad_acpi" ];
   hardware.cpu.intel.updateMicrocode = true;
   services.xserver.dpi = 152;
@@ -169,6 +171,10 @@ in {
     #})
   ];
 
+  # file namager Thunar extras
+  services.gvfs.enable = true; # Mount, trash, and other functionalities
+  # services.tumbler.enable = true; # Thumbnail support for images
+
   nixpkgs.config.allowBroken = true;
 
   environment.systemPackages = with pkgs;
@@ -278,8 +284,8 @@ in {
       exercism
 
       # others
-
-      gnome.nautilus
+      cinnamon.nemo # file manager
+      onlyoffice-bin # office
       libtool
       cachix # custom cache
       twurl # twitter cli oauth
@@ -356,6 +362,9 @@ in {
       # notes
       logseq
 
+      # image viewer
+      geeqie
+
       #dxvk
       #nvidia-offload
       # (steam.override { nativeOnly = true; }).run
@@ -430,6 +439,14 @@ in {
       texlive.combined.scheme-full
       zotero
     ];
+    gtk = {
+      # font.name = "Victor Mono SemiBold 12";
+      theme = {
+        name = "Materia-Dark";
+        package = pkgs.materia-theme;
+      };
+    };
+
     programs = {
       autojump = {
         enable = true;
@@ -627,5 +644,6 @@ in {
   # security.pki.certificateFiles = [
   #   ../../ca/consul.crt
   # ];
+  #
 
 }

@@ -13,7 +13,7 @@
 
     boot = {
       enable = true;
-      timeout = 0;
+      timeout = 1;
       efi.enable = true;
       efi.device = "nodev";
       efi.mountPoint = "/boot";
