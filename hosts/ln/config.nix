@@ -75,8 +75,9 @@ in {
       "adbusers"
     ];
   };
-  # boot.kernelModules =
-  #  [ "kvm-amd" "kvm-intel" "v4l2loopback" "snd-aloop" "akvcam" ];
+  boot.kernelModules = [
+    "kvm-intel" # "v4l2loopback" "snd-aloop"  "akvcam"
+  ];
   # Set initial kernel module settings
   nix = {
     package = pkgs.nixStable;
@@ -254,6 +255,10 @@ in {
       protonmail-bridge # protonmail bridge client
       protonvpn-cli # protonvpn command line
       dbus
+
+      # top
+      btop
+      htop
 
       # rust tools alternative
       bottom # btm: top alternative
@@ -636,9 +641,9 @@ in {
   '';
 
   boot.extraModprobeConfig = ''
-    options snd-hda-intel model=alc269-dmic 
+    # options snd-hda-intel model=alc269-dmic
     options kvm_intel nested=1
-    options v4l2loopback exclusive_caps=1 card_label="Virtual Camera"
+    # options v4l2loopback exclusive_caps=1 card_label="Virtual Camera"
   '';
 
   # security.pki.certificateFiles = [
