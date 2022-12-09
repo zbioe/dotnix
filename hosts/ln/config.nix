@@ -114,6 +114,7 @@ in {
     noto-fonts
     noto-fonts-cjk
     noto-fonts-emoji
+    nerdfonts
     symbola
   ];
   fonts.fontconfig.enable = true;
@@ -185,6 +186,9 @@ in {
       imagemagick
       colorpicker
       inkscape
+      # bar
+      polybar
+      killall
       # encryption
       age
       ssh-to-age
