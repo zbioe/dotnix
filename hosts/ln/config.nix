@@ -183,6 +183,7 @@ in {
     elmPkgs ++ [
       # image
       imagemagick
+      colorpicker
       inkscape
       # encryption
       age
