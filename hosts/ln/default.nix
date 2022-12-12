@@ -23,7 +23,7 @@
       layout = "br";
       variant = "abnt2";
       model = "thinkpad";
-      options = [ "ctrl:nocaps" ];
+      options = [ "ctrl:swapcaps" ];
     };
 
     network.enable = true;

@@ -49,9 +49,16 @@ in {
   services.fprintd.enable = true;
   # remove beep
   boot.blacklistedKernelModules = [ "snd_pcsp" ];
+  # printing and scan
+  services.printing.enable = true;
+  services.printing.drivers = [ pkgs.hplip pkgs.sane-backends ];
+  hardware.sane.enable = true;
+  hardware.sane.extraBackends = [ pkgs.hplipWithPlugin pkgs.sane-backends ];
   # Define a user account. Don't forget to set a password with ‘passwd’.
   users.users.${config.user.name} = {
     extraGroups = [
+      "scanner"
+      "lp"
       "input"
       "kvm"
       "dbus"
@@ -182,6 +189,9 @@ in {
   environment.systemPackages = with pkgs;
   # elm packages
     elmPkgs ++ [
+      gnome.simple-scan
+      # ebook
+      calibre
       # image
       imagemagick
       colorpicker
@@ -203,6 +213,8 @@ in {
       # virtualiation
       libvirt
       # emacsWithConfig # editor for all
+      # xtools
+      # xcape
       # emacs tools
       shfmt
       nixfmt
@@ -418,8 +430,9 @@ in {
       pulseaudio = true;
       firefox = {
         enableTridactylNative = true;
+        enableAdobeFlash = true;
         # enableGoogleTalkPlugin = true;
-        # enableAdobeFlash = true;
+
       };
       chromium = {
         # enablePepperFlash = true;
@@ -454,6 +467,21 @@ in {
       theme = {
         name = "Materia-Dark";
         package = pkgs.materia-theme;
+      };
+    };
+
+    # start it in shell first
+    # environment.shellInit = ''
+    #   xcape -e "Control_L=Escape"
+    # '';
+    services = {
+      xcape = {
+        enable = true;
+        mapExpression = {
+          # CapsLock to ESC
+          "#66" = "Escape";
+        };
+        timeout = 500;
       };
     };
 
@@ -612,6 +640,11 @@ in {
         #    };
         #  };
         #};
+        # profiles = {
+        #   default = {
+        #     userChrome = builtins.readFile ./firefox/userChrome.css;
+        #   };
+        # };
       };
       browserpass = {
         enable = true;
