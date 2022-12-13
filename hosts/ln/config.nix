@@ -118,7 +118,9 @@ in {
 
   services.locate = {
     enable = true;
-    interval = "hourly";
+    # interval = "hourly";
+    locate = pkgs.plocate;
+    localuser = null;
   };
 
   # fonts
@@ -254,7 +256,7 @@ in {
       unstable.stack
       k9s
 
-      pkgconfig
+      pkg-config
       # rust
       # rustc
       # cargo
