@@ -116,6 +116,11 @@ in {
 
   programs.adb.enable = true;
 
+  services.locate = {
+    enable = true;
+    interval = "hourly";
+  };
+
   # fonts
   fonts.fonts = with pkgs; [
     noto-fonts
@@ -246,10 +251,10 @@ in {
       # haskell
       unstable.haskell-language-server
       unstable.haskellPackages.zlib
-      unstable.pkg-config
       unstable.stack
       k9s
 
+      pkgconfig
       # rust
       # rustc
       # cargo
@@ -341,6 +346,7 @@ in {
       slack # chat
       lens # kubernetes interfac
       openssl # openssl tooling
+      openssl.dev # libssl
       openvpn # vpn
       azure-cli # azure communication by command line
       cachix # cachix
