@@ -26,6 +26,7 @@ let
     # PIP_TARGET = "$HOME/.local/";
     GTK_IM_MODULE = "ibus";
     GTK_USE_PORTAL = "1";
+    STARDICT_DATA_DIR = "$HOME/dics";
   };
 in {
   environment.pathsToLink = [ "/share/nix-direnv" ];
@@ -219,6 +220,9 @@ in {
       vlc
       # virtualiation
       libvirt
+      # torrent
+      rqbit
+      qbittorrent
       # emacsWithConfig # editor for all
       # xtools
       # xcape
@@ -238,6 +242,7 @@ in {
 
       # dics
       (aspellWithDicts (ds: with ds; [ en en-computers en-science pt_BR ]))
+      (hunspellWithDicts (with pkgs.hunspellDicts; [ en_US-large ]))
       # python
       pythonWithConfig
       pipenv
@@ -321,6 +326,8 @@ in {
       webcamoid # web cam tool
       #emacs-with-pkgs # mainly editor
       # telegram # chat
+      languagetool # grammar checker
+      sdcv # dictionary
       asciinema # record term
       texmacs # alternative awesome editor
       neovim # alternative editor
@@ -394,6 +401,9 @@ in {
 
       # image viewer
       geeqie
+
+      # meeting
+      teams
 
       #dxvk
       #nvidia-offload
@@ -489,7 +499,7 @@ in {
           # CapsLock to ESC
           "#66" = "Escape";
         };
-        timeout = 500;
+        timeout = 800;
       };
     };
 

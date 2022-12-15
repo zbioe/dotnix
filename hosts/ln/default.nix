@@ -5,7 +5,7 @@
   time.zone = "America/Sao_Paulo";
   host = {
     name = "ln";
-    i18n = "pt_BR.UTF-8";
+    i18n = "en_US.UTF-8";
   };
 
   modules = {
