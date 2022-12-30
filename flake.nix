@@ -9,9 +9,9 @@
 
   inputs = {
     # Main package channels
-    nixpkgs.url = "github:NixOS/nixpkgs/fd54651f5ffb";
-    nixpkgs-unstable.url = "github:NixOS/nixpkgs/fd54651f5ffb";
-    nur.url = "github:nix-community/NUR/834d53bf16ac";
+    nixpkgs.url = "github:NixOS/nixpkgs";
+    nixpkgs-unstable.url = "github:NixOS/nixpkgs";
+    nur.url = "github:nix-community/NUR";
     nur.inputs.nixpkgs.follows = "nixpkgs";
 
     # doom emacs
@@ -19,9 +19,14 @@
       url = "github:doomemacs/doomemacs/bea3cc161c0a";
       flake = false;
     };
+    # Grub theme
+    darkmatter-grub-theme = {
+      url = "gitlab:VandalByte/darkmatter-grub-theme";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
 
     # Extra packages
-    home-manager.url = "github:rycee/home-manager/70824bb5c790";
+    home-manager.url = "github:rycee/home-manager";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
 
     # Sops for nixos, ecnrypt secrets
@@ -33,7 +38,7 @@
     emacs-overlay.inputs.nixpkgs.follows = "nixpkgs";
 
     # Hardware
-    nixos-hardware.url = "github:nixos/nixos-hardware/0cab18a48de79";
+    nixos-hardware.url = "github:nixos/nixos-hardware";
   };
   outputs =
     inputs@{ self, nixpkgs, nixpkgs-unstable, nur, doomemacs, sops-nix, ... }:
@@ -114,6 +119,7 @@
             ./modules
             ./hosts/ln
             # self.nixosModules.options
+            inputs.darkmatter-grub-theme.nixosModule
             self.nixosModules.default
             self.nixosModules.unfree
             self.nixosModules.overlays
@@ -130,4 +136,4 @@
       #defaultPackage.${system} = self.nixosConfigurations.nv.config.system.build.vm;
       #defaultPackage.${system} = self.nixosConfigurations.nv;
     };
-  }
+}

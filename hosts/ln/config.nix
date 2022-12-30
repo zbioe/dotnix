@@ -39,7 +39,13 @@ in {
   #  akvcam.out
   #];
   #  boot.initrd.kernelModules = [ "8812au" ];
-  boot.loader.grub.theme = pkgs.nixos-grub2-theme;
+  # boot.loader.grub.theme = pkgs.nixos-grub2-theme;
+  boot.loader.grub.darkmatter-theme = {
+    enable = true;
+    style = "nixos";
+    icon = "color";
+    resolution = "1080p";
+  };
 
   boot.initrd.availableKernelModules = [ "thinkpad_acpi" ];
   hardware.cpu.intel.updateMicrocode = true;
@@ -379,9 +385,9 @@ in {
       dunst # notification daemon
       libnotify # desktop send notifications
       vulkan-tools # vulkan requirements
-      direnv
-      nix-direnv
-      nix-direnv-flakes
+      # direnv
+      # nix-direnv
+      # nix-direnv-flakes
       chromedriver
       file
       #extra-shells
@@ -404,6 +410,10 @@ in {
 
       # meeting
       teams
+
+      # hardware
+      dmidecode
+      geteltorito
 
       #dxvk
       #nvidia-offload
@@ -504,11 +514,16 @@ in {
     };
 
     programs = {
+      direnv = {
+        enable = true;
+        nix-direnv.enable = true;
+      };
       autojump = {
         enable = true;
         enableBashIntegration = true;
         enableFishIntegration = true;
         enableZshIntegration = true;
+        # enableNushellIntegration = true;
       };
       bash = {
         enable = true;
@@ -533,17 +548,14 @@ in {
       };
       nushell = {
         enable = true;
-        settings = {
-          key_timeout = 10;
-          completion_mode = "circular";
-          startup = [ "source ~/.cache/starship/init.nu" ];
-        };
+        extraConfig = "source ~/.cache/starship/init.nu";
       };
       fzf = {
         enable = true;
         enableBashIntegration = true;
         enableFishIntegration = true;
         enableZshIntegration = true;
+        # enableNushellIntegration = true;
       };
       chromium = { enable = true; };
       emacs = {
@@ -556,6 +568,7 @@ in {
         enableBashIntegration = true;
         enableFishIntegration = true;
         enableZshIntegration = true;
+        enableNushellIntegration = true;
         settings = let inherit (lib.strings) concatStrings;
         in {
           add_newline = true;
