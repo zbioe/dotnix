@@ -408,6 +408,8 @@ in {
       # image viewer
       geeqie
 
+      # image manipulation
+      gimp
       # meeting
       teams
 

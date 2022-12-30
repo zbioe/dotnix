@@ -19,6 +19,8 @@
       efi.mountPoint = "/boot";
     };
 
+    bluetooth.enable = true;
+
     keyboard = {
       layout = "br";
       variant = "abnt2";
