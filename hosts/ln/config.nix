@@ -39,13 +39,13 @@ in {
   #  akvcam.out
   #];
   #  boot.initrd.kernelModules = [ "8812au" ];
-  # boot.loader.grub.theme = pkgs.nixos-grub2-theme;
-  boot.loader.grub.darkmatter-theme = {
-    enable = true;
-    style = "nixos";
-    icon = "color";
-    resolution = "1080p";
-  };
+  boot.loader.grub.theme = pkgs.nixos-grub2-theme;
+  # boot.loader.grub.darkmatter-theme = {
+  #   enable = true;
+  #   style = "nixos";
+  #   icon = "color";
+  #   resolution = "1080p";
+  # };
 
   boot.initrd.availableKernelModules = [ "thinkpad_acpi" ];
   hardware.cpu.intel.updateMicrocode = true;

@@ -20,10 +20,10 @@
       flake = false;
     };
     # Grub theme
-    darkmatter-grub-theme = {
-      url = "gitlab:VandalByte/darkmatter-grub-theme";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
+    # darkmatter-grub-theme = {
+    #   url = "gitlab:VandalByte/darkmatter-grub-theme";
+    #   inputs.nixpkgs.follows = "nixpkgs";
+    # };
 
     # Extra packages
     home-manager.url = "github:rycee/home-manager";
@@ -119,7 +119,7 @@
             ./modules
             ./hosts/ln
             # self.nixosModules.options
-            inputs.darkmatter-grub-theme.nixosModule
+            # inputs.darkmatter-grub-theme.nixosModule
             self.nixosModules.default
             self.nixosModules.unfree
             self.nixosModules.overlays
