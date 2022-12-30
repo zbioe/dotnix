@@ -39,13 +39,25 @@ in {
   #  akvcam.out
   #];
   #  boot.initrd.kernelModules = [ "8812au" ];
-  boot.loader.grub.theme = pkgs.nixos-grub2-theme;
-  # boot.loader.grub.darkmatter-theme = {
-  #   enable = true;
-  #   style = "nixos";
-  #   icon = "color";
-  #   resolution = "1080p";
-  # };
+  # boot.loader.grub.theme = pkgs.nixos-grub2-theme;
+  # boot.loader.grub.splashImage = ./wallpaper.png;
+  boot.loader.grub = {
+    darkmatter-theme = {
+      enable = true;
+      style = "nixos";
+      icon = "color";
+      resolution = "1080p";
+    };
+  };
+
+  # remove watchdog
+  # https://wiki.archlinux.org/title/Improving_performance#Watchdogs
+  # https://dt.iki.fi/linux-disable-watchdog
+  boot.kernelParams = [ "nowatchdog" ];
+  boot.blacklistedKernelModules = [ "iTCO_wdt" ];
+
+  # remove beep (lenovo can remove it in bios)
+  # boot.blacklistedKernelModules = [ "snd_pcsp" ];
 
   boot.initrd.availableKernelModules = [ "thinkpad_acpi" ];
   hardware.cpu.intel.updateMicrocode = true;
@@ -54,8 +66,7 @@ in {
   hardware.enableAllFirmware = true;
   powerManagement.powertop.enable = true;
   services.fprintd.enable = true;
-  # remove beep
-  boot.blacklistedKernelModules = [ "snd_pcsp" ];
+
   # printing and scan
   services.printing.enable = true;
   services.printing.drivers = [ pkgs.hplip pkgs.sane-backends ];
