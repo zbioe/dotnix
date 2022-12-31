@@ -7,17 +7,17 @@
         ]
       },
       "locked": {
-        "lastModified": 1668143189,
-        "narHash": "sha256-mixR9bTkVPLMPaY7vz96XZ5gC6o3rU2cHUNvbEP7OlI=",
-        "owner": "VandalByte",
+        "lastModified": 1672442098,
+        "narHash": "sha256-6SBIBOZpTlPh2+BAuZ7LQp2W8ScoOwmy4RRZm7RCiQU=",
+        "owner": "zbioe",
         "repo": "darkmatter-grub-theme",
-        "rev": "6094e5ee0e4bd7f204e1da3808aee70ba0d93256",
-        "type": "gitlab"
+        "rev": "d6e4cfb751c050a40ee8071b266ac6285f2a56de",
+        "type": "github"
       },
       "original": {
-        "owner": "VandalByte",
+        "owner": "zbioe",
         "repo": "darkmatter-grub-theme",
-        "type": "gitlab"
+        "type": "github"
       }
     },
     "doomemacs": {

@@ -19,7 +19,10 @@
       efi.mountPoint = "/boot";
     };
 
-    bluetooth.enable = true;
+    bluetooth = {
+      enable = true;
+      powerOnBoot = false;
+    };
 
     keyboard = {
       layout = "br";

@@ -148,6 +148,7 @@ in {
     noto-fonts-emoji
     nerdfonts
     symbola
+    vegur
   ];
   fonts.fontconfig.enable = true;
 
@@ -463,6 +464,25 @@ in {
   # Steam
   #'programs.steam.enable = true;
 
+  # Bluetooth
+  hardware.pulseaudio = {
+    extraConfig = ''
+      load-module module-switch-on-connect
+    '';
+  };
+  hardware.bluetooth = {
+    # disable SIM Access Profile
+    disabledPlugins = [ "sap" ];
+    # enable microphone
+    # hsphfpd.enable = true;
+    settings = {
+      General = {
+        Enable = "Source,Sink,Media,Socket";
+        Experimental = true;
+      };
+    };
+  };
+
   # Home-Manager
   home-manager.users.${config.user.name} = { config, pkgs, lib, ... }: {
     nixpkgs.config.allowUnfreePredicate = pkg:
@@ -489,6 +509,14 @@ in {
       "${config.home.homeDirectory}/.cargo/bin"
       "${config.home.homeDirectory}/.npm-packages/bin"
     ];
+    # Bluetooth
+    systemd.user.services.mpris-proxy = {
+      Unit.Description = "Mpris proxy";
+      Unit.After = [ "network.target" "sound.target" ];
+      Service.ExecStart = "${pkgs.bluez}/bin/mpris-proxy";
+      Install.WantedBy = [ "default.target" ];
+    };
+
     home.packages = with pkgs; [
       spotify
       discord

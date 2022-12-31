@@ -21,7 +21,7 @@
     };
     # Grub theme
     darkmatter-grub-theme = {
-      url = "gitlab:VandalByte/darkmatter-grub-theme";
+      url = "github:zbioe/darkmatter-grub-theme";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
