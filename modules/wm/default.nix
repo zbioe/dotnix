@@ -3,7 +3,7 @@ with lib;
 with lib.my;
 let cfg = config.modules.wm;
 in {
-  imports = [ ./herbstluft.nix ./gdm.nix ];
+  imports = [ ./herbstluft.nix ./gdm.nix ./leftwm.nix ./lightdm.nix ];
   options.modules.wm = with types; { enable = mkBoolOpt true; };
   config = mkIf cfg.enable {
     services.xserver.enable = true;

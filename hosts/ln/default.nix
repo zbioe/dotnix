@@ -36,6 +36,7 @@
 
     wm = {
       enable = true;
+      leftwm.enable = true;
       herbstluft.enable = true;
       gdm.enable = true;
     };

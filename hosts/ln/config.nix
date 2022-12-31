@@ -215,6 +215,10 @@ in {
   environment.systemPackages = with pkgs;
   # elm packages
     elmPkgs ++ [
+      # WM
+      eww
+      slock
+      # scan
       gnome.simple-scan
       # ebook
       calibre
@@ -428,7 +432,8 @@ in {
       # hardware
       dmidecode
       geteltorito
-
+      # mount files android by bluetooth or usb
+      jmtpfs
       #dxvk
       #nvidia-offload
       # (steam.override { nativeOnly = true; }).run
@@ -462,7 +467,7 @@ in {
   nixpkgs.config.permittedInsecurePackages = [ "xen-4.10.4" ];
 
   # Steam
-  #'programs.steam.enable = true;
+  programs.steam.enable = true;
 
   # Bluetooth
   hardware.pulseaudio = {
@@ -477,7 +482,7 @@ in {
     # hsphfpd.enable = true;
     settings = {
       General = {
-        Enable = "Source,Sink,Media,Socket";
+        Enable = "Sink,Media,Socket";
         Experimental = true;
       };
     };
