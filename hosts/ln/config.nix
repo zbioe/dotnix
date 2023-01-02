@@ -521,7 +521,8 @@ in {
       Service.ExecStart = "${pkgs.bluez}/bin/mpris-proxy";
       Install.WantedBy = [ "default.target" ];
     };
-
+    home.file.".icons/default".source =
+      "${pkgs.vanilla-dmz}/share/icons/Vanilla-DMZ";
     home.packages = with pkgs; [
       spotify
       discord
@@ -537,10 +538,15 @@ in {
       zotero
     ];
     gtk = {
-      # font.name = "Victor Mono SemiBold 12";
+      enable = true;
+      font.name = "Vegur 12";
       theme = {
-        name = "Materia-Dark";
-        package = pkgs.materia-theme;
+        name = "gruvbox-dark";
+        package = pkgs.gruvbox-dark-gtk;
+      };
+      iconTheme = {
+        name = "oomox-gruvbox-dark";
+        package = pkgs.gruvbox-dark-icons-gtk;
       };
     };
 

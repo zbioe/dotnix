@@ -7,7 +7,12 @@ let
 in {
   options.modules.wm.leftwm = with types; { enable = mkBoolOpt false; };
   config = mkIf cfg.enable {
-    environment.systemPackages = [ leftwm ];
+    environment.systemPackages = [
+      leftwm
+      # wallpaper
+      pkgs.feh
+      pkgs.picom
+    ];
     services.xserver.windowManager.session = singleton {
       name = "leftwm";
       start = ''
