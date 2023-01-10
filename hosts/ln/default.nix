@@ -11,14 +11,6 @@
   modules = {
     system.stateVersion = "22.05";
 
-    boot = {
-      enable = true;
-      timeout = 1;
-      efi.enable = true;
-      efi.device = "nodev";
-      efi.mountPoint = "/boot";
-    };
-
     bluetooth = {
       enable = true;
       powerOnBoot = false;

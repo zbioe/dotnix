@@ -27,39 +27,28 @@ let
     GTK_IM_MODULE = "ibus";
     GTK_USE_PORTAL = "1";
     STARDICT_DATA_DIR = "$HOME/dics";
+    LIBVIRT_DEFAULT_URI = "qemu:///system";
   };
 in {
   environment.pathsToLink = [ "/share/nix-direnv" ];
 
   # Enable touchpad support (enabled default in most desktopManager).
   services.xserver.libinput.enable = true;
-  #boot.extraModulePackages = with config.boot.kernelPackages; [
-  #  v4l2loopback.out
-  #  rtl8812au.out
-  #  akvcam.out
-  #];
+  boot.kernelPackages = pkgs.linuxPackages_6_1;
+  # boot.extraModulePackages = with config.boot.kernelPackages;
+  #   [
+
+  #   ];
   #  boot.initrd.kernelModules = [ "8812au" ];
   # boot.loader.grub.theme = pkgs.nixos-grub2-theme;
   # boot.loader.grub.splashImage = ./wallpaper.png;
-  boot.loader.grub = {
-    darkmatter-theme = {
-      enable = true;
-      style = "nixos";
-      icon = "color";
-      resolution = "1080p";
-    };
-  };
-
   # remove watchdog
   # https://wiki.archlinux.org/title/Improving_performance#Watchdogs
   # https://dt.iki.fi/linux-disable-watchdog
-  boot.kernelParams = [ "nowatchdog" ];
-  boot.blacklistedKernelModules = [ "iTCO_wdt" ];
 
   # remove beep (lenovo can remove it in bios)
   # boot.blacklistedKernelModules = [ "snd_pcsp" ];
 
-  boot.initrd.availableKernelModules = [ "thinkpad_acpi" ];
   hardware.cpu.intel.updateMicrocode = true;
   services.xserver.dpi = 152;
   services.fwupd.enable = true;
@@ -114,6 +103,12 @@ in {
   virtualisation.docker.enable = true; # podman relace docker
   virtualisation.libvirtd.enable = true;
   virtualisation.libvirtd.qemu.runAsRoot = false;
+  virtualisation.libvirtd.extraConfig = ''
+    uri_default = "qemu:///system"
+  '';
+  systemd.services.libvirt-guests = {
+    environment = { URI = "qemu:///system"; };
+  };
   # virtualisation.podman.enable = true;
   # virtualisation.podman.dockerSocket.enable = true;
   # virtualisation.podman.defaultNetwork.dnsname.enable = true;
@@ -142,15 +137,6 @@ in {
   };
 
   # fonts
-  fonts.fonts = with pkgs; [
-    noto-fonts
-    noto-fonts-cjk
-    noto-fonts-emoji
-    nerdfonts
-    symbola
-    vegur
-  ];
-  fonts.fontconfig.enable = true;
 
   # nixpkgs changes
   nixpkgs.overlays = [
@@ -215,6 +201,7 @@ in {
   environment.systemPackages = with pkgs;
   # elm packages
     elmPkgs ++ [
+      gtk3
       # WM
       eww
       slock
@@ -771,5 +758,73 @@ in {
   #   ../../ca/consul.crt
   # ];
   #
+  fonts.fonts = with pkgs; [
+    noto-fonts
+    noto-fonts-cjk
+    noto-fonts-emoji
+    nerdfonts
+    symbola
+    vegur
+    # silent boot
+    meslo-lgs-nf
+  ];
+  fonts.fontconfig.enable = true;
+
+  # Silent Boot
+  console = {
+    font = "ter-v32n";
+    earlySetup = false;
+    useXkbConfig = true;
+    packages = with pkgs; [ terminus_font ];
+  };
+  # TTY
+  services.kmscon = {
+    enable = true;
+    hwRender = true;
+    extraConfig = ''
+      font-name=MesloLGS NF
+      font-size=14
+    '';
+  };
+  boot = {
+    # Plymouth
+    consoleLogLevel = 0;
+    initrd.verbose = false;
+    initrd.availableKernelModules = [ "thinkpad_acpi" ];
+    plymouth.enable = true;
+    # initrd.kernelModules = [ "shutdown" ];
+    kernelParams = [
+      "nowatchdog"
+      "quiet"
+      "splash"
+      "rd.systemd.show_status=false"
+      "rd.udev.log_level=3"
+      "udev.log_level=3"
+      "udev.log_priority=3"
+      "boot.shell_on_fail"
+    ];
+    blacklistedKernelModules = [ "iTCO_wdt" ];
+    # Boot Loader
+    loader = {
+      grub = {
+        darkmatter-theme = {
+          enable = true;
+          style = "nixos";
+          icon = "color";
+          resolution = "1080p";
+        };
+      };
+      efi.canTouchEfiVariables = true;
+      efi.efiSysMountPoint = "/boot";
+      systemd-boot.enable = true;
+      timeout = 0;
+    };
+  };
+
+  # auto login
+  services.xserver.displayManager.autoLogin = {
+    enable = true;
+    user = "${config.user.name}";
+  };
 
 }

@@ -7,12 +7,12 @@ in {
     layout = mkOpt str "br";
     variant = mkOpt str "";
     model = mkOpt str "";
+    earlySetup = mkBoolOpt false;
     options = mkOpt' (listOf str) [ "ctrl:nocaps" ] "XDB Options";
   };
   config = mkIf (cfg.layout != "") {
     console = {
-      font = "ter-v32n";
-      earlySetup = true;
+      earlySetup = cfg.earlySetup;
       useXkbConfig = true;
       packages = [ pkgs.terminus_font ];
     };
