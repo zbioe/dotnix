@@ -19,6 +19,7 @@
       url = "github:doomemacs/doomemacs/bea3cc161c0a";
       flake = false;
     };
+
     # Grub theme
     darkmatter-grub-theme = {
       url = "github:zbioe/darkmatter-grub-theme";

@@ -373,7 +373,6 @@ in {
       pass # password manager
       flameshot # nice screenshoter
       scrot # print screen tool
-      tridactyl-native # vim Firefox
       # eksctl # Amazon K8s Manager
       gnumake # make files
       awscli # Amazon cli
@@ -476,7 +475,16 @@ in {
   };
 
   # Home-Manager
-  home-manager.users.${config.user.name} = { config, pkgs, lib, ... }: {
+  home-manager.users.${config.user.name} = let
+    cfg_super = config;
+    pkgs_super = pkgs;
+    firefox_extensions = with pkgs.nur.repos.rycee.firefox-addons; [
+      tridactyl
+      bitwarden
+      ublock-origin
+      privacy-badger
+    ];
+  in { config, pkgs, lib, ... }: {
     nixpkgs.config.allowUnfreePredicate = pkg:
       builtins.elem (lib.getName pkg) unfree;
     nixpkgs.config = {
@@ -501,6 +509,36 @@ in {
       "${config.home.homeDirectory}/.cargo/bin"
       "${config.home.homeDirectory}/.npm-packages/bin"
     ];
+    programs.firefox = {
+      enable = true;
+      extensions = firefox_extensions;
+      package = pkgs_super.firefox.override {
+        cfg = { enableTridactylNative = true; };
+      };
+      profiles = {
+        "${cfg_super.user.name}" = {
+          id = 0;
+          isDefault = true;
+          settings = {
+            # auto enable extensions
+            "extensions.autoDisableScopes" = 0;
+            "extensions.enabledScopes" = 15;
+          } // import ./firefox/settings.nix;
+          userChrome = builtins.readFile ./firefox/userChrome.css;
+          bookmarks = import ./firefox/bookmarks.nix;
+          search = {
+            default = "Google";
+            engines = import ./firefox/searchEngines.nix { inherit pkgs; };
+            force = true;
+          };
+        };
+        clean = {
+          isDefault = false;
+          id = 1;
+        };
+      };
+    };
+    xdg.configFile."tridactyl/tridactylrc".source = ./firefox/tridactylrc;
     # Bluetooth
     systemd.user.services.mpris-proxy = {
       Unit.Description = "Mpris proxy";
@@ -690,32 +728,6 @@ in {
         ];
         extraConfig = builtins.readFile ./extraConfig.vim;
       };
-      firefox = {
-        enable = true;
-        # extensions = with pkgs.nur.repos.rycee.firefox-addons; [
-        #   ublock-origin
-        #   browserpass
-        #   tridactyl
-        #   sidebery
-        # ];
-        #package = pkgs.firefox.override {
-        #  cfg = { enableTridactylNative = true; };
-        ##};
-        #profiles = {
-        #  ${config.user.name} = {
-        #    isDefault = true;
-        #    settings = {
-        #      "browser.startup.homepage" = "https://google.com";
-        #      "general.smoothScroll" = true;
-        #    };
-        #  };
-        #};
-        # profiles = {
-        #   default = {
-        #     userChrome = builtins.readFile ./firefox/userChrome.css;
-        #   };
-        # };
-      };
       browserpass = {
         enable = true;
         browsers = [ "firefox" ];
@@ -791,7 +803,10 @@ in {
     consoleLogLevel = 0;
     initrd.verbose = false;
     initrd.availableKernelModules = [ "thinkpad_acpi" ];
-    plymouth.enable = true;
+    plymouth = {
+      enable = true;
+      # theme = "breeze";
+    };
     # initrd.kernelModules = [ "shutdown" ];
     kernelParams = [
       "nowatchdog"

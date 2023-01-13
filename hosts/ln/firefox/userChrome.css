@@ -1,15 +1,7 @@
-.tab-background[selected="true"] {
-      background-color: #339933 !important;
-      background-image: none !important;
-    }
-
-@-moz-document url(chrome://browser/content/browser.xul),
-               url(chrome://browser/content/browser.xhtml) {
-    #urlbar-background{
-        background-color: #339933 !important;
-    }
+:root {
+  --dark-color: #282828;
 }
 
-#urlbar {
-  color: #111999 !important;
+#tabbrowser-tabpanels {
+  background: var(--dark-color) !important;
 }
