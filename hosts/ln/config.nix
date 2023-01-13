@@ -292,6 +292,7 @@ in {
       bitwarden-cli
       protonmail-bridge # protonmail bridge client
       protonvpn-cli # protonvpn command line
+      protonvpn-gui # protonvpn gui interface
       dbus
 
       # top

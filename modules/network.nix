@@ -13,7 +13,8 @@ in {
       true; # Enables wireless support via wpa_supplicant.
     networking.wireless.iwd.enable = true;
     networking.wireless.userControlled.enable = true;
-    networking.search = cfg.dns;
+    # networking.search = cfg.dns;
+    # networking.nameservers = cfg.dns;
     users.users.${config.user.name}.extraGroups = [ "networkmanager" ];
   };
 }
