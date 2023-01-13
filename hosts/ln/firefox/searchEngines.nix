@@ -84,4 +84,18 @@
   "Google".metaData.alias =
     "@g"; # builtin engines only support specifying one additional alias
 
+  "YouTube" = {
+    urls = [{
+      template = "https://youtube.com/results";
+      params = [{
+        name = "search_query";
+        value = "{searchTerms}";
+      }];
+    }];
+    iconUpdateURL =
+      "https://www.youtube.com/s/desktop/0c0c1a38/img/favicon_144x144.png";
+    updateInterval = 24 * 60 * 60 * 1000; # every day
+    definedAliases = [ "@youtube" "@yt" ];
+  };
+
 }

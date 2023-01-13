@@ -1,4 +1,4 @@
-# Cloned from https://github.com/kurnevsky/nixfiles/blob//modules/firefox/firefox.nix
+# Copied from https://github.com/kurnevsky/nixfiles/blob//modules/firefox/firefox.nix
 # Based on https://github.com/ghacksuserjs/ghacks-user.js/blob/bd384622db70eaf6893d32a0c1c4b99d5516fa5b/user.js
 # Compare with master using https://github.com/ghacksuserjs/ghacks-user.js/compare/HASH1...HASH2
 
@@ -115,6 +115,9 @@
 
   # 0704: enforce the proxy server to do any DNS lookups when using SOCKS
   "network.proxy.socks_remote_dns" = true;
+  # Enable ECH Support
+  "network.dns.echconfig.enabled" = true;
+  "network.dns.use_https_rr_as_altsvc" = true;
 
   # [SECTION 0800]: LOCATION BAR / SEARCH BAR / SUGGESTIONS / HISTORY / FORMS
 
@@ -309,5 +312,8 @@
 
   # DISABLED: it prevents changes in color of background
   # "privacy.resistFingerprinting" = true;
+
+  # Encrypted SNI https://www.cloudflare.com/pt-br/ssl/encrypted-sni/#results
+  "network.security.esni.enabled" = true;
 
 }
