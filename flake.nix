@@ -26,6 +26,10 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    # brain fuck
+    bf-nix.url = "github:water-sucks/brainfuck.nix";
+    bf-nix.inputs.nixpkgs.follows = "nixpkgs";
+
     # Extra packages
     home-manager.url = "github:rycee/home-manager";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
@@ -41,17 +45,17 @@
     # Hardware
     nixos-hardware.url = "github:nixos/nixos-hardware";
   };
-  outputs =
-    inputs@{ self, nixpkgs, nixpkgs-unstable, nur, doomemacs, sops-nix, ... }:
+  outputs = inputs@{ self, nixpkgs, nixpkgs-unstable, nur, doomemacs, sops-nix
+    , bf-nix, ... }:
     with self; {
       system = "x86_64-linux";
       pkgs = import nixpkgs {
         inherit system;
-        overlay = overlay;
+        overlays = overlays;
       };
       unstable-pkgs = import nixpkgs-unstable {
         inherit system;
-        overlay = overlay;
+        overlays = overlays;
       };
       # unstable-pkgs = import nixpkgs-unstable { inherit system;};
       nur-pkgs = import nur { inherit pkgs; };
@@ -63,10 +67,13 @@
         };
       });
 
-      overlay = final: prev: {
-        unstable = unstable-pkgs;
-        nur = nur-pkgs;
-      };
+      overlays = [
+        (final: prev: {
+          unstable = unstable-pkgs;
+          nur = nur-pkgs;
+        })
+        bf-nix.overlays.default
+      ];
 
       nixosModules = {
         overlays = {

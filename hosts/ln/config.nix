@@ -201,6 +201,7 @@ in {
   environment.systemPackages = with pkgs;
   # elm packages
     elmPkgs ++ [
+      # gtk
       gtk3
       # WM
       eww
@@ -225,8 +226,14 @@ in {
       # video
       ffmpeg-full
       simplescreenrecorder
+      youtube-dl
+      yt-dlp
+      tartube-yt-dlp
+      tartube
+
       # audio
       vlc
+
       # virtualiation
       libvirt
       # torrent
@@ -299,6 +306,9 @@ in {
       btop
       htop
 
+      # elixir
+      elixir_1_14
+
       # rust tools alternative
       bottom # btm: top alternative
       bat # cat talternative
@@ -326,6 +336,9 @@ in {
 
       # study
       exercism
+
+      # desktop tools
+      tdesktop
 
       # others
       cinnamon.nemo # file manager
@@ -416,6 +429,15 @@ in {
       # meeting
       teams
 
+      # games
+      flatpak
+      playonlinux
+
+      # audacity
+      audacity
+
+      # stream
+      stremio
       # hardware
       dmidecode
       geteltorito
@@ -438,6 +460,8 @@ in {
   # Environment Variables
   environment.variables = variables;
   environment.sessionVariables = variables;
+
+  services.flatpak.enable = true;
 
   nixpkgs.config.allowUnfree = true;
   # nixpkgs.config.allowUnfreePredicate = pkg:
@@ -480,7 +504,7 @@ in {
     cfg_super = config;
     pkgs_super = pkgs;
     firefox_extensions = with pkgs.nur.repos.rycee.firefox-addons; [
-      tridactyl
+      vimium
       bitwarden
       ublock-origin
       privacy-badger
@@ -491,7 +515,6 @@ in {
     nixpkgs.config = {
       pulseaudio = true;
       firefox = {
-        enableTridactylNative = true;
         enableAdobeFlash = true;
         # enableGoogleTalkPlugin = true;
 
@@ -513,13 +536,26 @@ in {
     programs.firefox = {
       enable = true;
       extensions = firefox_extensions;
-      package = pkgs_super.firefox.override {
-        cfg = { enableTridactylNative = true; };
-      };
       profiles = {
         "${cfg_super.user.name}" = {
           id = 0;
           isDefault = true;
+          settings = {
+            # auto enable extensions
+            "extensions.autoDisableScopes" = 0;
+            "extensions.enabledScopes" = 15;
+          };
+          userChrome = builtins.readFile ./firefox/userChrome.css;
+          bookmarks = import ./firefox/bookmarks.nix;
+          search = {
+            default = "Google";
+            engines = import ./firefox/searchEngines.nix { inherit pkgs; };
+            force = true;
+          };
+        };
+        "safe" = {
+          id = 1;
+          isDefault = false;
           settings = {
             # auto enable extensions
             "extensions.autoDisableScopes" = 0;
@@ -535,7 +571,7 @@ in {
         };
         clean = {
           isDefault = false;
-          id = 1;
+          id = 2;
         };
       };
     };

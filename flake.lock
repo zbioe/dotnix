@@ -1,5 +1,26 @@
 {
   "nodes": {
+    "bf-nix": {
+      "inputs": {
+        "flake-parts": "flake-parts",
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1672725179,
+        "narHash": "sha256-7H6H2TwozorlaQjWl4c6DJ3zz9bMUR423KeSHiDKhMk=",
+        "owner": "water-sucks",
+        "repo": "brainfuck.nix",
+        "rev": "163de874f67f1664c4856539427c6e66601004d2",
+        "type": "github"
+      },
+      "original": {
+        "owner": "water-sucks",
+        "repo": "brainfuck.nix",
+        "type": "github"
+      }
+    },
     "darkmatter-grub-theme": {
       "inputs": {
         "nixpkgs": [
@@ -56,6 +77,24 @@
         "owner": "nix-community",
         "ref": "18caabdf606d1",
         "repo": "emacs-overlay",
+        "type": "github"
+      }
+    },
+    "flake-parts": {
+      "inputs": {
+        "nixpkgs-lib": "nixpkgs-lib"
+      },
+      "locked": {
+        "lastModified": 1672616755,
+        "narHash": "sha256-dvwU2ORLpiP6ZMXL3CJ/qrqmtLBLF6VAc+Fois7Qfew=",
+        "owner": "hercules-ci",
+        "repo": "flake-parts",
+        "rev": "87673d7c13a799d95ce25ff5dc7b9e15f01af2ea",
+        "type": "github"
+      },
+      "original": {
+        "owner": "hercules-ci",
+        "repo": "flake-parts",
         "type": "github"
       }
     },
@@ -125,6 +164,24 @@
         "type": "github"
       }
     },
+    "nixpkgs-lib": {
+      "locked": {
+        "dir": "lib",
+        "lastModified": 1672350804,
+        "narHash": "sha256-jo6zkiCabUBn3ObuKXHGqqORUMH27gYDIFFfLq5P4wg=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "677ed08a50931e38382dbef01cba08a8f7eac8f6",
+        "type": "github"
+      },
+      "original": {
+        "dir": "lib",
+        "owner": "NixOS",
+        "ref": "nixos-unstable",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
     "nixpkgs-stable": {
       "locked": {
         "lastModified": 1673100377,
@@ -173,6 +230,7 @@
     },
     "root": {
       "inputs": {
+        "bf-nix": "bf-nix",
         "darkmatter-grub-theme": "darkmatter-grub-theme",
         "doomemacs": "doomemacs",
         "emacs-overlay": "emacs-overlay",
