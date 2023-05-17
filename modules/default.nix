@@ -9,6 +9,7 @@ with lib.my; {
     ./network.nix
     ./keyboard.nix
     ./bluetooth.nix
+    ./protonvpn.nix
   ];
   options = with types; {
     user.uid = mkOpt int 1000;
