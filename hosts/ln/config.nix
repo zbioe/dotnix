@@ -206,6 +206,9 @@ in {
       # WM
       eww
       slock
+      # rofi
+      rofi
+      rofi-rbw
       # scan
       gnome.simple-scan
       # ebook
@@ -246,7 +249,7 @@ in {
       shfmt
       nixfmt
       nixpkgs-fmt
-      terraform
+      # terraform # removed for use it in devShell.nix
       sqlite
       xclip
       graphviz
@@ -276,6 +279,10 @@ in {
       unstable.haskellPackages.zlib
       unstable.stack
       k9s
+
+      # dart
+      dart
+      flutter
 
       pkg-config
       # rust
@@ -324,7 +331,7 @@ in {
       htmlq # query in html jq like
       jql # jq alternative
       hyperfine # benchmark
-      just # make alternative
+      # just # make alternative
       rm-improved # rip: rm improved with recovery in /tmp/graveyard-$USER
       xcp # cp with some optimizations
       tokei # code info
@@ -384,7 +391,16 @@ in {
       cachix # cachix
       # linkerd_stable # service mesh
       pavucontrol # volume control
-      pass # password manager
+      (pass.withExtensions (ext:
+        with ext; [
+          pass-otp
+          pass-import
+          pass-update
+          pass-genphrase
+          pass-audit
+          pass-checkup
+        ]))
+      pass
       flameshot # nice screenshoter
       scrot # print screen tool
       # eksctl # Amazon K8s Manager
@@ -435,6 +451,9 @@ in {
 
       # audacity
       audacity
+
+      # sec
+      gobuster
 
       # stream
       stremio
@@ -768,6 +787,37 @@ in {
       browserpass = {
         enable = true;
         browsers = [ "firefox" ];
+      };
+      rofi = {
+        enable = true;
+        package = pkgs.rofi;
+        extraConfig = {
+          modi =
+            "drun,emoji,ssh,keys,filebrowser,file-browser-extended,combi,run,window,windowcd";
+          kb-primary-paste = "Control+V,Shift+Insert";
+          kb-secondary-paste = "Control+v,Insert";
+          show-icons = true;
+          icon-theme = "Gruvbox-Material-Dark";
+          display-ssh = " ssh:";
+          display-run = " run:";
+          display-drun = " drun:";
+          display-window = " window:";
+          display-combi = " combi:";
+          display-filebrowser = " filebrowser:";
+        };
+        plugins = [
+          pkgs.rofi-emoji
+          pkgs.rofi-pulse-select
+          pkgs.rofi-vpn
+          pkgs.rofi-file-browser
+          pkgs.rofi-rbw
+        ];
+        font = "Noto Sans Mono 14";
+        # theme = "gruvbox-dark";
+        # https://github.com/hiimsergey/rofi-gruvbox-material
+        theme = ./rofi-theme.rasi;
+        terminal = "alacritty";
+        # pass = { enable = true; };
       };
     };
     services = {

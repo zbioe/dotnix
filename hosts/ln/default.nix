@@ -29,9 +29,13 @@
     };
 
     protonvpn = let
-      country = "BR";
+      country = "BR-22";
       vpnMap = {
-        BR = {
+        BR-43 = {
+          IP = "149.102.251.97";
+          PubKey = "0FnhfTGup0LHPmBCsuDN4tVqlgOaItDwayQokhWapFQ=";
+        };
+        BR-22 = {
           IP = "149.102.251.97";
           PubKey = "0FnhfTGup0LHPmBCsuDN4tVqlgOaItDwayQokhWapFQ=";
         };
@@ -57,7 +61,7 @@
         };
       };
     in {
-      enable = true;
+      enable = false;
       autostart = true;
       endpoint = {
         ip = vpnMap.${country}.IP;
