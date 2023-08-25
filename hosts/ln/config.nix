@@ -58,9 +58,11 @@ in {
 
   # printing and scan
   services.printing.enable = true;
-  services.printing.drivers = [ pkgs.hplip pkgs.sane-backends ];
-  hardware.sane.enable = true;
-  hardware.sane.extraBackends = [ pkgs.hplipWithPlugin pkgs.sane-backends ];
+  services.printing.drivers =
+    [ pkgs.hplip pkgs.sane-backends pkgs.epson-escpr ];
+  services.avahi.enable = true;
+  services.avahi.nssmdns = true;
+
   # Define a user account. Don't forget to set a password with ‘passwd’.
   users.users.${config.user.name} = {
     extraGroups = [
@@ -196,8 +198,9 @@ in {
   services.gvfs.enable = true; # Mount, trash, and other functionalities
   # services.tumbler.enable = true; # Thumbnail support for images
 
-  nixpkgs.config.allowBroken = true;
+  programs.slock.enable = true;
 
+  nixpkgs.config.allowBroken = true;
   environment.systemPackages = with pkgs;
   # elm packages
     elmPkgs ++ [
@@ -205,7 +208,9 @@ in {
       gtk3
       # WM
       eww
-      slock
+      i3lock
+      # password generator
+      pwgen
       # rofi
       rofi
       rofi-rbw
@@ -375,6 +380,7 @@ in {
       xsel # copy to X
       jq # shell JSON parser
       git # version control tool
+      gh # github cli
       cmake # make file
       go # go programming lang
       delta # git viewer
@@ -517,6 +523,18 @@ in {
       };
     };
   };
+  xdg.mime.defaultApplications = {
+    "x-scheme-handler/http" = "firefox.desktop";
+    "x-scheme-handler/https" = "firefox.desktop";
+    "x-scheme-handler/mailto" = "thunderbird.desktop";
+    "text/html" = "firefox.desktop";
+    "application/x-extension-htm" = "firefox.desktop";
+    "application/x-extension-html" = "firefox.desktop";
+    "application/x-extension-shtml" = "firefox.desktop";
+    "application/xhtml+xml" = "firefox.desktop";
+    "application/x-extension-xhtml" = "firefox.desktop";
+    "application/x-extension-xht" = "firefox.desktop";
+  };
 
   # Home-Manager
   home-manager.users.${config.user.name} = let
@@ -595,6 +613,7 @@ in {
       };
     };
     xdg.configFile."tridactyl/tridactylrc".source = ./firefox/tridactylrc;
+
     # Bluetooth
     systemd.user.services.mpris-proxy = {
       Unit.Description = "Mpris proxy";
@@ -929,4 +948,6 @@ in {
     user = "${config.user.name}";
   };
 
+  # teamviewer
+  services.teamviewer.enable = true;
 }
