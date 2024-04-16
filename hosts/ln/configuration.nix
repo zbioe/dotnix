@@ -5,7 +5,8 @@
 { config, pkgs, ... }:
 
 {
-  imports = [ # Include the results of the hardware scan.
+  imports = [
+    # Include the results of the hardware scan.
     ./hardware-configuration.nix
   ];
 
@@ -85,7 +86,9 @@
   #
   # Enable Openvpn
   services.openvpn.servers = {
-    tm = { config = "config /home/zbioe/hacking/zbioe.ovpn "; };
+    tm = {
+      config = "config /home/zbioe/hacking/zbioe.ovpn ";
+    };
   };
 
   # Open ports in the firewall.
@@ -106,6 +109,4 @@
   # Before changing this value read the documentation for this option
   # (e.g. man configuration.nix or on https://nixos.org/nixos/options.html).
   system.stateVersion = "22.11"; # Did you read the comment?
-
 }
-

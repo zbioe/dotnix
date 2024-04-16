@@ -1,13 +1,20 @@
-{pkgs, config, lib, options, ...}:
+{
+  pkgs,
+  config,
+  lib,
+  options,
+  ...
+}:
 with lib;
 with lib.my;
-let 
+let
   cfg = config.modules.system;
-in {
+in
+{
   options.modules.system = with types; {
     stateVersion = mkOpt' nonEmptyStr "22.11" "system and home state version";
   };
-  
+
   config = {
     home-manager.users.${config.user.name}.home.stateVersion = cfg.stateVersion;
     system.stateVersion = cfg.stateVersion;

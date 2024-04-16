@@ -46,6 +46,7 @@ with lib.my; {
     i18n.defaultLocale = config.host.i18n;
 
     users.users.${config.user.name} = config.user;
+    programs.fish.enable = true;
     nix.settings = let users = [ "root" config.user.name ];
     in {
       trusted-users = users;

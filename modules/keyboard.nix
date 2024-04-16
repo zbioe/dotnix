@@ -16,9 +16,16 @@ in {
       useXkbConfig = true;
       packages = [ pkgs.terminus_font ];
     };
-    services.xserver.layout = cfg.layout;
-    services.xserver.xkbVariant = cfg.variant;
-    services.xserver.xkbModel = cfg.model;
-    services.xserver.xkbOptions = concatStringsSep "," cfg.options;
+    services.xserver.xkb.layout = cfg.layout;
+    services.xserver.xkb.variant = cfg.variant;
+    services.xserver.xkb.model = cfg.model;
+    services.xserver.xkb.options = concatStringsSep "," cfg.options;
+    # services.xserver.displayManager.sessionCommands =
+    #   "${pkgs.xorg.xmodmap}/bin/xmodmap " + "${pkgs.writeText "xkb-layout" ''
+    #     ! Map umlauts to RIGHT ALT + <key>
+    #       keycode 108 = Mode_switch
+    #       keysym p = p P bar section ssharp
+    #       keysym l = l L backslash
+    #   ''}";
   };
 }

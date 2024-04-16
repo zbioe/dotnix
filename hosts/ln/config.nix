@@ -61,7 +61,7 @@ in {
   services.printing.drivers =
     [ pkgs.hplip pkgs.sane-backends pkgs.epson-escpr ];
   services.avahi.enable = true;
-  services.avahi.nssmdns = true;
+  services.avahi.nssmdns4 = true;
 
   # Define a user account. Don't forget to set a password with ‘passwd’.
   users.users.${config.user.name} = {
@@ -120,9 +120,10 @@ in {
   hardware.enableRedistributableFirmware = true;
 
   networking.extraHosts = ''
-    10.0.62.11 c1r1
-    10.0.62.12 c1r2
-    10.0.62.13 c1r3
+
+    10.0.62.11 c1r1 r1.mongodb.dev.bornlogic.com
+    10.0.62.12 c1r2 r2.mongodb.dev.bornlogic.com
+    10.0.62.13 c1r3 r3.mongodb.dev.bornlogic.com
 
     10.0.62.14 c2r1
     10.0.62.15 c2r2
@@ -134,7 +135,7 @@ in {
   services.locate = {
     enable = true;
     # interval = "hourly";
-    locate = pkgs.plocate;
+    package = pkgs.plocate;
     localuser = null;
   };
 
@@ -159,7 +160,7 @@ in {
     })
 
     (self: super: {
-      pythonWithConfig = super.python39.withPackages (ppkgs:
+      pythonWithConfig = super.python311.withPackages (ppkgs:
         (with ppkgs; [
           ipython
           python-lsp-server
@@ -217,6 +218,7 @@ in {
       # scan
       gnome.simple-scan
       # ebook
+      zathura
       calibre
       # image
       imagemagick
@@ -252,7 +254,7 @@ in {
       # xcape
       # emacs tools
       shfmt
-      nixfmt
+      nixfmt-rfc-style
       nixpkgs-fmt
       # terraform # removed for use it in devShell.nix
       sqlite
@@ -303,7 +305,7 @@ in {
       nodePackages.stylelint
       python39Packages.jsbeautifier
       # node
-      nodejs-16_x
+      nodejs
       node2nix
 
       # sec
@@ -328,7 +330,7 @@ in {
       choose # grep alternative
       delta # diff alternative
       du-dust # du alternative
-      exa # ls alternative
+      eza # ls alternative
       fd # find alternative
       felix # dir manager
       gitui # ui for git
@@ -480,6 +482,12 @@ in {
       (pkgs.writeShellScriptBin "nixFlakes" ''
         exec ${pkgs.nixUnstable}/bin/nix --experimental-features "nix-command flakes" "$@"
       '')
+
+      # google manager
+      gam
+
+      # multipass - vm manager
+      multipass
     ];
 
   # Environment Variables
@@ -572,11 +580,11 @@ in {
     ];
     programs.firefox = {
       enable = true;
-      extensions = firefox_extensions;
       profiles = {
         "${cfg_super.user.name}" = {
           id = 0;
           isDefault = true;
+          extensions = firefox_extensions;
           settings = {
             # auto enable extensions
             "extensions.autoDisableScopes" = 0;
@@ -683,9 +691,9 @@ in {
       };
       zsh = {
         enable = true;
-        enableAutosuggestions = true;
+        autosuggestion.enable = true;
         enableCompletion = true;
-        enableSyntaxHighlighting = true;
+        syntaxHighlighting.enable = true;
         oh-my-zsh.enable = true;
         prezto.enable = true;
       };
@@ -876,7 +884,7 @@ in {
   #   ../../ca/consul.crt
   # ];
   #
-  fonts.fonts = with pkgs; [
+  fonts.packages = with pkgs; [
     noto-fonts
     noto-fonts-cjk
     noto-fonts-emoji
@@ -943,11 +951,12 @@ in {
   };
 
   # auto login
-  services.xserver.displayManager.autoLogin = {
+  services.displayManager.autoLogin = {
     enable = true;
     user = "${config.user.name}";
   };
 
   # teamviewer
   services.teamviewer.enable = true;
+
 }

@@ -12,11 +12,10 @@
     nixpkgs.url = "github:NixOS/nixpkgs";
     nixpkgs-unstable.url = "github:NixOS/nixpkgs";
     nur.url = "github:nix-community/NUR";
-    nur.inputs.nixpkgs.follows = "nixpkgs";
 
     # doom emacs
     doomemacs = {
-      url = "github:doomemacs/doomemacs/bea3cc161c0a";
+      url = "github:doomemacs/doomemacs";
       flake = false;
     };
 
@@ -96,6 +95,7 @@
         unfree = {
           nixpkgs.config.allowUnfreePredicate = pkg:
             builtins.elem (lib.getName pkg) (import ./nixpkgs/unfree.nix);
+          nixpkgs.config.allowUnsupportedSystem = true;
         };
       };
 

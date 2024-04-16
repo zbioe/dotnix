@@ -29,7 +29,7 @@
     };
 
     protonvpn = let
-      country = "BR-22";
+      country = "US";
       vpnMap = {
         BR-43 = {
           IP = "149.102.251.97";
