@@ -1,4 +1,9 @@
-{ config, pkgs, lib, ... }:
+{
+  config,
+  pkgs,
+  lib,
+  ...
+}:
 let
   unfree = (import ../../nixpkgs/unfree.nix);
   elmPkgs = with pkgs.elmPackages; [
@@ -29,7 +34,8 @@ let
     STARDICT_DATA_DIR = "$HOME/dics";
     LIBVIRT_DEFAULT_URI = "qemu:///system";
   };
-in {
+in
+{
   environment.pathsToLink = [ "/share/nix-direnv" ];
 
   # Enable touchpad support (enabled default in most desktopManager).
@@ -58,8 +64,11 @@ in {
 
   # printing and scan
   services.printing.enable = true;
-  services.printing.drivers =
-    [ pkgs.hplip pkgs.sane-backends pkgs.epson-escpr ];
+  services.printing.drivers = [
+    pkgs.hplip
+    pkgs.sane-backends
+    pkgs.epson-escpr
+  ];
   services.avahi.enable = true;
   services.avahi.nssmdns4 = true;
 
@@ -97,8 +106,9 @@ in {
   # Set initial kernel module settings
   nix = {
     package = pkgs.nixStable;
-    extraOptions = lib.optionalString (config.nix.package == pkgs.nixStable)
-      "experimental-features = nix-command flakes";
+    extraOptions = lib.optionalString (
+      config.nix.package == pkgs.nixStable
+    ) "experimental-features = nix-command flakes";
   };
   # services.qemuGuest.enable = true;
   # docker env
@@ -109,7 +119,9 @@ in {
     uri_default = "qemu:///system"
   '';
   systemd.services.libvirt-guests = {
-    environment = { URI = "qemu:///system"; };
+    environment = {
+      URI = "qemu:///system";
+    };
   };
   # virtualisation.podman.enable = true;
   # virtualisation.podman.dockerSocket.enable = true;
@@ -149,18 +161,23 @@ in {
         vimAlias = true;
       };
     })
+    (self: super: { nix-direnv = super.nix-direnv.override { enableFlakes = true; }; })
     (self: super: {
-      nix-direnv = super.nix-direnv.override { enableFlakes = true; };
-    })
-    (self: super: {
-      emacsWithConfig =
-        ((super.emacsPackagesFor super.emacsNativeComp).emacsWithPackages
-          (epkgs:
-            (with epkgs.melpaPackages; [ vterm pdf-tools org-pdftools ])));
+      emacsWithConfig = (
+        (super.emacsPackagesFor super.emacsNativeComp).emacsWithPackages (
+          epkgs:
+          (with epkgs.melpaPackages; [
+            vterm
+            pdf-tools
+            org-pdftools
+          ])
+        )
+      );
     })
 
     (self: super: {
-      pythonWithConfig = super.python311.withPackages (ppkgs:
+      pythonWithConfig = super.python311.withPackages (
+        ppkgs:
         (with ppkgs; [
           ipython
           python-lsp-server
@@ -172,7 +189,8 @@ in {
           setuptools
           protonvpn-nm-lib
           pip
-        ]));
+        ])
+      );
     })
 
     #(self: super: {
@@ -202,9 +220,11 @@ in {
   programs.slock.enable = true;
 
   nixpkgs.config.allowBroken = true;
-  environment.systemPackages = with pkgs;
-  # elm packages
-    elmPkgs ++ [
+  environment.systemPackages =
+    with pkgs;
+    # elm packages
+    elmPkgs
+    ++ [
       # gtk
       gtk3
       # WM
@@ -257,6 +277,7 @@ in {
       nixfmt-rfc-style
       nixpkgs-fmt
       # terraform # removed for use it in devShell.nix
+      terramate
       sqlite
       xclip
       graphviz
@@ -267,7 +288,14 @@ in {
       tectonic
 
       # dics
-      (aspellWithDicts (ds: with ds; [ en en-computers en-science pt_BR ]))
+      (aspellWithDicts (
+        ds: with ds; [
+          en
+          en-computers
+          en-science
+          pt_BR
+        ]
+      ))
       (hunspellWithDicts (with pkgs.hunspellDicts; [ en_US-large ]))
       # python
       pythonWithConfig
@@ -390,6 +418,10 @@ in {
       kubernetes # kubernetes
       # vagrant # local virt
       virt-manager # view virtualizations
+      # multipass # multipass - vm manager
+      virter # cli to manager virt-manager
+      # libvirt # ensure libvirt on system
+      # libvirt-glib # libvirt glib
       slack # chat
       lens # kubernetes interfac
       openssl # openssl tooling
@@ -399,15 +431,16 @@ in {
       cachix # cachix
       # linkerd_stable # service mesh
       pavucontrol # volume control
-      (pass.withExtensions (ext:
-        with ext; [
+      (pass.withExtensions (
+        ext: with ext; [
           pass-otp
           pass-import
           pass-update
           pass-genphrase
           pass-audit
           pass-checkup
-        ]))
+        ]
+      ))
       pass
       flameshot # nice screenshoter
       scrot # print screen tool
@@ -457,6 +490,9 @@ in {
       flatpak
       playonlinux
 
+      # work
+      certbot-full
+
       # audacity
       audacity
 
@@ -486,8 +522,8 @@ in {
       # google manager
       gam
 
-      # multipass - vm manager
-      multipass
+      # mongodb shell
+      mongosh
     ];
 
   # Environment Variables
@@ -545,327 +581,351 @@ in {
   };
 
   # Home-Manager
-  home-manager.users.${config.user.name} = let
-    cfg_super = config;
-    pkgs_super = pkgs;
-    firefox_extensions = with pkgs.nur.repos.rycee.firefox-addons; [
-      vimium
-      bitwarden
-      ublock-origin
-      privacy-badger
-    ];
-  in { config, pkgs, lib, ... }: {
-    nixpkgs.config.allowUnfreePredicate = pkg:
-      builtins.elem (lib.getName pkg) unfree;
-    nixpkgs.config = {
-      pulseaudio = true;
-      firefox = {
-        enableAdobeFlash = true;
-        # enableGoogleTalkPlugin = true;
-
+  home-manager.users.${config.user.name} =
+    let
+      cfg_super = config;
+      pkgs_super = pkgs;
+      firefox_extensions = with pkgs.nur.repos.rycee.firefox-addons; [
+        vimium
+        bitwarden
+        ublock-origin
+        privacy-badger
+      ];
+    in
+    {
+      config,
+      pkgs,
+      lib,
+      ...
+    }:
+    {
+      nixpkgs.config.allowUnfreePredicate = pkg: builtins.elem (lib.getName pkg) unfree;
+      nixpkgs.config = {
+        pulseaudio = true;
+        firefox = {
+          enableAdobeFlash = true;
+          # enableGoogleTalkPlugin = true;
+        };
+        chromium = {
+          # enablePepperFlash = true;
+          # enablePepperPDF = true;
+        };
       };
-      chromium = {
-        # enablePepperFlash = true;
-        # enablePepperPDF = true;
-      };
-    };
-    home.sessionPath = [
-      "${config.home.homeDirectory}/bin"
-      "${config.home.homeDirectory}/.emacs.d/bin"
-      "${config.home.homeDirectory}/go/bin"
-      "${config.home.homeDirectory}/.local/bin"
-      "${config.home.homeDirectory}/.local/bin"
-      "${config.home.homeDirectory}/.cargo/bin"
-      "${config.home.homeDirectory}/.npm-packages/bin"
-    ];
-    programs.firefox = {
-      enable = true;
-      profiles = {
-        "${cfg_super.user.name}" = {
-          id = 0;
-          isDefault = true;
-          extensions = firefox_extensions;
-          settings = {
-            # auto enable extensions
-            "extensions.autoDisableScopes" = 0;
-            "extensions.enabledScopes" = 15;
+      home.sessionPath = [
+        "${config.home.homeDirectory}/bin"
+        "${config.home.homeDirectory}/.emacs.d/bin"
+        "${config.home.homeDirectory}/go/bin"
+        "${config.home.homeDirectory}/.local/bin"
+        "${config.home.homeDirectory}/.local/bin"
+        "${config.home.homeDirectory}/.cargo/bin"
+        "${config.home.homeDirectory}/.npm-packages/bin"
+      ];
+      programs.firefox = {
+        enable = true;
+        profiles = {
+          "${cfg_super.user.name}" = {
+            id = 0;
+            isDefault = true;
+            extensions = firefox_extensions;
+            settings = {
+              # auto enable extensions
+              "extensions.autoDisableScopes" = 0;
+              "extensions.enabledScopes" = 15;
+            };
+            userChrome = builtins.readFile ./firefox/userChrome.css;
+            bookmarks = import ./firefox/bookmarks.nix;
+            search = {
+              default = "Google";
+              engines = import ./firefox/searchEngines.nix { inherit pkgs; };
+              force = true;
+            };
           };
-          userChrome = builtins.readFile ./firefox/userChrome.css;
-          bookmarks = import ./firefox/bookmarks.nix;
-          search = {
-            default = "Google";
-            engines = import ./firefox/searchEngines.nix { inherit pkgs; };
-            force = true;
+          "safe" = {
+            id = 1;
+            isDefault = false;
+            settings = {
+              # auto enable extensions
+              "extensions.autoDisableScopes" = 0;
+              "extensions.enabledScopes" = 15;
+            } // import ./firefox/settings.nix;
+            userChrome = builtins.readFile ./firefox/userChrome.css;
+            bookmarks = import ./firefox/bookmarks.nix;
+            search = {
+              default = "Google";
+              engines = import ./firefox/searchEngines.nix { inherit pkgs; };
+              force = true;
+            };
+          };
+          clean = {
+            isDefault = false;
+            id = 2;
           };
         };
-        "safe" = {
-          id = 1;
-          isDefault = false;
-          settings = {
-            # auto enable extensions
-            "extensions.autoDisableScopes" = 0;
-            "extensions.enabledScopes" = 15;
-          } // import ./firefox/settings.nix;
-          userChrome = builtins.readFile ./firefox/userChrome.css;
-          bookmarks = import ./firefox/bookmarks.nix;
-          search = {
-            default = "Google";
-            engines = import ./firefox/searchEngines.nix { inherit pkgs; };
-            force = true;
+      };
+      xdg.configFile."tridactyl/tridactylrc".source = ./firefox/tridactylrc;
+
+      # Bluetooth
+      systemd.user.services.mpris-proxy = {
+        Unit.Description = "Mpris proxy";
+        Unit.After = [
+          "network.target"
+          "sound.target"
+        ];
+        Service.ExecStart = "${pkgs.bluez}/bin/mpris-proxy";
+        Install.WantedBy = [ "default.target" ];
+      };
+      home.file.".icons/default".source = "${pkgs.vanilla-dmz}/share/icons/Vanilla-DMZ";
+      home.packages = with pkgs; [
+        spotify
+        discord
+        audio-recorder
+        element-desktop
+
+        krita
+        # Emacs
+        ripgrep
+        coreutils
+        clang
+        texlive.combined.scheme-full
+        zotero
+      ];
+      gtk = {
+        enable = true;
+        font.name = "Vegur 12";
+        theme = {
+          name = "gruvbox-dark";
+          package = pkgs.gruvbox-dark-gtk;
+        };
+        iconTheme = {
+          name = "oomox-gruvbox-dark";
+          package = pkgs.gruvbox-dark-icons-gtk;
+        };
+      };
+
+      # start it in shell first
+      # environment.shellInit = ''
+      #   xcape -e "Control_L=Escape"
+      # '';
+      services = {
+        xcape = {
+          enable = true;
+          mapExpression = {
+            # CapsLock to ESC
+            "#66" = "Escape";
           };
-        };
-        clean = {
-          isDefault = false;
-          id = 2;
+          timeout = 800;
         };
       };
-    };
-    xdg.configFile."tridactyl/tridactylrc".source = ./firefox/tridactylrc;
 
-    # Bluetooth
-    systemd.user.services.mpris-proxy = {
-      Unit.Description = "Mpris proxy";
-      Unit.After = [ "network.target" "sound.target" ];
-      Service.ExecStart = "${pkgs.bluez}/bin/mpris-proxy";
-      Install.WantedBy = [ "default.target" ];
-    };
-    home.file.".icons/default".source =
-      "${pkgs.vanilla-dmz}/share/icons/Vanilla-DMZ";
-    home.packages = with pkgs; [
-      spotify
-      discord
-      audio-recorder
-      element-desktop
-
-      krita
-      # Emacs
-      ripgrep
-      coreutils
-      clang
-      texlive.combined.scheme-full
-      zotero
-    ];
-    gtk = {
-      enable = true;
-      font.name = "Vegur 12";
-      theme = {
-        name = "gruvbox-dark";
-        package = pkgs.gruvbox-dark-gtk;
-      };
-      iconTheme = {
-        name = "oomox-gruvbox-dark";
-        package = pkgs.gruvbox-dark-icons-gtk;
-      };
-    };
-
-    # start it in shell first
-    # environment.shellInit = ''
-    #   xcape -e "Control_L=Escape"
-    # '';
-    services = {
-      xcape = {
-        enable = true;
-        mapExpression = {
-          # CapsLock to ESC
-          "#66" = "Escape";
+      programs = {
+        direnv = {
+          enable = true;
+          nix-direnv.enable = true;
         };
-        timeout = 800;
-      };
-    };
+        autojump = {
+          enable = true;
+          enableBashIntegration = true;
+          enableFishIntegration = true;
+          enableZshIntegration = true;
+          # enableNushellIntegration = true;
+        };
+        bash = {
+          enable = true;
+          historySize = -1;
+        };
+        zsh = {
+          enable = true;
+          autosuggestion.enable = true;
+          enableCompletion = true;
+          syntaxHighlighting.enable = true;
+          oh-my-zsh.enable = true;
+          prezto.enable = true;
+        };
+        fish = {
+          enable = true;
+          shellAbbrs = {
+            "hc" = "herbstclient";
+          };
+          shellInit = ''
+            set fish_greeting
+            set extraConfig ~/.config/fish/extraConfig.fish
+            [ -f $extraConfig ] && source $extraConfig
+          '';
+        };
+        nushell = {
+          enable = true;
+          extraConfig = "source ~/.cache/starship/init.nu";
+        };
+        fzf = {
+          enable = true;
+          enableBashIntegration = true;
+          enableFishIntegration = true;
+          enableZshIntegration = true;
+          # enableNushellIntegration = true;
+        };
+        chromium = {
+          enable = true;
+        };
+        emacs = {
+          enable = true;
+          # package = emacs-with-pkgs;
+          extraPackages =
+            epkgs: with epkgs; [
+              pdf-tools
+              org-pdftools
+              vterm
+            ];
+        };
+        starship = {
+          enable = true;
+          enableBashIntegration = true;
+          enableFishIntegration = true;
+          enableZshIntegration = true;
+          enableNushellIntegration = true;
+          settings =
+            let
+              inherit (lib.strings) concatStrings;
+            in
+            {
+              add_newline = true;
+              format = concatStrings [
+                "$username"
+                "$hostname"
+                "$directory"
+                "$git_branch"
+                "$git_commit"
+                "$git_metrics"
+                "$git_status"
+                "$nix_shell"
+                "$shell"
+                "$memory_usage"
+                "$cmd_duration"
+                "$line_break"
+                "$jobs"
+                "$battery"
+                "$time"
+                "$status"
+                "$character"
+              ];
+              memory_usage = {
+                disabled = false;
+              };
+              character =
+                let
+                  char = "≻";
+                in
+                {
+                  success_symbol = "[${char}](bold cyan)";
+                  error_symbol = "[${char}](bold red)";
+                };
+              shell = {
+                disabled = false;
+                style = "bold bright-blue";
+                format = "[λ](dimmed bold blue)[ $indicator]($style) ";
+              };
+              nix_shell = {
+                disabled = false;
+                impure_msg = "[nix](bold yellow)";
+                pure_msg = "[nix](bold green)";
+                format = "[❄ $state](bold blue) ";
+              };
+            };
+        };
+        neovim = {
+          enable = true;
+          # package = pkgs.neovim.overrideAttrs (old: {patches = (old.patches or []) ++ [ /home/zbioe/.config/nvim/undo.patch ];});
+          plugins = with pkgs.vimPlugins; [
+            # Syntax / Language Support
+            vim-nix
+            vim-go
+            vim-fish
+            vim-toml
+            rust-vim
+            vim-pandoc
+            vim-pandoc-syntax
 
-    programs = {
-      direnv = {
-        enable = true;
-        nix-direnv.enable = true;
-      };
-      autojump = {
-        enable = true;
-        enableBashIntegration = true;
-        enableFishIntegration = true;
-        enableZshIntegration = true;
-        # enableNushellIntegration = true;
-      };
-      bash = {
-        enable = true;
-        historySize = -1;
-      };
-      zsh = {
-        enable = true;
-        autosuggestion.enable = true;
-        enableCompletion = true;
-        syntaxHighlighting.enable = true;
-        oh-my-zsh.enable = true;
-        prezto.enable = true;
-      };
-      fish = {
-        enable = true;
-        shellAbbrs = { "hc" = "herbstclient"; };
-        shellInit = ''
-          set fish_greeting
-          set extraConfig ~/.config/fish/extraConfig.fish
-          [ -f $extraConfig ] && source $extraConfig
-        '';
-      };
-      nushell = {
-        enable = true;
-        extraConfig = "source ~/.cache/starship/init.nu";
-      };
-      fzf = {
-        enable = true;
-        enableBashIntegration = true;
-        enableFishIntegration = true;
-        enableZshIntegration = true;
-        # enableNushellIntegration = true;
-      };
-      chromium = { enable = true; };
-      emacs = {
-        enable = true;
-        # package = emacs-with-pkgs;
-        extraPackages = epkgs: with epkgs; [ pdf-tools org-pdftools vterm ];
-      };
-      starship = {
-        enable = true;
-        enableBashIntegration = true;
-        enableFishIntegration = true;
-        enableZshIntegration = true;
-        enableNushellIntegration = true;
-        settings = let inherit (lib.strings) concatStrings;
-        in {
-          add_newline = true;
-          format = concatStrings [
-            "$username"
-            "$hostname"
-            "$directory"
-            "$git_branch"
-            "$git_commit"
-            "$git_metrics"
-            "$git_status"
-            "$nix_shell"
-            "$shell"
-            "$memory_usage"
-            "$cmd_duration"
-            "$line_break"
-            "$jobs"
-            "$battery"
-            "$time"
-            "$status"
-            "$character"
+            # UI
+            gruvbox
+            vim-gitgutter
+            vim-devicons
+            vim-airline
+
+            # Editor Features
+            vim-abolish
+            vim-surround
+            vim-repeat
+            vim-commentary
+            nerdtree
+            vim-indent-object
+            vim-easy-align
+            vim-eunuch
+            vim-sneak
+            supertab
+            ale
+
+            # Buffer / Pane / File Management
+            fzf-vim
+
+            # Panes / Larger features
+            tagbar
+            vim-fugitive
           ];
-          memory_usage = { disabled = false; };
-          character = let char = "≻";
-          in {
-            success_symbol = "[${char}](bold cyan)";
-            error_symbol = "[${char}](bold red)";
+          extraConfig = builtins.readFile ./extraConfig.vim;
+        };
+        browserpass = {
+          enable = true;
+          browsers = [ "firefox" ];
+        };
+        rofi = {
+          enable = true;
+          package = pkgs.rofi;
+          extraConfig = {
+            modi = "drun,emoji,ssh,keys,filebrowser,file-browser-extended,combi,run,window,windowcd";
+            kb-primary-paste = "Control+V,Shift+Insert";
+            kb-secondary-paste = "Control+v,Insert";
+            show-icons = true;
+            icon-theme = "Gruvbox-Material-Dark";
+            display-ssh = " ssh:";
+            display-run = " run:";
+            display-drun = " drun:";
+            display-window = " window:";
+            display-combi = " combi:";
+            display-filebrowser = " filebrowser:";
           };
-          shell = {
-            disabled = false;
-            style = "bold bright-blue";
-            format = "[λ](dimmed bold blue)[ $indicator]($style) ";
-          };
-          nix_shell = {
-            disabled = false;
-            impure_msg = "[nix](bold yellow)";
-            pure_msg = "[nix](bold green)";
-            format = "[❄ $state](bold blue) ";
-          };
+          plugins = [
+            pkgs.rofi-emoji
+            pkgs.rofi-pulse-select
+            pkgs.rofi-vpn
+            pkgs.rofi-file-browser
+            pkgs.rofi-rbw
+          ];
+          font = "Noto Sans Mono 14";
+          # theme = "gruvbox-dark";
+          # https://github.com/hiimsergey/rofi-gruvbox-material
+          theme = ./rofi-theme.rasi;
+          terminal = "alacritty";
+          # pass = { enable = true; };
         };
       };
-      neovim = {
-        enable = true;
-        # package = pkgs.neovim.overrideAttrs (old: {patches = (old.patches or []) ++ [ /home/zbioe/.config/nvim/undo.patch ];});
-        plugins = with pkgs.vimPlugins; [
-          # Syntax / Language Support
-          vim-nix
-          vim-go
-          vim-fish
-          vim-toml
-          rust-vim
-          vim-pandoc
-          vim-pandoc-syntax
-
-          # UI
-          gruvbox
-          vim-gitgutter
-          vim-devicons
-          vim-airline
-
-          # Editor Features
-          vim-abolish
-          vim-surround
-          vim-repeat
-          vim-commentary
-          nerdtree
-          vim-indent-object
-          vim-easy-align
-          vim-eunuch
-          vim-sneak
-          supertab
-          ale
-
-          # Buffer / Pane / File Management
-          fzf-vim
-
-          # Panes / Larger features
-          tagbar
-          vim-fugitive
-        ];
-        extraConfig = builtins.readFile ./extraConfig.vim;
+      services = {
+        #emacs.enable = true;
+        #emacs.package = emacs-with-pkgs;
+        #emacs.client.enable = true;
+        #emacs.client.arguments = [ "--no-wait" ];
+        # dropbox.enable = true;
       };
-      browserpass = {
-        enable = true;
-        browsers = [ "firefox" ];
-      };
-      rofi = {
-        enable = true;
-        package = pkgs.rofi;
-        extraConfig = {
-          modi =
-            "drun,emoji,ssh,keys,filebrowser,file-browser-extended,combi,run,window,windowcd";
-          kb-primary-paste = "Control+V,Shift+Insert";
-          kb-secondary-paste = "Control+v,Insert";
-          show-icons = true;
-          icon-theme = "Gruvbox-Material-Dark";
-          display-ssh = " ssh:";
-          display-run = " run:";
-          display-drun = " drun:";
-          display-window = " window:";
-          display-combi = " combi:";
-          display-filebrowser = " filebrowser:";
-        };
-        plugins = [
-          pkgs.rofi-emoji
-          pkgs.rofi-pulse-select
-          pkgs.rofi-vpn
-          pkgs.rofi-file-browser
-          pkgs.rofi-rbw
-        ];
-        font = "Noto Sans Mono 14";
-        # theme = "gruvbox-dark";
-        # https://github.com/hiimsergey/rofi-gruvbox-material
-        theme = ./rofi-theme.rasi;
-        terminal = "alacritty";
-        # pass = { enable = true; };
-      };
+      xsession.enable = true;
+      #systemd.user.services.emacs = {
+
+      #  Install = {
+      #    WantedBy = [ "graphical-session.target" ];
+      #  };
+
+      #  Service = {
+      #    ExecStop = "${emacs-with-pkgs}/bin/emacsclient --eval (kill-emacs)";
+      #  };
+      #};
     };
-    services = {
-      #emacs.enable = true;
-      #emacs.package = emacs-with-pkgs;
-      #emacs.client.enable = true;
-      #emacs.client.arguments = [ "--no-wait" ];
-      # dropbox.enable = true;
-    };
-    xsession.enable = true;
-    #systemd.user.services.emacs = {
-
-    #  Install = {
-    #    WantedBy = [ "graphical-session.target" ];
-    #  };
-
-    #  Service = {
-    #    ExecStop = "${emacs-with-pkgs}/bin/emacsclient --eval (kill-emacs)";
-    #  };
-    #};
-  };
 
   environment.interactiveShellInit = ''
     alias hc='herbstclient'
@@ -958,5 +1018,4 @@ in {
 
   # teamviewer
   services.teamviewer.enable = true;
-
 }
