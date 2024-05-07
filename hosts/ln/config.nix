@@ -991,6 +991,7 @@ in
       "udev.log_level=3"
       "udev.log_priority=3"
       "boot.shell_on_fail"
+      "usbcore.autosuspend=-1"
     ];
     blacklistedKernelModules = [ "iTCO_wdt" ];
     # Boot Loader
