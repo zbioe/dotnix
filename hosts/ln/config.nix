@@ -33,6 +33,7 @@ let
     GTK_USE_PORTAL = "1";
     STARDICT_DATA_DIR = "$HOME/dics";
     LIBVIRT_DEFAULT_URI = "qemu:///system";
+    XCURSOR_SIZE = "26";
   };
 in
 {
