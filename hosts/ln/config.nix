@@ -20,6 +20,7 @@ let
     elmi-to-json
   ];
   variables = {
+    FLAKE = "$HOME/dotnix";
     TERMINAL = "alacritty";
     EDITOR = "emacsclient";
     ALTERNATE_EDITOR = "";
@@ -127,8 +128,17 @@ in
   # virtualisation.podman.enable = true;
   # virtualisation.podman.dockerSocket.enable = true;
   # virtualisation.podman.defaultNetwork.dnsname.enable = true;
+  #
+
+  # Nixos Management Tool
+  services.nixos-cli = {
+    enable = true;
+  };
 
   programs.dconf.enable = true;
+
+  # clipboard with buffer
+  services.greenclip.enable = true;
 
   hardware.enableRedistributableFirmware = true;
 
@@ -366,12 +376,18 @@ in
       grex # find regex patterns
       htmlq # query in html jq like
       jql # jq alternative
+      yq # yaml jq
       hyperfine # benchmark
       # just # make alternative
       rm-improved # rip: rm improved with recovery in /tmp/graveyard-$USER
       xcp # cp with some optimizations
       tokei # code info
       ripgrep # rg: grep replacement
+
+      # nix tools
+      nh # nix helper
+      nvd # nix diff system generations
+      nix-output-monitor # show a pretty output of build
 
       # pdf
       poppler
