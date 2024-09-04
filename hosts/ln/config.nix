@@ -71,8 +71,38 @@ in
     pkgs.sane-backends
     pkgs.epson-escpr
   ];
-  services.avahi.enable = true;
-  services.avahi.nssmdns4 = true;
+
+  # LXD local config
+  services.nginx = {
+    enable = true;
+    appendConfig = ''
+      stream {
+          server {
+              listen 443;
+              proxy_pass 0.0.0.0:8443;
+          }
+      }
+    '';
+    appendHttpConfig = ''
+      server {
+          listen 80 default_server;
+          listen [::]:80 default_server;
+          server_name _;
+          return 301 https://$host$request_uri;
+      }
+    '';
+  };
+
+  services.resolved = {
+    enable = true;
+    dnssec = "true";
+    domains = [ "~." ];
+    fallbackDns = [
+      "1.1.1.1#one.one.one.one"
+      "1.0.0.1#one.one.one.one"
+    ];
+    dnsovertls = "true";
+  };
 
   # Define a user account. Don't forget to set a password with ‘passwd’.
   users.users.${config.user.name} = {
@@ -100,6 +130,7 @@ in
       "disk"
       "vboxusers"
       "adbusers"
+      "lxd"
     ];
   };
   boot.kernelModules = [
@@ -129,6 +160,19 @@ in
   # virtualisation.podman.dockerSocket.enable = true;
   # virtualisation.podman.defaultNetwork.dnsname.enable = true;
   #
+  #
+  virtualisation = {
+    lxd = {
+      enable = true;
+      ui.enable = true;
+      agent.enable = true;
+    };
+
+    lxc = {
+      enable = true;
+      lxcfs.enable = true;
+    };
+  };
 
   # Nixos Management Tool
   services.nixos-cli = {
@@ -151,6 +195,8 @@ in
     10.0.62.14 c2r1
     10.0.62.15 c2r2
     10.0.62.16 c2r3
+
+    127.0.1.1 lxd.local
   '';
 
   programs.adb.enable = true;
@@ -346,6 +392,9 @@ in
       # node
       nodejs
       node2nix
+
+      # connection
+      zrok
 
       # sec
       bitwarden
