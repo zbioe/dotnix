@@ -6,19 +6,20 @@
 }:
 let
   unfree = (import ../../nixpkgs/unfree.nix);
-  elmPkgs = with pkgs.elmPackages; [
-    elm
-    elm-analyse
-    elm-doc-preview
-    elm-format
-    elm-live
-    elm-test
-    elm-upgrade
-    elm-xref
-    elm-language-server
-    elm-verify-examples
-    elmi-to-json
-  ];
+  # elmPkgs = with pkgs.elmPackages; [
+  #   elm
+  #   elm-analyse
+  #   elm-doc-preview
+  #   elm-format
+  #   elm-live
+  #   elm-test
+  #   elm-upgrade
+  #   elm-xref
+  #   elm-language-server
+  #   elm-verify-examples
+  #   elmi-to-json
+  # ]
+  # ;
   variables = {
     FLAKE = "$HOME/dotnix";
     TERMINAL = "alacritty";
@@ -41,7 +42,7 @@ in
   environment.pathsToLink = [ "/share/nix-direnv" ];
 
   # Enable touchpad support (enabled default in most desktopManager).
-  services.xserver.libinput.enable = true;
+  services.libinput.enable = true;
   boot.kernelPackages = pkgs.linuxPackages_6_1;
   # boot.extraModulePackages = with config.boot.kernelPackages;
   #   [
@@ -66,29 +67,75 @@ in
 
   # printing and scan
   services.printing.enable = true;
-  services.printing.drivers = [
-    pkgs.hplip
-    pkgs.sane-backends
-    pkgs.epson-escpr
-  ];
+  # services.printing.drivers = [
+  # pkgs.hplip
+  # pkgs.sane-backends
+  # pkgs.epson-escpr
+  # ];
+
+  services.grafana = {
+    enable = true;
+    settings = {
+      server = {
+        # Listening Address
+        http_addr = "127.0.0.1";
+        # and Port
+        http_port = 3000;
+        # Grafana needs to know on which domain and URL it's running
+        domain = "localhost";
+      };
+    };
+  };
+
+  systemd.user.services.aw = {
+    description = "Activity Watch";
+    enable = true;
+    path = with pkgs; [
+      aw-qt
+      aw-server-rust
+      aw-watcher-window
+      aw-watcher-afk
+    ];
+    script = "sleep 5 && aw-qt --no-gui";
+    wantedBy = [ "graphical-session.target" ];
+  };
 
   # LXD local config
   services.nginx = {
     enable = true;
     appendConfig = ''
       stream {
+          upstream lxd {
+              hash $remote_addr consistent;
+
+              server lxd.local:8443 weight=5;
+              server lxd.local:8443       max_fails=3 fail_timeout=30s;
+          }
+
           server {
-              listen 443;
-              proxy_pass 0.0.0.0:8443;
+              listen lxd.local:443;
+              proxy_connect_timeout 1s;
+              proxy_timeout 3s;
+              proxy_pass lxd;
           }
       }
     '';
     appendHttpConfig = ''
+      # server {
+      #     listen 80;
+      #     listen [::]:80;
+      #     server_name lxd.local;
+      #     return 301 https://$host$request_uri;
+      # }
+
       server {
           listen 80 default_server;
           listen [::]:80 default_server;
-          server_name _;
-          return 301 https://$host$request_uri;
+          server_name aw.local;
+
+          location / {
+            proxy_pass http://127.0.0.1:5600;
+          }
       }
     '';
   };
@@ -196,7 +243,9 @@ in
     10.0.62.15 c2r2
     10.0.62.16 c2r3
 
-    127.0.1.1 lxd.local
+    127.0.0.1 lxd.local
+    127.0.0.1 aw.local
+    127.0.0.1 gf.local
   '';
 
   programs.adb.enable = true;
@@ -233,46 +282,29 @@ in
     })
 
     (self: super: {
-      pythonWithConfig = super.python311.withPackages (
+      pythonWithConfig = super.python310Full.withPackages (
         ppkgs:
         (with ppkgs; [
-          ipython
-          python-lsp-server
-          black
-          pyflakes
-          isort
-          nose
-          pytest
-          setuptools
-          protonvpn-nm-lib
+          # aw-client
+          # aw-core
+          bpython
+          # python-lsp
+          # black
+          # pyflakes
+          # isort
+          # pytest
+          # setuptools
+          # protonvpn-nm-lib
           pip
         ])
       );
     })
 
-    #(self: super: {
-    #  emacs = (super.emacs.override {
-    #    nativeComp = true;
-    #  }).overrideAttrs (old : {
-    #    pname = "emacs";
-    #    version = "head";
-    #    src = super.fetchFromGitHub {
-    #      owner = "emacs-mirror";
-    #      repo = "emacs";
-    #      rev = "99ba8c03c8fac65c2497265c54e1bea49f7c6dd3";
-    #      sha256 = "00vxb83571r39r0dbzkr9agjfmqs929lhq9rwf8akvqghc412apf";
-    #    };
-    #    patches = [];
-    #    configureFlags = old.configureFlags ++ ["--with-json"];
-    #    preConfigure = "./autogen.sh";
-    #    buildInputs = with super.pkgs; old.buildInputs ++ [ autoconf texinfo ];
-    #  });
-    #})
   ];
 
   # file namager Thunar extras
   services.gvfs.enable = true; # Mount, trash, and other functionalities
-  # services.tumbler.enable = true; # Thumbnail support for images
+  services.tumbler.enable = true; # Thumbnail support for images
 
   programs.slock.enable = true;
 
@@ -280,8 +312,9 @@ in
   environment.systemPackages =
     with pkgs;
     # elm packages
-    elmPkgs
-    ++ [
+    # elmPkgs
+    # ++ [
+    [
       # gtk
       gtk3
       # WM
@@ -293,13 +326,13 @@ in
       rofi
       rofi-rbw
       # scan
-      gnome.simple-scan
+      simple-scan
       # ebook
       zathura
       calibre
       # image
       imagemagick
-      colorpicker
+      xcolor
       inkscape
       # bar
       polybar
@@ -313,10 +346,9 @@ in
       # video
       ffmpeg-full
       simplescreenrecorder
-      youtube-dl
-      yt-dlp
-      tartube-yt-dlp
-      tartube
+      # yt-dlp
+      # tartube-yt-dlp
+      # tartube
 
       # audio
       vlc
@@ -356,7 +388,8 @@ in
       (hunspellWithDicts (with pkgs.hunspellDicts; [ en_US-large ]))
       # python
       pythonWithConfig
-      pipenv
+      # python39Packages.jsbeautifier
+      # pipenv
       # golang
       gomodifytags
       gotests
@@ -367,9 +400,9 @@ in
       # solidity
       solc
       # haskell
-      unstable.haskell-language-server
-      unstable.haskellPackages.zlib
-      unstable.stack
+      haskell-language-server
+      haskellPackages.zlib
+      stack
       k9s
 
       # dart
@@ -388,7 +421,6 @@ in
       # web
       html-tidy
       nodePackages.stylelint
-      python39Packages.jsbeautifier
       # node
       nodejs
       node2nix
@@ -402,14 +434,14 @@ in
       protonmail-bridge # protonmail bridge client
       protonvpn-cli # protonvpn command line
       protonvpn-gui # protonvpn gui interface
-      dbus
+      #dbus
 
       # top
       btop
       htop
 
       # elixir
-      elixir_1_14
+      elixir
 
       # rust tools alternative
       bottom # btm: top alternative
@@ -449,7 +481,8 @@ in
       tdesktop
 
       # others
-      cinnamon.nemo # file manager
+      nemo-with-extensions # file manager
+      nautilus # file manager 2
       onlyoffice-bin # office
       libtool
       cachix # custom cache
@@ -475,6 +508,7 @@ in
       tmux # terminal multiplexer
       xsel # copy to X
       jq # shell JSON parser
+      tree # tree view from shell
       git # version control tool
       gh # github cli
       cmake # make file
@@ -519,7 +553,7 @@ in
       light # light control
       brightnessctl # light control
       steam-run-native # steam start game
-      gnome.adwaita-icon-theme # gnome themes
+      adwaita-icon-theme # gnome themes
       lutris # game runner
       dunst # notification daemon
       libnotify # desktop send notifications
@@ -530,7 +564,7 @@ in
       chromedriver
       file
       #extra-shells
-      xonsh
+      # xonsh
       elvish
       ion
       # win10 install iso
@@ -538,6 +572,10 @@ in
       # woeusb-ng
       ntfs3g
       gparted
+      parted
+
+      # iso creator
+      ventoy-bin-full
 
       # zoom meeting client
       zoom-us
@@ -550,7 +588,7 @@ in
       # image manipulation
       gimp
       # meeting
-      teams
+      # teams
 
       # games
       flatpak
@@ -581,15 +619,21 @@ in
       #(steam.override { withPrimus = true; extraPkgs = pkgs: [ bumblebee glxinfo ];
       # nativeOnly = true; }).run
       #(steam.override { withJava = true; })
-      (pkgs.writeShellScriptBin "nixFlakes" ''
-        exec ${pkgs.nixUnstable}/bin/nix --experimental-features "nix-command flakes" "$@"
-      '')
+
+      # sec
+      whois
 
       # google manager
       gam
 
       # mongodb shell
       mongosh
+
+      # activity watch
+      aw-qt
+      aw-server-rust
+      aw-watcher-window
+      aw-watcher-afk
     ];
 
   # Environment Variables
@@ -610,13 +654,17 @@ in
   #   "steam-original"
   #   "steam-runtime"
   # ];
-  nixpkgs.config.permittedInsecurePackages = [ "xen-4.10.4" ];
+  nixpkgs.config.permittedInsecurePackages = [
+    "xen-4.10.4"
+    "electron-27.3.11"
+  ];
 
   # Steam
   programs.steam.enable = true;
 
   # Bluetooth
   hardware.pulseaudio = {
+    enable = false;
     extraConfig = ''
       load-module module-switch-on-connect
     '';
@@ -1012,7 +1060,7 @@ in
   #
   fonts.packages = with pkgs; [
     noto-fonts
-    noto-fonts-cjk
+    noto-fonts-cjk-sans
     noto-fonts-emoji
     nerdfonts
     symbola

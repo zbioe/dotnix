@@ -7,10 +7,13 @@
 
   inputs = {
     # Main package channels
-    nixpkgs.url = "github:NixOS/nixpkgs";
-    nixpkgs-unstable.url = "github:NixOS/nixpkgs";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.11-small";
     nur.url = "github:nix-community/NUR";
     nixos-cli.url = "github:water-sucks/nixos";
+
+    # Extra packages
+    home-manager.url = "github:nix-community/home-manager/release-24.11";
+    home-manager.inputs.nixpkgs.follows = "nixpkgs";
 
     # doom emacs
     doomemacs = {
@@ -28,10 +31,6 @@
     bf-nix.url = "github:water-sucks/brainfuck.nix";
     bf-nix.inputs.nixpkgs.follows = "nixpkgs";
 
-    # Extra packages
-    home-manager.url = "github:rycee/home-manager";
-    home-manager.inputs.nixpkgs.follows = "nixpkgs";
-
     # Sops for nixos, ecnrypt secrets
     sops-nix.url = "github:Mic92/sops-nix";
     sops-nix.inputs.nixpkgs.follows = "nixpkgs";
@@ -47,7 +46,6 @@
     inputs@{
       self,
       nixpkgs,
-      nixpkgs-unstable,
       nur,
       doomemacs,
       sops-nix,
@@ -62,11 +60,6 @@
         inherit system;
         overlays = overlays;
       };
-      unstable-pkgs = import nixpkgs-unstable {
-        inherit system;
-        overlays = overlays;
-      };
-      # unstable-pkgs = import nixpkgs-unstable { inherit system;};
       nur-pkgs = import nur { inherit pkgs; };
       # TODO: fix this
       lib = nixpkgs.lib.extend (
@@ -79,10 +72,7 @@
       );
 
       overlays = [
-        (final: prev: {
-          unstable = unstable-pkgs;
-          nur = nur-pkgs;
-        })
+        (final: prev: { nur = nur-pkgs; })
         bf-nix.overlays.default
       ];
 
@@ -90,14 +80,11 @@
         overlays = {
           nixpkgs.overlays = [
             inputs.emacs-overlay.overlay
-            nur.overlay
+            nur.overlays.default
           ];
         };
         overrides = {
-          nixpkgs.config.packageOverrides = pkgs: {
-            nur = nur-pkgs;
-            unstable = unstable-pkgs;
-          };
+          nixpkgs.config.packageOverrides = pkgs: { nur = nur-pkgs; };
         };
         default = {
           nix.extraOptions = "experimental-features = nix-command flakes";
