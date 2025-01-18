@@ -282,18 +282,19 @@ in
     })
 
     (self: super: {
-      pythonWithConfig = super.python310Full.withPackages (
+      pythonWithConfig = super.python310.withPackages (
         ppkgs:
         (with ppkgs; [
           # aw-client
           # aw-core
           bpython
           # python-lsp
-          # black
-          # pyflakes
-          # isort
-          # pytest
-          # setuptools
+          black
+          pyflakes
+          isort
+          pytest
+          setuptools
+          nose2
           # protonvpn-nm-lib
           pip
         ])
@@ -351,6 +352,7 @@ in
       # tartube
 
       # audio
+      alsa-utils
       vlc
 
       # virtualiation
@@ -365,6 +367,10 @@ in
       shfmt
       nixfmt-rfc-style
       nixpkgs-fmt
+      ansible
+      terraform
+      dockfmt
+      libxml2
       # terraform # removed for use it in devShell.nix
       terramate
       sqlite
@@ -388,8 +394,9 @@ in
       (hunspellWithDicts (with pkgs.hunspellDicts; [ en_US-large ]))
       # python
       pythonWithConfig
-      # python39Packages.jsbeautifier
-      # pipenv
+      pipenv
+      python310Packages.nose2
+      python310Packages.nose2pytest
       # golang
       gomodifytags
       gotests
@@ -421,6 +428,7 @@ in
       # web
       html-tidy
       nodePackages.stylelint
+      nodePackages.js-beautify
       # node
       nodejs
       node2nix
@@ -442,17 +450,19 @@ in
 
       # elixir
       elixir
+      erlfmt
 
       # rust tools alternative
       bottom # btm: top alternative
       bat # cat talternative
       broot # tree alternative
+      tree # real tree
       choose # grep alternative
       delta # diff alternative
       du-dust # du alternative
       eza # ls alternative
       fd # find alternative
-      felix # dir manager
+      felix-fm # dir manager
       gitui # ui for git
       grex # find regex patterns
       htmlq # query in html jq like
@@ -469,6 +479,7 @@ in
       nh # nix helper
       nvd # nix diff system generations
       nix-output-monitor # show a pretty output of build
+      nixfmt-rfc-style # nix fmt
 
       # pdf
       poppler
