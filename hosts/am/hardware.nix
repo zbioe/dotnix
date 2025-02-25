@@ -27,7 +27,7 @@
   boot.extraModulePackages = [ ];
 
   fileSystems."/" = {
-    device = "/dev/disk/by-uuid/4a0ad2fb-d2ec-41c1-8e17-ef0fd3a548c4";
+    device = "/dev/disk/by-uuid/90e1092e-dff9-4b7f-82ea-9f28692ccb82";
     fsType = "btrfs";
     options = [
       "subvol=root"
@@ -36,10 +36,10 @@
     ];
   };
 
-  boot.initrd.luks.devices."enc".device = "/dev/disk/by-uuid/3f485088-5547-43f8-84ce-fc345463390c";
+  boot.initrd.luks.devices."enc".device = "/dev/disk/by-uuid/42b115e4-218e-47da-94d6-9425368de467";
 
   fileSystems."/home" = {
-    device = "/dev/disk/by-uuid/4a0ad2fb-d2ec-41c1-8e17-ef0fd3a548c4";
+    device = "/dev/disk/by-uuid/90e1092e-dff9-4b7f-82ea-9f28692ccb82";
     fsType = "btrfs";
     options = [
       "subvol=home"
@@ -49,7 +49,7 @@
   };
 
   fileSystems."/nix" = {
-    device = "/dev/disk/by-uuid/4a0ad2fb-d2ec-41c1-8e17-ef0fd3a548c4";
+    device = "/dev/disk/by-uuid/90e1092e-dff9-4b7f-82ea-9f28692ccb82";
     fsType = "btrfs";
     options = [
       "subvol=nix"
@@ -59,7 +59,7 @@
   };
 
   fileSystems."/persist" = {
-    device = "/dev/disk/by-uuid/4a0ad2fb-d2ec-41c1-8e17-ef0fd3a548c4";
+    device = "/dev/disk/by-uuid/90e1092e-dff9-4b7f-82ea-9f28692ccb82";
     fsType = "btrfs";
     options = [
       "subvol=persist"
@@ -69,7 +69,7 @@
   };
 
   fileSystems."/var/log" = {
-    device = "/dev/disk/by-uuid/4a0ad2fb-d2ec-41c1-8e17-ef0fd3a548c4";
+    device = "/dev/disk/by-uuid/90e1092e-dff9-4b7f-82ea-9f28692ccb82";
     fsType = "btrfs";
     options = [
       "subvol=log"
@@ -80,7 +80,7 @@
   };
 
   fileSystems."/boot" = {
-    device = "/dev/disk/by-uuid/73EC-9820";
+    device = "/dev/disk/by-uuid/EC1F-1BE3";
     fsType = "vfat";
     options = [
       "fmask=0022"
@@ -89,7 +89,7 @@
   };
 
   swapDevices = [
-    { device = "/dev/disk/by-uuid/e709d0b4-dce2-4d90-b933-93a5283b2410"; }
+    { device = "/dev/disk/by-uuid/95ef4e54-9ac4-443c-ad54-339fd8d1f77a"; }
   ];
 
   # Enables DHCP on each ethernet and wireless interface. In case of scripted networking
