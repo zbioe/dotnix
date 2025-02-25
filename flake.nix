@@ -26,6 +26,7 @@
             modules = [
               ./hosts/am
               ./modules
+              ./users
             ];
           };
         };
