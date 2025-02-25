@@ -43,8 +43,6 @@
   };
 
   environment.systemPackages = with pkgs; [
-    kitty
-
     wget
     btop
     neovim
