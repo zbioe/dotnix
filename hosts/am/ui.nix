@@ -8,7 +8,7 @@
 {
   programs.hyprland = {
     enable = true;
-    nvidiaPatches = true;
+    # nvidiaPatches = true;
     xwayland.enable = true;
   };
 
@@ -21,7 +21,7 @@
 
   hardware = {
     # Opengl
-    opengl.enable = true;
+    graphics.enable = true;
 
     # Most wayland compositors need this
     nvidia.modesetting.enable = true;
