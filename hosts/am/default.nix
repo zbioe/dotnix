@@ -4,6 +4,8 @@
     ./hardware.nix
     ./boot.nix
     ./config.nix
+    ./ui.nix
+    ./sound.nix
   ];
 
   # DO NOT CHANGE IT
