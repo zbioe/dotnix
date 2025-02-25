@@ -4,22 +4,27 @@
     # Include the results of the hardware scan.
     ./hardware.nix
   ];
-
-  boot.kernelPackages = pkgs.linuxPackages_latest;
-  boot.supportedFilesystems = {
-    btrfs = true;
-  };
+  nix.settings.experimental-features = [
+    "nix-command"
+    "flakes"
+  ];
   hardware.enableAllFirmware = true;
   nixpkgs.config.allowUnfree = true;
 
-  # Use the systemd-boot EFI boot loader.
-  boot.loader.systemd-boot.enable = true;
-  boot.loader.efi.canTouchEfiVariables = true;
-  boot.loader.grub = {
-    enable = false;
-    device = "nodev";
-    efiSupport = true;
-    enableCryptodisk = true;
+  boot = {
+    kernelPackages = pkgs.linuxPackages_latest;
+    supportedFilesystems = {
+      btrfs = true;
+    };
+    loader = {
+      efi.canTouchEfiVariables = true;
+      grub = {
+        enable = true;
+        device = "nodev";
+        efiSupport = true;
+        enableCryptodisk = true;
+      };
+    };
   };
 
   networking.hostName = "am"; # Define your hostname.
@@ -42,6 +47,11 @@
     earlySetup = false;
     useXkbConfig = true;
     packages = with pkgs; [ terminus_font ];
+  };
+  services.xserver.xkb = {
+    layout = "br";
+    model = "abnt2";
+    options = "ctrl:swapcaps";
   };
 
   environment.systemPackages = with pkgs; [

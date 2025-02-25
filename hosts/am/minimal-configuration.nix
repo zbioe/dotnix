@@ -4,23 +4,28 @@
     # Include the results of the hardware scan.
     ./hardware.nix
   ];
-
-  boot.kernelPackages = pkgs.linuxPackages_latest;
-  boot.supportedFilesystems = {
-    btrfs = true;
-  };
+  nix.settings.experimental-features = [
+    "nix-command"
+    "flakes"
+  ];
   hardware.enableAllFirmware = true;
   nixpkgs.config.allowUnfree = true;
 
-  # Use the systemd-boot EFI boot loader.
-  boot.loader.systemd-boot.enable = true;
-  boot.loader.efi.canTouchEfiVariables = true;
-  # boot.loader.grub = {
-  #   enable = true;
-  #   device = "nodev";
-  #   efiSupport = true;
-  #   enableCryptodisk = true;
-  # };
+  boot = {
+    kernelPackages = pkgs.linuxPackages_latest;
+    supportedFilesystems = {
+      btrfs = true;
+    };
+    loader = {
+      efi.canTouchEfiVariables = true;
+      grub = {
+        enable = true;
+        device = "nodev";
+        efiSupport = true;
+        enableCryptodisk = true;
+      };
+    };
+  };
 
   networking.hostName = "am"; # Define your hostname.
   networking.networkmanager.enable = true;
@@ -48,13 +53,6 @@
     model = "abnt2";
     options = "ctrl:swapcaps";
   };
-
-  # Enable the X11 windowing system.
-  services.xserver.enable = true;
-
-  # Enable the KDE Desktop Environment.
-  services.xserver.displayManager.sddm.enable = true;
-  services.xserver.desktopManager.plasma5.enable = true;
 
   environment.systemPackages = with pkgs; [
     wget

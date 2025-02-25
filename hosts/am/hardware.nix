@@ -27,7 +27,7 @@
   boot.extraModulePackages = [ ];
 
   fileSystems."/" = {
-    device = "/dev/disk/by-uuid/8a634571-8801-4ef4-853d-e5165fa3fc15";
+    device = "/dev/disk/by-uuid/4a0ad2fb-d2ec-41c1-8e17-ef0fd3a548c4";
     fsType = "btrfs";
     options = [
       "subvol=root"
@@ -36,10 +36,10 @@
     ];
   };
 
-  boot.initrd.luks.devices."enc".device = "/dev/disk/by-uuid/7b462b84-aba5-4523-8c56-f41068a7bf08";
+  boot.initrd.luks.devices."enc".device = "/dev/disk/by-uuid/3f485088-5547-43f8-84ce-fc345463390c";
 
   fileSystems."/home" = {
-    device = "/dev/disk/by-uuid/8a634571-8801-4ef4-853d-e5165fa3fc15";
+    device = "/dev/disk/by-uuid/4a0ad2fb-d2ec-41c1-8e17-ef0fd3a548c4";
     fsType = "btrfs";
     options = [
       "subvol=home"
@@ -49,7 +49,7 @@
   };
 
   fileSystems."/nix" = {
-    device = "/dev/disk/by-uuid/8a634571-8801-4ef4-853d-e5165fa3fc15";
+    device = "/dev/disk/by-uuid/4a0ad2fb-d2ec-41c1-8e17-ef0fd3a548c4";
     fsType = "btrfs";
     options = [
       "subvol=nix"
@@ -59,7 +59,7 @@
   };
 
   fileSystems."/persist" = {
-    device = "/dev/disk/by-uuid/8a634571-8801-4ef4-853d-e5165fa3fc15";
+    device = "/dev/disk/by-uuid/4a0ad2fb-d2ec-41c1-8e17-ef0fd3a548c4";
     fsType = "btrfs";
     options = [
       "subvol=persist"
@@ -69,18 +69,18 @@
   };
 
   fileSystems."/var/log" = {
-    device = "/dev/disk/by-uuid/8a634571-8801-4ef4-853d-e5165fa3fc15";
+    device = "/dev/disk/by-uuid/4a0ad2fb-d2ec-41c1-8e17-ef0fd3a548c4";
     fsType = "btrfs";
-    neededForBoot = true;
     options = [
       "subvol=log"
       "compress=zstd"
       "noatime"
     ];
+    neededForBoot = true;
   };
 
   fileSystems."/boot" = {
-    device = "/dev/disk/by-uuid/FF41-1F75";
+    device = "/dev/disk/by-uuid/73EC-9820";
     fsType = "vfat";
     options = [
       "fmask=0022"
@@ -89,7 +89,7 @@
   };
 
   swapDevices = [
-    { device = "/dev/disk/by-uuid/e39a10a3-8cfd-455c-bbf4-a8dc73691396"; }
+    { device = "/dev/disk/by-uuid/e709d0b4-dce2-4d90-b933-93a5283b2410"; }
   ];
 
   # Enables DHCP on each ethernet and wireless interface. In case of scripted networking
