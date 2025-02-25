@@ -6,6 +6,7 @@
     ./config.nix
     ./ui.nix
     ./sound.nix
+    ./nvidia.nix
   ];
 
   # DO NOT CHANGE IT

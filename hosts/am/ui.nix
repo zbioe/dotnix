@@ -19,6 +19,8 @@
     NIXOS_OZONE_WL = "1";
   };
 
+  services.xserver.videoDrivers = [ "nvidia" ];
+
   hardware = {
     # Opengl
     graphics.enable = true;
