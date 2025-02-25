@@ -6,6 +6,7 @@
 }:
 
 {
+  # Compositor
   programs.hyprland = {
     enable = true;
     # nvidiaPatches = true;
@@ -19,8 +20,21 @@
     NIXOS_OZONE_WL = "1";
   };
 
-  services.xserver.videoDrivers = [ "nvidia" ];
+  # Display Manager
+  services.greetd = {
+    enable = true;
+    settings = {
+      default_session = {
+        command = "${pkgs.greetd.greetd}/bin/agreety --cmd Hyprland";
+      };
+      initial_session = {
+        command = "Hyprland";
+        user = "zbioe";
+      };
+    };
+  };
 
+  # Hardware
   hardware = {
     # Opengl
     graphics.enable = true;
@@ -29,10 +43,11 @@
     nvidia.modesetting.enable = true;
   };
 
-  #
+  # Portal
   xdg.portal.enable = true;
   xdg.portal.extraPortals = [ pkgs.xdg-desktop-portal-gtk ];
 
+  # Packages
   environment.systemPackages = with pkgs; [
     # terminal
     kitty
@@ -49,5 +64,20 @@
 
     # launcher
     wofi
+
+    # file manager
+    pcmanfm
+
+    # player manager
+    playerctl
+
+    # brightness manager
+    brightnessctl
+
+    # printscreen with selection
+    # grim -l 0 -g "$(slurp)" - | wl-copy
+    wl-clipboard # cli interface to clipboard (xclip anternative)
+    slurp # select utility
+    grim # screenshot utility
   ];
 }
