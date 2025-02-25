@@ -1,9 +1,24 @@
 { config, pkgs, ... }:
 {
-  nix.settings.experimental-features = [
-    "nix-command"
-    "flakes"
-  ];
+  nix.settings =
+    let
+      users = [
+        "root"
+        "zbioe"
+      ];
+    in
+    {
+      trusted-users = users;
+      allowed-users = users;
+      experimental-features = [
+        "nix-command"
+        "flakes"
+        "pipe-operators"
+      ];
+    };
+
+  security.sudo.wheelNeedsPassword = false;
+
   hardware.enableAllFirmware = true;
   nixpkgs.config.allowUnfree = true;
 
