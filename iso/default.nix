@@ -1,5 +1,10 @@
 # iso.nix
-{ config, pkgs, ... }:
+{
+  config,
+  pkgs,
+  user,
+  ...
+}:
 {
   nix.settings.experimental-features = [
     "nix-command"
@@ -29,7 +34,7 @@
     options = "ctrl:swapcaps";
   };
 
-  users.users.zbioe = {
+  users.users.${user} = {
     isNormalUser = true;
     extraGroups = [ "wheel" ]; # Enable ‘sudo’ for the user.
     hashedPassword = "$y$j9T$aUrSFZjFUIfKKBQ/C.bXY/$mS1UQvVwaBs6.777A7vnuMl3kGsWXpU0gY2VdtwdWi0";

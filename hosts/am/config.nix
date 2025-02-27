@@ -1,10 +1,15 @@
-{ config, pkgs, ... }:
+{
+  config,
+  pkgs,
+  user,
+  ...
+}:
 {
   nix.settings =
     let
       users = [
         "root"
-        "zbioe"
+        "${user}"
       ];
     in
     {
@@ -49,5 +54,6 @@
     vim
     git
     mkpasswd
+    home-manager
   ];
 }

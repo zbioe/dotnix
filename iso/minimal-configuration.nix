@@ -1,4 +1,9 @@
-{ config, pkgs, ... }:
+{
+  config,
+  pkgs,
+  user,
+  ...
+}:
 {
   imports = [
     # Include the results of the hardware scan.
@@ -34,7 +39,7 @@
   networking.firewall.enable = false;
 
   # Define a user account. Don't forget to set a password with ‘passwd’.
-  users.users.zbioe = {
+  users.users."${user}" = {
     isNormalUser = true;
     extraGroups = [ "wheel" ]; # Enable ‘sudo’ for the user.
     hashedPassword = "$y$j9T$aUrSFZjFUIfKKBQ/C.bXY/$mS1UQvVwaBs6.777A7vnuMl3kGsWXpU0gY2VdtwdWi0";

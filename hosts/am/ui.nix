@@ -2,6 +2,7 @@
   config,
   lib,
   pkgs,
+  user,
   ...
 }:
 
@@ -29,7 +30,7 @@
       };
       initial_session = {
         command = "Hyprland";
-        user = "zbioe";
+        inherit user;
       };
     };
   };
