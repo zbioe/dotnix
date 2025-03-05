@@ -33,8 +33,8 @@
   networking.networkmanager.enable = true;
   networking.firewall.enable = true;
   networking.nameservers = [
-    "1.0.0.1"
     "1.1.1.1"
+    "1.0.0.1"
     "2606:4700:4700::1111"
     "2606:4700:4700::1001"
   ];
@@ -42,6 +42,11 @@
   services.openssh = {
     enable = true;
     openFirewall = true;
+    settings = {
+      PasswordAuthentication = false;
+      KbdInteractiveAuthentication = false;
+      PermitRootLogin = "no";
+    };
   };
 
   console = {
@@ -65,11 +70,16 @@
     };
   };
 
+  programs.neovim = {
+    enable = true;
+    vimAlias = true;
+    viAlias = true;
+    defaultEditor = true;
+  };
+
   environment.systemPackages = with pkgs; [
     wget
     btop
-    neovim
-    vim
     git
     mkpasswd
   ];
