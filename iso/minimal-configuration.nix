@@ -1,7 +1,6 @@
 {
   config,
   pkgs,
-  user,
   ...
 }:
 {
@@ -12,6 +11,7 @@
   nix.settings.experimental-features = [
     "nix-command"
     "flakes"
+    "pipe-operators"
   ];
   hardware.enableAllFirmware = true;
   nixpkgs.config.allowUnfree = true;
@@ -39,7 +39,7 @@
   networking.firewall.enable = false;
 
   # Define a user account. Don't forget to set a password with ‘passwd’.
-  users.users."${user}" = {
+  users.users.zbioe = {
     isNormalUser = true;
     extraGroups = [ "wheel" ]; # Enable ‘sudo’ for the user.
     hashedPassword = "$y$j9T$aUrSFZjFUIfKKBQ/C.bXY/$mS1UQvVwaBs6.777A7vnuMl3kGsWXpU0gY2VdtwdWi0";

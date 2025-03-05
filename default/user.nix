@@ -1,3 +1,8 @@
+{
+  config,
+  pkgs,
+  ...
+}:
 let
   keys = [
     # zbioe
@@ -5,31 +10,12 @@ let
   ];
 in
 {
-  config,
-  pkgs,
-  user,
-  ...
-}:
-{
-  users.users = {
-    root = {
-      openssh = {
-        authorizedKeys = {
-          inherit keys;
-        };
-      };
-    };
-    "${user}" = {
+  modules = {
+    user = {
+      name = "zbioe";
       hashedPassword = "$y$j9T$aUrSFZjFUIfKKBQ/C.bXY/$mS1UQvVwaBs6.777A7vnuMl3kGsWXpU0gY2VdtwdWi0";
-      openssh = {
-        authorizedKeys = {
-          inherit keys;
-        };
-      };
-      isNormalUser = true;
       uid = 1000;
-      name = "${user}";
-      description = "${user} user";
+      authorizedKeys = keys;
       extraGroups = [
         "wheel"
         "users"

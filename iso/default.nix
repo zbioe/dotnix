@@ -2,13 +2,13 @@
 {
   config,
   pkgs,
-  user,
   ...
 }:
 {
   nix.settings.experimental-features = [
     "nix-command"
     "flakes"
+    "pipe-operators"
   ];
 
   hardware.enableAllFirmware = true;
@@ -32,12 +32,6 @@
     layout = "br";
     model = "abnt2";
     options = "ctrl:swapcaps";
-  };
-
-  users.users.${user} = {
-    isNormalUser = true;
-    extraGroups = [ "wheel" ]; # Enable ‘sudo’ for the user.
-    hashedPassword = "$y$j9T$aUrSFZjFUIfKKBQ/C.bXY/$mS1UQvVwaBs6.777A7vnuMl3kGsWXpU0gY2VdtwdWi0";
   };
 
   environment.systemPackages = with pkgs; [

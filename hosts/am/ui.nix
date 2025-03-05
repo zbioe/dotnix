@@ -2,7 +2,6 @@
   config,
   lib,
   pkgs,
-  user,
   ...
 }:
 
@@ -30,7 +29,7 @@
       };
       initial_session = {
         command = "Hyprland";
-        inherit user;
+        user = config.modules.user.name;
       };
     };
   };
