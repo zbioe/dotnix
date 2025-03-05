@@ -3,6 +3,7 @@
   imports = [
     ./user.nix
   ];
+
   hardware.enableAllFirmware = true;
   nixpkgs.config.allowUnfree = true;
 
@@ -29,15 +30,7 @@
     '';
   };
 
-  environment = {
-    etc = {
-      "nix/inputs/nixpkgs".source = nixpkgs;
-    };
-    variables = {
-      EDITOR = "vim";
-    };
-  };
-
+  networking.networkmanager.enable = true;
   networking.firewall.enable = true;
   networking.nameservers = [
     "1.0.0.1"
@@ -45,8 +38,40 @@
     "2606:4700:4700::1111"
     "2606:4700:4700::1001"
   ];
+
   services.openssh = {
     enable = true;
     openFirewall = true;
   };
+
+  console = {
+    font = "ter-v32n";
+    earlySetup = true;
+    useXkbConfig = true;
+    packages = with pkgs; [ terminus_font ];
+  };
+  services.xserver.xkb = {
+    layout = "br";
+    model = "abnt2";
+    options = "ctrl:swapcaps";
+  };
+
+  environment = {
+    etc = {
+      "nix/inputs/nixpkgs".source = nixpkgs;
+    };
+    variables = {
+      EDITOR = "nvim";
+    };
+  };
+
+  environment.systemPackages = with pkgs; [
+    wget
+    btop
+    neovim
+    vim
+    git
+    mkpasswd
+  ];
+
 }

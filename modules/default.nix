@@ -12,6 +12,8 @@ in
 {
   imports = [
     ./audio.nix
+    ./nvidia.nix
+    ./boot.nix
   ];
   options.modules = with types; {
     user.name = mkOption {

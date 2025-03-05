@@ -1,7 +1,6 @@
 {
   config,
   lib,
-  pkgs,
   ...
 }:
 let
@@ -9,10 +8,10 @@ let
   cfg = config.modules.audio;
 in
 {
-  options.modules.audio = {
+  options.modules.audio = with types; {
     enable = mkOption {
-      type = types.bool;
-      default = true;
+      type = bool;
+      default = false;
       description = ''
         Enable sound support.
       '';

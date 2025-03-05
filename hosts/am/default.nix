@@ -2,10 +2,7 @@
 {
   imports = [
     ./hardware.nix
-    ./boot.nix
-    ./config.nix
     ./ui.nix
-    ./nvidia.nix
   ];
 
   modules = {
@@ -18,6 +15,15 @@
     };
     time.zone = "America/Sao_Paulo";
     audio.enable = true;
+    boot = {
+      enable = true;
+      kernelPackages = pkgs.linuxPackages_latest;
+    };
+    nvidia = {
+      enable = true;
+      intelBusId = "PCI:0:2:0";
+      nvidiaBusId = "PCI:1:0:0";
+    };
   };
 
   programs.fish = {
