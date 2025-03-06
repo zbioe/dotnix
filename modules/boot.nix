@@ -3,12 +3,10 @@
   lib,
   pkgs,
   ...
-}:
-let
+}: let
   cfg = config.modules.boot;
   inherit (lib) types mkOption mkIf;
-in
-{
+in {
   options.modules.boot = with types; {
     enable = mkOption {
       type = bool;
@@ -25,7 +23,6 @@ in
         The kernel packages to use.
       '';
     };
-
   };
   config = mkIf cfg.enable {
     assertions = [

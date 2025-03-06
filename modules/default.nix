@@ -7,13 +7,14 @@
 let
   inherit (lib) types mkOption;
   cfg = config.modules;
-
 in
 {
   imports = [
     ./audio.nix
     ./nvidia.nix
     ./boot.nix
+    ./stylix.nix
+    ./fish.nix
   ];
   options.modules = with types; {
     user.name = mkOption {

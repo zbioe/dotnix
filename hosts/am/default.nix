@@ -1,20 +1,25 @@
-{ pkgs, ... }:
+{
+  pkgs,
+  lib,
+  outputs,
+  nvf,
+  ...
+}:
 {
   imports = [
     ./hardware.nix
     ./ui.nix
+    ./packages.nix
   ];
 
   modules = {
-    user = {
-      shell = pkgs.fish;
-    };
     host = {
       name = "am";
       i18n = "pt_BR.UTF-8";
     };
     time.zone = "America/Sao_Paulo";
     audio.enable = true;
+    fish.enable = true;
     boot = {
       enable = true;
       kernelPackages = pkgs.linuxPackages_latest;
@@ -24,18 +29,15 @@
       intelBusId = "PCI:0:2:0";
       nvidiaBusId = "PCI:1:0:0";
     };
+    stylix = {
+      enable = true;
+      theme = "gruvbox-dark-medium";
+    };
   };
 
-  programs.fish = {
-    enable = true;
-    shellAbbrs = {
-      "n" = "nvim";
-    };
-    shellInit = ''
-      set fish_greeting
-      test -f ~/.secrets.fish && source ~/.secrets.fish
-    '';
-  };
+  environment.systemPackages = [
+    nvf
+  ];
 
   # DO NOT CHANGE IT
   system.stateVersion = "24.11";

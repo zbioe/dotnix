@@ -79,6 +79,12 @@
     wl-clipboard # cli interface to clipboard (xclip anternative)
     slurp # select utility
     grim # screenshot utility
+
+    # image manager
+    imagemagick # editing and manipulating digital images
+    wl-color-picker
+    gcolor3
+
   ];
 
   fonts.packages = with pkgs; [
