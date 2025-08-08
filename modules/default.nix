@@ -21,35 +21,35 @@ in
       type = str;
       default = "default";
       description = ''
-        username used to create the default user
+        username used to create the user
       '';
     };
     user.uid = mkOption {
       type = (nullOr int);
-      default = null;
+      default = 1000;
       description = ''
-        uid for the default user
+        uid for the ${cfg.user.name} user
       '';
     };
     user.shell = mkOption {
       type = package;
       default = pkgs.bash;
       description = ''
-        shell used by the default user
+        shell used by the ${cfg.user.name} user
       '';
     };
     user.description = mkOption {
       type = str;
       default = "${cfg.user.name} account";
       description = ''
-        description of the default user
+        description of the ${cfg.user.name} user
       '';
     };
     user.extraGroups = mkOption {
       type = (listOf str);
       default = [ "wheel" ];
       description = ''
-        extra groups for the default user
+        extra groups for the ${cfg.user.name} user
       '';
     };
     user.hashedPassword = mkOption {
@@ -57,7 +57,7 @@ in
       # weakPass
       default = "$y$j9T$FJRz6zSHOa1MWfrJXV6u71$bfclDgI8hZmGxlo7XzzdjgB31FGjxwQikdxudXKTqV8";
       description = ''
-        hashed password for the default user
+        hashed password for the ${cfg.user.name} user
         default: "weakPass"
       '';
     };

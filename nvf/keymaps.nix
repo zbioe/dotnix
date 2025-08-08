@@ -4,7 +4,7 @@ _: {
       key = "<C-z>";
       mode = [ "i" ];
       action = "<Esc>^i";
-      desc = " of line";
+      desc = "start of line";
     }
     {
       key = "<C-s>";

@@ -55,7 +55,6 @@ in
     };
 
     languages = {
-      enableLSP = true;
       enableFormat = true;
       enableTreesitter = true;
       enableExtraDiagnostics = true;
@@ -71,9 +70,15 @@ in
       bash.enable = true;
       elixir.enable = true;
       html.enable = true;
-      css.enable = true;
+      css = {
+        enable = true;
+        format.type = "prettierd";
+      };
       tailwind.enable = true;
-      ts.enable = true;
+      ts = {
+        enable = true;
+        format.type = "prettierd";
+      };
     };
 
     visuals = {
