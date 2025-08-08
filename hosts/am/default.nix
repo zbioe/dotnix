@@ -3,6 +3,7 @@
   lib,
   outputs,
   nvf,
+  home-manager,
   ...
 }:
 {
@@ -31,12 +32,13 @@
     };
     stylix = {
       enable = true;
-      theme = "gruvbox-dark-medium";
+      #   theme = "gruvbox-dark-medium";
     };
   };
 
   environment.systemPackages = [
     nvf
+    home-manager
   ];
 
   # DO NOT CHANGE IT

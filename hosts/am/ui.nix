@@ -6,20 +6,6 @@
 }:
 
 {
-  # Compositor
-  programs.hyprland = {
-    enable = true;
-    # nvidiaPatches = true;
-    xwayland.enable = true;
-  };
-
-  environment.sessionVariables = {
-    # If your cursor becomes invisible
-    WLR_NO_HARDWARE_CURSORS = "1";
-    # Hint electron apps to use wayland
-    NIXOS_OZONE_WL = "1";
-  };
-
   # Display Manager
   services.greetd = {
     enable = true;
@@ -44,8 +30,8 @@
   };
 
   # Portal
-  xdg.portal.enable = true;
-  xdg.portal.extraPortals = [ pkgs.xdg-desktop-portal-gtk ];
+  # xdg.portal.enable = true;
+  # xdg.portal.extraPortals = [ pkgs.xdg-desktop-portal-gtk ];
 
   # Packages
   environment.systemPackages = with pkgs; [
@@ -59,6 +45,7 @@
     # notification
     dunst
     libnotify
+
     # wallpaper
     swww
 
@@ -79,11 +66,15 @@
     wl-clipboard # cli interface to clipboard (xclip anternative)
     slurp # select utility
     grim # screenshot utility
+    grimblast # screenshot
 
     # image manager
     imagemagick # editing and manipulating digital images
     wl-color-picker
     gcolor3
+
+    # plasma apply wallpaper
+    # kdePackages.plasma-workspace
 
   ];
 

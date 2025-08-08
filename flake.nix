@@ -9,14 +9,17 @@
       programsdb,
       nvf,
       stylix,
+      hyprland,
       nixpkgs,
       ...
     }@inputs:
     let
+      username = "zbioe";
       system = "x86_64-linux";
       specialArgs = {
-        inherit nixpkgs;
+        inherit nixpkgs username;
         inherit (self.packages.${system}) nvf;
+        inherit (home.packages.${system}) home-manager;
       };
       minimalDefaultModules = [
         ./modules
@@ -25,7 +28,7 @@
       defaultModules = minimalDefaultModules ++ [
         programsdb.nixosModules.programs-sqlite
         home.nixosModules.home-manager
-        stylix.homeManagerModules.stylix
+        stylix.nixosModules.stylix
       ];
       amDefaultModules = defaultModules ++ [
         hardware.nixosModules.common-cpu-intel
@@ -36,6 +39,7 @@
       ];
     in
     {
+      # system
       nixosConfigurations = {
         minimal-iso = nixpkgs.lib.nixosSystem {
           inherit system specialArgs;
@@ -55,6 +59,19 @@
           modules = amDefaultModules;
         };
       };
+      # home-manager
+      homeConfigurations."${username}" = home.lib.homeManagerConfiguration {
+        extraSpecialArgs = {
+          inherit username;
+          inherit (hyprland.packages.${system}) hyprland;
+        };
+        pkgs = import nixpkgs { inherit system; };
+        modules = [
+          stylix.homeManagerModules.stylix
+          ./home
+        ];
+      };
+      # nvim
       packages."${system}" = {
         nvf =
           (nvf.lib.neovimConfiguration {
@@ -66,10 +83,10 @@
       };
     };
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.11-small";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.05-small";
     hardware.url = "github:NixOS/nixos-hardware/master";
     home = {
-      url = "github:nix-community/home-manager/release-24.11";
+      url = "github:nix-community/home-manager/release-25.05";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     programsdb = {
@@ -80,12 +97,11 @@
       };
     };
     stylix = {
-      url = "github:danth/stylix/release-24.11";
+      url = "github:nix-community/stylix/release-25.05";
       inputs = {
         nixpkgs.follows = "nixpkgs";
-        home-manager.follows = "home";
         systems.follows = "systems";
-        flake-utils.follows = "utils";
+        flake-parts.follows = "parts";
       };
     };
     nvf = {
@@ -93,20 +109,29 @@
       inputs = {
         nixpkgs.follows = "nixpkgs";
         systems.follows = "systems";
-        flake-utils.follows = "utils";
-        nil.follows = "nil";
+        flake-compat.follows = "compat";
+        flake-parts.follows = "parts";
+        mnw.follows = "mnw";
       };
     };
-    nil = {
-      url = "github:oxalica/nil";
+    hyprland = {
+      url = "github:hyprwm/Hyprland";
       inputs = {
-        flake-utils.follows = "utils";
         nixpkgs.follows = "nixpkgs";
+        systems.follows = "systems";
       };
+    };
+    mnw.url = "github:Gerg-L/mnw";
+    compat = {
+      url = "git+https://git.lix.systems/lix-project/flake-compat.git";
+      flake = false;
     };
     utils = {
       url = "github:zimbatm/flake-utils";
       inputs.systems.follows = "systems";
+    };
+    parts = {
+      url = "github:hercules-ci/flake-parts";
     };
     systems.url = "github:nix-systems/default";
   };
