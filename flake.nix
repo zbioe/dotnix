@@ -10,7 +10,9 @@
       nvf,
       stylix,
       hyprland,
+      hyprland-plugins,
       nixpkgs,
+      nixpkgs-unstable,
       ...
     }@inputs:
     let
@@ -20,12 +22,11 @@
         inherit nixpkgs username;
         inherit (self.packages.${system}) nvf;
         inherit (home.packages.${system}) home-manager;
+        inherit (hyprland.packages.${system}) hyprland xdg-desktop-portal-hyprland;
       };
-      minimalDefaultModules = [
+      defaultModules = [
         ./modules
         ./default
-      ];
-      defaultModules = minimalDefaultModules ++ [
         programsdb.nixosModules.programs-sqlite
         home.nixosModules.home-manager
         stylix.nixosModules.stylix
@@ -37,15 +38,24 @@
         hardware.nixosModules.common-pc-ssd
         ./hosts/am
       ];
+      lnDefaultModules = defaultModules ++ [
+        hardware.nixosModules.lenovo-thinkpad-x1-6th-gen
+      ];
     in
     {
       # system
       nixosConfigurations = {
         minimal-iso = nixpkgs.lib.nixosSystem {
           inherit system specialArgs;
-          modules = minimalDefaultModules ++ [
+          modules = [
             "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
             ./iso
+          ];
+        };
+        ln-iso = nixpkgs.lib.nixosSystem {
+          inherit system specialArgs;
+          modules = lnDefaultModules ++ [
+            "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
           ];
         };
         am-iso = nixpkgs.lib.nixosSystem {
@@ -64,10 +74,11 @@
         extraSpecialArgs = {
           inherit username;
           inherit (hyprland.packages.${system}) hyprland;
+          inherit hyprland-plugins;
         };
         pkgs = import nixpkgs { inherit system; };
         modules = [
-          stylix.homeManagerModules.stylix
+          stylix.homeModules.stylix
           ./home
         ];
       };
@@ -84,6 +95,7 @@
     };
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.05-small";
+    nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable-small";
     hardware.url = "github:NixOS/nixos-hardware/master";
     home = {
       url = "github:nix-community/home-manager/release-25.05";
@@ -117,9 +129,13 @@
     hyprland = {
       url = "github:hyprwm/Hyprland";
       inputs = {
-        nixpkgs.follows = "nixpkgs";
+        nixpkgs.follows = "nixpkgs-unstable";
         systems.follows = "systems";
       };
+    };
+    hyprland-plugins = {
+      url = "github:hyprwm/hyprland-plugins";
+      inputs.hyprland.follows = "hyprland";
     };
     mnw.url = "github:Gerg-L/mnw";
     compat = {

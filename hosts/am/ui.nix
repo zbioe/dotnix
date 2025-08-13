@@ -2,22 +2,46 @@
   config,
   lib,
   pkgs,
+  hyprland,
+  xdg-desktop-portal-hyprland,
   ...
 }:
 
 {
   # Display Manager
-  services.greetd = {
+  # services.greetd = {
+  #   enable = true;
+  #   settings = {
+  #     default_session = {
+  #       command = "${pkgs.greetd.greetd}/bin/agreety --cmd Hyprland";
+  #     };
+  #     initial_session = {
+  #       command = "Hyprland";
+  #       user = config.modules.user.name;
+  #     };
+  #   };
+  # };
+
+  # services.xserver.enable = true;
+  programs.xwayland.enable = true;
+
+  # services.greetd = {
+  #   enable = true;
+  #   vt = 1; # Start greetd on VT 1
+  #   settings = {
+  #     default_session = {
+  #       command = "${pkgs.greetd.tuigreet}/bin/tuigreet --cmd Hyprland";
+  #       user = "greeter";
+  #     };
+  #   };
+  # };
+
+  programs.hyprland = {
     enable = true;
-    settings = {
-      default_session = {
-        command = "${pkgs.greetd.greetd}/bin/agreety --cmd Hyprland";
-      };
-      initial_session = {
-        command = "Hyprland";
-        user = config.modules.user.name;
-      };
-    };
+    withUWSM = true;
+    package = hyprland;
+    portalPackage = xdg-desktop-portal-hyprland;
+    xwayland.enable = true;
   };
 
   # Hardware
