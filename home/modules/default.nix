@@ -1,5 +1,0 @@
-_: {
-  imports = [
-    ./stylix.nix
-  ];
-}

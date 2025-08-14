@@ -17,6 +17,13 @@ in
         Enable color support by stylix.
       '';
     };
+    autoEnable = mkOption {
+      type = bool;
+      default = true;
+      description = ''
+        Auto enable option to all system
+      '';
+    };
     theme = mkOption {
       type = str;
       default = "gruvbox-dark-medium";
@@ -29,14 +36,6 @@ in
     image = mkOption {
       type = nullOr (coercedTo package toString path);
       default = ../wallpaper.jpg;
-      # let
-      #   theme = "${pkgs.base16-schemes}/share/themes/${cfg.theme}.yaml";
-      #   wallpaper = pkgs.runCommand "image.png" { } ''
-      #     COLOR=$(${pkgs.yq}/bin/yq -r .palette.base00 ${theme})
-      #     ${pkgs.imagemagick}/bin/magick -size 1920x1080 xc:#$COLOR $out
-      #   '';
-      # in
-      # wallpaper;
       example = "./path/to/image";
       description = ''
         The image to use as background.
@@ -53,6 +52,7 @@ in
   };
   config = mkIf cfg.enable {
     stylix = {
+      autoEnable = cfg.autoEnable;
       enable = cfg.enable;
       base16Scheme = "${pkgs.base16-schemes}/share/themes/${cfg.theme}.yaml";
       inherit (cfg) polarity image;

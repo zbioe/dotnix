@@ -122,12 +122,15 @@
     noto-fonts-cjk-sans
     noto-fonts-emoji
     noto-fonts-cjk-serif
+    noto-fonts-extra
     fira-sans
     fira-code
     fira-code-symbols
     roboto
     nerd-fonts._0xproto
     nerd-fonts.droid-sans-mono
+    nerd-fonts.iosevka
+    nerd-fonts.gohufont
     jetbrains-mono
     material-symbols
     material-icons

@@ -15,6 +15,9 @@
   ];
 
   modules = {
+    user = {
+      shell = pkgs.fish;
+    };
     host = {
       name = "am";
       i18n = "pt_BR.UTF-8";
@@ -32,6 +35,7 @@
     };
     stylix = {
       enable = true;
+      autoEnable = true;
       theme = "gruvbox-dark-medium";
     };
   };

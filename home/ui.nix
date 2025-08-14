@@ -15,6 +15,19 @@ in
     ../modules/stylix.nix
   ];
 
+  home.pointerCursor = {
+    gtk.enable = true;
+    package = pkgs.bibata-cursors;
+    name = "Bibata-Modern-Ice";
+    size = 3;
+  };
+
+  modules.stylix = {
+    enable = true;
+    autoEnable = true;
+    theme = "gruvbox-dark-medium";
+  };
+
   home.packages = with pkgs; [
     qt5.qtgraphicaleffects
     qt5.qtquickcontrols2
@@ -75,6 +88,14 @@ in
     enable = true;
   };
 
+  programs.waybar = {
+    enable = true;
+  };
+
+  programs.ripgrep = {
+    enable = true;
+  };
+
   wayland.windowManager = {
     hyprland = {
       enable = true;
@@ -107,11 +128,11 @@ in
         bind = [
           "$mod, F, fullscreen,"
           "$mod SHIFT, B, exec, uwsm app -- librewolf"
-          "$mod, RETURN, exec, uwsm app -- kitty"
+          "$mod, RETURN, exec, uwsm app -- kitty tmux new-session -A -D -s main && exit"
           "$mod, P, exec, uwsm app -- wofi --show drun"
           "$mod, Q, killactive,"
           "$mod SHIFT, L, exec, uwsm app -- hyprlock"
-          "$mod SHIFT, X, exit,"
+          # "$mod SHIFT, X, exit,"
           ", Print, exec, uwsm app -- grimblast copy area"
           ", XF86AudioRaiseVolume, exec, wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.1+"
           ", XF86AudioLowerVolume, exec, wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.1-"
