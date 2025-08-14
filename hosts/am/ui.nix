@@ -117,12 +117,16 @@
 
   ];
 
+  fonts.fontconfig.enable = true;
   fonts.packages = with pkgs; [
     noto-fonts
     noto-fonts-cjk-sans
     noto-fonts-emoji
     noto-fonts-cjk-serif
     noto-fonts-extra
+    symbola
+    vegur
+    meslo-lgs-nf
     fira-sans
     fira-code
     fira-code-symbols

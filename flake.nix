@@ -73,17 +73,33 @@
         };
       };
       # home-manager
-      homeConfigurations."${username}" = home.lib.homeManagerConfiguration {
-        extraSpecialArgs = {
-          inherit username;
-          inherit (hyprland.packages.${system}) hyprland;
-          hyprland-plugins = hyprland-plugins.packages.${system};
+      homeConfigurations = {
+        am = home.lib.homeManagerConfiguration {
+          extraSpecialArgs = {
+            stateVersion = "24.11";
+            inherit username;
+            inherit (hyprland.packages.${system}) hyprland;
+            hyprland-plugins = hyprland-plugins.packages.${system};
+          };
+          pkgs = import nixpkgs { inherit system; };
+          modules = [
+            stylix.homeModules.stylix
+            ./home
+          ];
         };
-        pkgs = import nixpkgs { inherit system; };
-        modules = [
-          stylix.homeModules.stylix
-          ./home
-        ];
+        ln = home.lib.homeManagerConfiguration {
+          extraSpecialArgs = {
+            stateVersion = "25.05";
+            inherit username;
+            inherit (hyprland.packages.${system}) hyprland;
+            hyprland-plugins = hyprland-plugins.packages.${system};
+          };
+          pkgs = import nixpkgs { inherit system; };
+          modules = [
+            stylix.homeModules.stylix
+            ./home
+          ];
+        };
       };
       # nvim
       packages."${system}" = {
