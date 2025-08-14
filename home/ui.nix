@@ -15,10 +15,6 @@ in
     ../modules/stylix.nix
   ];
 
-  # modules.stylix = {
-  #   enable = true;
-  # };
-
   home.packages = with pkgs; [
     qt5.qtgraphicaleffects
     qt5.qtquickcontrols2
@@ -70,25 +66,6 @@ in
     };
   };
 
-  # gtk = {
-  #   enable = true;
-
-  #   theme = {
-  #     package = pkgs.flat-remix-gtk;
-  #     name = "Flat-Remix-GTK-Grey-Darkest";
-  #   };
-
-  #   iconTheme = {
-  #     package = pkgs.gnome.adwaita-icon-theme;
-  #     name = "Adwaita";
-  #   };
-
-  #   font = {
-  #     name = "Sans";
-  #     size = 11;
-  #   };
-  # };
-
   programs.anyrun = {
     enable = true;
     config.plugins = [ ];
@@ -131,7 +108,7 @@ in
           "$mod, F, fullscreen,"
           "$mod SHIFT, B, exec, uwsm app -- librewolf"
           "$mod, RETURN, exec, uwsm app -- kitty"
-          "$mod, P, exec, uwsm app -- wofi"
+          "$mod, P, exec, uwsm app -- wofi --show drun"
           "$mod, Q, killactive,"
           "$mod SHIFT, L, exec, uwsm app -- hyprlock"
           "$mod SHIFT, X, exit,"

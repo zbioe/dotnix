@@ -14,7 +14,6 @@ in
     ./nvidia.nix
     ./boot.nix
     ./stylix.nix
-    ./fish.nix
   ];
   options.modules = with types; {
     user.name = mkOption {

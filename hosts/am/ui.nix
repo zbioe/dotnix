@@ -13,7 +13,6 @@
   services.greetd =
     let
       command = "uwsm start hyprland-uwsm.desktop";
-      # command = "${pkgs.uwsm}/bin/uwsm ${hyprland}/bin/Hyprland";
     in
     {
       enable = true;
@@ -28,27 +27,10 @@
       };
     };
 
-  # Notifier
-  # services.mako = {
-  #   enable = true;
-  #   settings.defaultTimeout = 4;
-  # };
+  programs.tmux.enable = true;
+  programs.fish.enable = true;
 
-  # services.xserver.enable = true;
   programs.xwayland.enable = true;
-
-  # services.greetd = {
-  #   enable = true;
-  #   vt = 1; # Start greetd on VT 1
-  #   settings = {
-  #     default_session = {
-  #       command = "${pkgs.greetd.tuigreet}/bin/tuigreet --cmd Hyprland";
-  #       user = "greeter";
-  #     };
-  #   };
-  # };
-
-  # quickshell
 
   # hyprland
   programs.hyprland = {
@@ -72,16 +54,8 @@
     nvidia.modesetting.enable = true;
   };
 
-  # Portal
-  # xdg.portal.enable = true;
-  # xdg.portal.extraPortals = [ pkgs.xdg-desktop-portal-gtk ];
-
   # Packages
   environment.systemPackages = with pkgs; [
-    # bar
-    (waybar.overrideAttrs (oldAttrs: {
-      mesonFlags = oldAttrs.mesonFlags ++ [ "-Dexperimental=true" ];
-    }))
     # notification
     dunst
     libnotify
