@@ -13,6 +13,7 @@
       hyprland-plugins,
       nixpkgs,
       nixpkgs-unstable,
+      quickshell,
       ...
     }@inputs:
     let
@@ -23,6 +24,7 @@
         inherit (self.packages.${system}) nvf;
         inherit (home.packages.${system}) home-manager;
         inherit (hyprland.packages.${system}) hyprland xdg-desktop-portal-hyprland;
+        inherit (quickshell.packages.${system}) quickshell;
       };
       defaultModules = [
         ./modules
@@ -40,6 +42,7 @@
       ];
       lnDefaultModules = defaultModules ++ [
         hardware.nixosModules.lenovo-thinkpad-x1-6th-gen
+        ./hosts/ln
       ];
     in
     {
@@ -74,7 +77,7 @@
         extraSpecialArgs = {
           inherit username;
           inherit (hyprland.packages.${system}) hyprland;
-          inherit hyprland-plugins;
+          hyprland-plugins = hyprland-plugins.packages.${system};
         };
         pkgs = import nixpkgs { inherit system; };
         modules = [
@@ -116,6 +119,12 @@
         flake-parts.follows = "parts";
       };
     };
+    quickshell = {
+      url = "git+https://git.outfoxxed.me/outfoxxed/quickshell";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+      };
+    };
     nvf = {
       url = "github:notashelf/nvf";
       inputs = {
@@ -124,6 +133,13 @@
         flake-compat.follows = "compat";
         flake-parts.follows = "parts";
         mnw.follows = "mnw";
+      };
+    };
+    hyprpolkitagent = {
+      url = "github:hyprwm/hyprpolkitagent";
+      inputs = {
+        nixpkgs.follows = "nixpkgs-unstable";
+        systems.follows = "systems";
       };
     };
     hyprland = {

@@ -61,12 +61,15 @@
     options = "ctrl:swapcaps";
   };
 
+  programs.ydotool.enable = true;
+
   environment = {
     etc = {
       "nix/inputs/nixpkgs".source = nixpkgs;
     };
     variables = {
       EDITOR = "vim";
+      YDTOOL_SOCKET = "/run/ydotoold/socket";
     };
   };
 

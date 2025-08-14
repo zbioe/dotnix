@@ -1,27 +1,21 @@
 {
   pkgs,
-  nvf,
   home-manager,
-  quickshell,
+  nvf,
   ...
 }:
 
 {
 
   environment.systemPackages = with pkgs; [
-    # home manager
-    home-manager
-    # shell toolkit
-    quickshell
     # custom neovim
     nvf
+
+    # home-manager
+    home-manager
 
     # nix debuger
     nixd
     nixfmt-rfc-style
-
-    # browser
-    librewolf-wayland
-
   ];
 }
