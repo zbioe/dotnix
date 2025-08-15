@@ -121,7 +121,7 @@ in
           kb_model = "abnt2";
         };
 
-        bindr = [ "CONTROL, Caps_Lock, exec, ydotool key 1:1 1:0" ];
+        bindr = [ "CONTROL, Caps_Lock, exec, ydotool key --key-delay 5ms  1:1 1:0" ];
 
         monitor = ",preferred,auto,1";
 
@@ -132,7 +132,7 @@ in
           "$mod, P, exec, uwsm app -- wofi --show drun"
           "$mod, Q, killactive,"
           "$mod SHIFT, L, exec, uwsm app -- hyprlock"
-          # "$mod SHIFT, X, exit,"
+          "$mod SHIFT, X, exit,"
           ", Print, exec, uwsm app -- grimblast copy area"
           ", XF86AudioRaiseVolume, exec, wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.1+"
           ", XF86AudioLowerVolume, exec, wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.1-"

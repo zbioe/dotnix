@@ -3,10 +3,12 @@
   lib,
   pkgs,
   ...
-}: let
+}:
+let
   cfg = config.modules.boot;
   inherit (lib) types mkOption mkIf;
-in {
+in
+{
   options.modules.boot = with types; {
     enable = mkOption {
       type = bool;
@@ -33,6 +35,11 @@ in {
     ];
     boot = {
       inherit (cfg) kernelPackages;
+      consoleLogLevel = 0;
+      initrd.verbose = false;
+      plymouth = {
+        enable = true;
+      };
       supportedFilesystems = {
         btrfs = true;
       };
@@ -40,6 +47,7 @@ in {
         efi.canTouchEfiVariables = true;
         # make sure system-boot is disabled
         systemd-boot.enable = false;
+        timeout = 0;
         grub = {
           enable = true;
           device = "nodev";

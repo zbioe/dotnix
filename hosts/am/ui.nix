@@ -12,7 +12,8 @@
   # Display Manager
   services.greetd =
     let
-      command = "uwsm start hyprland-uwsm.desktop";
+      cmd = "uwsm start hyprland-uwsm.desktop";
+      command = "${pkgs.greetd.greetd}/bin/agreety --cmd '${cmd}'";
     in
     {
       enable = true;
@@ -21,7 +22,7 @@
           inherit command;
         };
         initial_session = {
-          inherit command;
+          command = cmd;
           user = config.modules.user.name;
         };
       };
@@ -118,32 +119,35 @@
   ];
 
   fonts.fontconfig.enable = true;
-  fonts.packages = with pkgs; [
-    noto-fonts
-    noto-fonts-cjk-sans
-    noto-fonts-emoji
-    noto-fonts-cjk-serif
-    noto-fonts-extra
-    symbola
-    vegur
-    meslo-lgs-nf
-    fira-sans
-    fira-code
-    fira-code-symbols
-    roboto
-    nerd-fonts._0xproto
-    nerd-fonts.droid-sans-mono
-    nerd-fonts.iosevka
-    nerd-fonts.gohufont
-    jetbrains-mono
-    material-symbols
-    material-icons
-    fontconfig
-    freetype
-    liberation_ttf
-    dejavu_fonts
-    ubuntu_font_family
-  ];
+  fonts.packages =
+    with pkgs;
+    [
+      noto-fonts
+      noto-fonts-cjk-sans
+      noto-fonts-emoji
+      noto-fonts-cjk-serif
+      noto-fonts-extra
+      symbola
+      vegur
+      meslo-lgs-nf
+      fira-sans
+      fira-code
+      fira-code-symbols
+      roboto
+      jetbrains-mono
+      material-symbols
+      material-icons
+      fontconfig
+      freetype
+      liberation_ttf
+      dejavu_fonts
+      ubuntu_font_family
+      # nerd-fonts._0xproto
+      # nerd-fonts.droid-sans-mono
+      # nerd-fonts.iosevka
+      # nerd-fonts.gohufont
+    ]
+    ++ builtins.filter lib.attrsets.isDerivation (builtins.attrValues pkgs.nerd-fonts);
 
   # quickshell
   environment.sessionVariables = {

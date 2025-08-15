@@ -4,16 +4,16 @@
   outputs =
     {
       self,
-      hardware,
-      home,
-      programsdb,
       nvf,
+      home,
       stylix,
-      hyprland,
-      hyprland-plugins,
       nixpkgs,
-      nixpkgs-unstable,
+      hardware,
+      hyprland,
+      programsdb,
       quickshell,
+      hyprland-plugins,
+      nixpkgs-unstable,
       ...
     }@inputs:
     let
