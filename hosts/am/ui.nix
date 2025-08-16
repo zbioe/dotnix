@@ -33,6 +33,22 @@
 
   programs.xwayland.enable = true;
 
+  services = {
+    evremap = {
+      enable = true;
+      settings = {
+        device_name = "AT Translated Set 2 keyboard";
+        dual_role = [
+          {
+            input = "KEY_CAPSLOCK";
+            hold = [ "KEY_LEFTCTRL" ];
+            tap = [ "KEY_ESC" ];
+          }
+        ];
+      };
+    };
+  };
+
   # hyprland
   programs.hyprland = {
     enable = true;
@@ -168,6 +184,7 @@
     # X11/AppImage compatibility for Wayland
     DISPLAY = ":0";
     XDG_SESSION_TYPE = "wayland";
+    XDG_CURRENT_DESKTOP = "Hyprland";
     GDK_BACKEND = "wayland,x11";
     CLUTTER_BACKEND = "wayland";
     SDL_VIDEODRIVER = "wayland";

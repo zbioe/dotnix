@@ -14,6 +14,7 @@ in
     ./nvidia.nix
     ./boot.nix
     ./stylix.nix
+    ./evremap.nix
   ];
   options.modules = with types; {
     user.name = mkOption {

@@ -31,7 +31,7 @@
   services.xserver.xkb = {
     layout = "br";
     model = "abnt2";
-    options = "ctrl:swapcaps";
+    options = "caps:ctrl_modifier";
   };
 
   environment.systemPackages = with pkgs; [

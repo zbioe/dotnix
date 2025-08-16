@@ -38,6 +38,59 @@
       autoEnable = true;
       theme = "gruvbox-dark-medium";
     };
+    evremap =
+      let
+        remap = [
+          {
+            input = [
+              "KEY_CAPSLOCK"
+              "KEY_H"
+            ];
+            output = [ "KEY_BACKSPACE" ];
+          }
+          {
+            input = [
+              "KEY_CAPSLOCK"
+              "KEY_M"
+            ];
+            output = [ "KEY_ENTER" ];
+          }
+          {
+            input = [
+              "KEY_CAPSLOCK"
+              "KEY_I"
+            ];
+            output = [ "KEY_TAB" ];
+          }
+          {
+            input = [
+              "KEY_CAPSLOCK"
+              "KEY_H"
+            ];
+            output = [ "KEY_BACKSPACE" ];
+          }
+        ];
+        dual_role = [
+          {
+            input = "KEY_CAPSLOCK";
+            hold = [ "KEY_LEFTCTRL" ];
+            tap = [ "KEY_ESC" ];
+          }
+        ];
+      in
+      {
+        enable = true;
+        devices = {
+          internal = {
+            device_name = "AT Translated Set 2 keyboard";
+            inherit dual_role;
+          };
+          external = {
+            device_name = "SINO WEALTH Gaming KB ";
+            inherit dual_role;
+          };
+        };
+      };
   };
 
   # DO NOT CHANGE IT

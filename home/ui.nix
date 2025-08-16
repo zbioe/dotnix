@@ -2,8 +2,6 @@
   config,
   lib,
   pkgs,
-  hyprland,
-  hyprland-plugins,
   ...
 }:
 let
@@ -13,10 +11,11 @@ in
 {
   imports = [
     ../modules/stylix.nix
+    ./hyprland.nix
+    ./waybar.nix
   ];
 
-  home.pointerCursor = {
-    gtk.enable = true;
+  stylix.cursor = {
     package = pkgs.bibata-cursors;
     name = "Bibata-Modern-Ice";
     size = 3;
@@ -26,6 +25,40 @@ in
     enable = true;
     autoEnable = true;
     theme = "gruvbox-dark-medium";
+  };
+
+  stylix.targets.gtk.extraCss = ''
+    .default-decoration {
+      min-height: 0;
+      padding: 0;
+      border-width: 0;
+    }
+    .headerbar {
+      min-height: 0;
+      padding: 0;
+      border-width: 0;
+    }
+    window decoration {
+      margin: 0;
+      padding: 0;
+      border: none;
+      box-shadow: none;
+    }
+    window.csd {
+      margin: 0;
+      padding: 0;
+      border: none;
+    }
+  '';
+
+  gtk = {
+    enable = true;
+    gtk3.extraConfig = {
+      gtk-decoration-layout = "";
+    };
+    gtk4.extraConfig = {
+      gtk-decoration-layout = "";
+    };
   };
 
   home.packages = with pkgs; [
@@ -42,6 +75,10 @@ in
     qt6.qtbase.dev # This includes Qt Widgets headers
     qt6Packages.qtstyleplugin-kvantum
     qt6Packages.qt5compat
+    # file manager
+    nautilus
+    hyprpicker
+    chromium
   ];
 
   home.sessionVariables = {
@@ -68,6 +105,10 @@ in
 
     # Override problematic Qt style variable
     QT_STYLE_OVERRIDE = lib.mkForce "";
+
+    # Disable all client side decorations
+    # WAYLAND_DISPLAY = "no";
+    GTK_CSD = "0";
   };
 
   qt = {
@@ -88,79 +129,10 @@ in
     enable = true;
   };
 
-  programs.waybar = {
-    enable = true;
-  };
-
   programs.ripgrep = {
     enable = true;
   };
 
-  wayland.windowManager = {
-    hyprland = {
-      enable = true;
-      package = hyprland;
-      xwayland.enable = true;
-      systemd.variables = [ "--all" ];
-      settings = {
-        "$mod" = "SUPER";
-        exec-once = [
-          "waybar"
-        ];
-        misc = {
-          disable_hyprland_logo = true;
-          force_default_wallpaper = 0;
-        };
-
-        input = {
-          follow_mouse = 2;
-          sensitivity = 0;
-          accel_profile = "adaptive";
-          kb_options = "caps:ctrl_modifier";
-          kb_layout = "br";
-          kb_model = "abnt2";
-        };
-
-        bindr = [ "CONTROL, Caps_Lock, exec, ydotool key --key-delay 5ms  1:1 1:0" ];
-
-        monitor = ",preferred,auto,1";
-
-        bind = [
-          "$mod, F, fullscreen,"
-          "$mod SHIFT, B, exec, uwsm app -- librewolf"
-          "$mod, RETURN, exec, uwsm app -- kitty tmux new-session -A -D -s main && exit"
-          "$mod, P, exec, uwsm app -- wofi --show drun"
-          "$mod, Q, killactive,"
-          "$mod SHIFT, L, exec, uwsm app -- hyprlock"
-          "$mod SHIFT, X, exit,"
-          ", Print, exec, uwsm app -- grimblast copy area"
-          ", XF86AudioRaiseVolume, exec, wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.1+"
-          ", XF86AudioLowerVolume, exec, wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.1-"
-          ", XF86MonBrightnessUp, exec, brightnessctl s +5%"
-          ", XF86MonBrightnessDown, exec, brightnessctl s 5%-"
-        ]
-        ++ (
-          # workspaces
-          # binds $mod + [shift +] {1..9} to [move to] workspace {1..9}
-          builtins.concatLists (
-            builtins.genList (
-              i:
-              let
-                ws = i + 1;
-              in
-              [
-                "$mod, code:1${toString i}, workspace, ${toString ws}"
-                "$mod SHIFT, code:1${toString i}, movetoworkspace, ${toString ws}"
-              ]
-            ) 9
-          )
-        );
-      };
-      plugins = with hyprland-plugins; [
-        hyprbars
-      ];
-    };
-  };
   programs.hyprlock = {
     enable = true;
     settings = {
@@ -180,7 +152,19 @@ in
     };
   };
   programs = {
-    kitty.enable = true;
-    # alacritty.enable = true;
+    kitty = {
+      enable = true;
+      settings = {
+        hide_window_decorations = "yes";
+        titlebar_style = "none";
+        window_border_width = 0;
+        draw_minimal_borders = "yes";
+        placement_strategy = "top-right";
+        tab_bar_style = "hidden";
+        window_padding_width = 0;
+        window_margin_width = 0;
+      };
+    };
+    alacritty.enable = true;
   };
 }

@@ -55,13 +55,12 @@
     useXkbConfig = true;
     packages = with pkgs; [ terminus_font ];
   };
+
   services.xserver.xkb = {
     layout = "br";
     model = "abnt2";
-    options = "ctrl:swapcaps";
+    options = "caps:ctrl_modifier";
   };
-
-  programs.ydotool.enable = true;
 
   environment = {
     etc = {
@@ -69,7 +68,6 @@
     };
     variables = {
       EDITOR = "vim";
-      YDTOOL_SOCKET = "/run/ydotoold/socket";
     };
   };
 

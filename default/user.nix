@@ -18,7 +18,6 @@
         "systemd-journal"
         "bluetooth"
         "dbus"
-        "ydotool"
       ];
     };
   };

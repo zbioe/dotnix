@@ -12,7 +12,6 @@
       hyprland,
       programsdb,
       quickshell,
-      hyprland-plugins,
       nixpkgs-unstable,
       ...
     }@inputs:
@@ -79,7 +78,6 @@
             stateVersion = "24.11";
             inherit username;
             inherit (hyprland.packages.${system}) hyprland;
-            hyprland-plugins = hyprland-plugins.packages.${system};
           };
           pkgs = import nixpkgs { inherit system; };
           modules = [
@@ -92,7 +90,6 @@
             stateVersion = "25.05";
             inherit username;
             inherit (hyprland.packages.${system}) hyprland;
-            hyprland-plugins = hyprland-plugins.packages.${system};
           };
           pkgs = import nixpkgs { inherit system; };
           modules = [
@@ -164,10 +161,6 @@
         nixpkgs.follows = "nixpkgs-unstable";
         systems.follows = "systems";
       };
-    };
-    hyprland-plugins = {
-      url = "github:hyprwm/hyprland-plugins";
-      inputs.hyprland.follows = "hyprland";
     };
     mnw.url = "github:Gerg-L/mnw";
     compat = {
