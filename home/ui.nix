@@ -9,11 +9,6 @@ let
   qt5 = pkgs.libsForQt5;
 in
 {
-  imports = [
-    ../modules/stylix.nix
-    ./hyprland.nix
-    ./waybar.nix
-  ];
 
   stylix.cursor = {
     package = pkgs.bibata-cursors;
@@ -75,10 +70,7 @@ in
     qt6.qtbase.dev # This includes Qt Widgets headers
     qt6Packages.qtstyleplugin-kvantum
     qt6Packages.qt5compat
-    # file manager
-    nautilus
-    hyprpicker
-    chromium
+
   ];
 
   home.sessionVariables = {
@@ -126,10 +118,6 @@ in
   };
 
   programs.wofi = {
-    enable = true;
-  };
-
-  programs.ripgrep = {
     enable = true;
   };
 

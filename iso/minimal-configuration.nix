@@ -32,7 +32,7 @@
     };
   };
 
-  networking.hostName = "am"; # Define your hostname.
+  networking.hostName = "tmp"; # Define your hostname.
   networking.networkmanager.enable = true;
 
   services.openssh.enable = true;
@@ -67,5 +67,5 @@
     mkpasswd
   ];
 
-  system.stateVersion = "24.11";
+  system.stateVersion = "25.05";
 }

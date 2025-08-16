@@ -83,18 +83,9 @@
     # file manager
     nautilus
 
-    # disk utility
-    gnome-disk-utility
-
     # GTK
     gtk3
     gtk4
-
-    # Dev
-    github-desktop
-    python313
-    gedit
-    vscode
 
     # player manager
     playerctl
@@ -111,11 +102,6 @@
 
     # image manager
     imagemagick # editing and manipulating digital images
-    wl-color-picker
-    gcolor3
-
-    # plasma apply wallpaper
-    # kdePackages.plasma-workspace
 
     # Qt6 related kits（for slove Qt5Compat problem）
     qt6.qt5compat
@@ -158,10 +144,6 @@
       liberation_ttf
       dejavu_fonts
       ubuntu_font_family
-      # nerd-fonts._0xproto
-      # nerd-fonts.droid-sans-mono
-      # nerd-fonts.iosevka
-      # nerd-fonts.gohufont
     ]
     ++ builtins.filter lib.attrsets.isDerivation (builtins.attrValues pkgs.nerd-fonts);
 

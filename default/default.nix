@@ -2,6 +2,9 @@
 {
   imports = [
     ./user.nix
+    ./ui.nix
+    ./polkit-rules.nix
+    ./packages.nix
   ];
 
   hardware.enableAllFirmware = true;
@@ -67,16 +70,7 @@
       "nix/inputs/nixpkgs".source = nixpkgs;
     };
     variables = {
-      EDITOR = "vim";
+      EDITOR = "nvim";
     };
   };
-
-  environment.systemPackages = with pkgs; [
-    wget
-    btop
-    git
-    mkpasswd
-    vim
-  ];
-
 }

@@ -9,21 +9,16 @@
 {
   imports = [
     ./hardware.nix
-    ./ui.nix
-    ./packages.nix
-    ./polkit-rules.nix
   ];
 
   modules = {
-    user = {
-      shell = pkgs.fish;
-    };
     host = {
       name = "am";
       i18n = "pt_BR.UTF-8";
     };
     time.zone = "America/Sao_Paulo";
     audio.enable = true;
+    bluetooth.enable = true;
     boot = {
       enable = true;
       kernelPackages = pkgs.linuxPackages_latest;
@@ -40,36 +35,6 @@
     };
     evremap =
       let
-        remap = [
-          {
-            input = [
-              "KEY_CAPSLOCK"
-              "KEY_H"
-            ];
-            output = [ "KEY_BACKSPACE" ];
-          }
-          {
-            input = [
-              "KEY_CAPSLOCK"
-              "KEY_M"
-            ];
-            output = [ "KEY_ENTER" ];
-          }
-          {
-            input = [
-              "KEY_CAPSLOCK"
-              "KEY_I"
-            ];
-            output = [ "KEY_TAB" ];
-          }
-          {
-            input = [
-              "KEY_CAPSLOCK"
-              "KEY_H"
-            ];
-            output = [ "KEY_BACKSPACE" ];
-          }
-        ];
         dual_role = [
           {
             input = "KEY_CAPSLOCK";

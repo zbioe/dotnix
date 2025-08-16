@@ -10,6 +10,9 @@
 {
   imports = [
     ./ui.nix
+    ./hyprland.nix
+    ./waybar.nix
+    ../modules/stylix.nix
   ];
 
   home.username = username;
@@ -72,6 +75,9 @@
       enable = true;
       enableBashIntegration = true;
       enableFishIntegration = true;
+    };
+    ripgrep = {
+      enable = true;
     };
     starship = {
       enable = true;

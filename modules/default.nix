@@ -15,6 +15,8 @@ in
     ./boot.nix
     ./stylix.nix
     ./evremap.nix
+    ./bluetooth.nix
+    ./protonvpn.nix
   ];
   options.modules = with types; {
     user.name = mkOption {
