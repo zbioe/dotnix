@@ -18,7 +18,7 @@ in
     };
     powerOnBoot = mkOption {
       type = bool;
-      default = true;
+      default = false;
       description = ''
         enable Power on boot.
       '';

@@ -19,31 +19,27 @@
           "hyprland/workspaces"
         ];
         modules-right = [
+          # "tray"
           "idle_inhibitor"
+          "custom/separator"
+          "memory"
+          "cpu"
+          "disk"
+          "custom/separator"
+          # "bluetooth"
           "pulseaudio"
-          "tray"
+          "network"
           "clock"
+          "battery"
         ];
 
         "custom/logo" = {
-          format = "  ";
+          format = "   ";
           tooltip = false;
         };
 
         "hyprland/workspaces" = {
           disable-scroll = true;
-          persistent_workspaces = {
-            "I" = [ ];
-            "II" = [ ];
-            "III" = [ ];
-            "IV" = [ ];
-            "V" = [ ];
-            "VI" = [ ];
-            "VII" = [ ];
-            "VIII" = [ ];
-            "IX" = [ ];
-            "X" = [ ];
-          };
           disable-click = false;
         };
 
@@ -57,6 +53,58 @@
           ];
           tooltip = true;
           tooltip-format = "{volume}%";
+          on-click = "pavucontrol";
+        };
+        "custom/separator" = {
+          format = "|";
+          interval = "once";
+          tooltip = false;
+        };
+        battery = {
+          format = "{icon} ";
+          format-icons = [
+            ""
+            ""
+            ""
+            ""
+            ""
+          ];
+          tooltip = true;
+          tooltip-format = "{capacity}%";
+        };
+
+        bluetooth = {
+          format = " ";
+          format-disabled = " ᛒ";
+          format-connected = " ᚼᛒ";
+          tooltip-format = "{device_alias}";
+          format-connected-battery = "  {device_battery_percentage}% ";
+          tooltip-format-enumerate-connected = "{device_alias}";
+          on-click = "btblock";
+        };
+
+        network = {
+          interval = 1;
+          format-disconnected = " ⃠ ";
+          format-wifi = " ";
+          format-ethernet = "≐ ";
+          tooltip-format = " {essid}  {signalStrength} | {ipaddr}/{cidr}  {bandwidthUpBytes} 󰁅 {bandwidthDownBytes}";
+          on-click = "wifimenu";
+        };
+
+        memory = {
+          interval = 1;
+          format = " {percentage}%";
+          tooltip-format = "{used} / {total} G";
+        };
+        cpu = {
+          interval = 1;
+          format = " {usage}%";
+        };
+        disk = {
+          interval = 60;
+          format = " {percentage_used}%";
+          tooltip-format = "{used} used out of {total} on {path} ";
         };
 
         clock = {
@@ -89,10 +137,13 @@
           tooltip-format-deactivated = "Idle inhibitor inactive";
         };
 
-        tray = {
-          icon-size = 21;
-          spacing = 10;
-        };
+        # tray = {
+        #   icon-size = 21;
+        #   spacing = 10;
+        #   icons = {
+        #     blueman = "bluetooth";
+        #   };
+        # };
       };
     };
   };
