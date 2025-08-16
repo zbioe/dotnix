@@ -31,22 +31,6 @@
   programs.tmux.enable = true;
   programs.fish.enable = true;
 
-  services = {
-    evremap = {
-      enable = true;
-      settings = {
-        device_name = "AT Translated Set 2 keyboard";
-        dual_role = [
-          {
-            input = "KEY_CAPSLOCK";
-            hold = [ "KEY_LEFTCTRL" ];
-            tap = [ "KEY_ESC" ];
-          }
-        ];
-      };
-    };
-  };
-
   # hyprland
   programs.hyprland = {
     enable = true;
