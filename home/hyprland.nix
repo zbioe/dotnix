@@ -12,7 +12,6 @@
       enable = true;
       package = hyprland;
       xwayland.enable = true;
-      systemd.variables = [ "--all" ];
       settings = {
         "$mod" = "SUPER";
 

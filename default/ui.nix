@@ -31,8 +31,6 @@
   programs.tmux.enable = true;
   programs.fish.enable = true;
 
-  programs.xwayland.enable = true;
-
   services = {
     evremap = {
       enable = true;
@@ -83,10 +81,6 @@
     # file manager
     nautilus
 
-    # GTK
-    gtk3
-    gtk4
-
     # player manager
     playerctl
 
@@ -103,22 +97,12 @@
     # image manager
     imagemagick # editing and manipulating digital images
 
-    # Qt6 related kits（for slove Qt5Compat problem）
-    qt6.qt5compat
-    qt6.qtbase
-    qt6.qtquick3d
-    qt6.qtwayland
-    qt6.qtdeclarative
-    qt6.qtsvg
-    qt5.qtgraphicaleffects
-    qt5.qtquickcontrols2
-
-    # alternate options
-    kdePackages.qt5compat
-    libsForQt5.qt5ct
-    libsForQt5.qt5.qtgraphicaleffects
-
   ];
+
+  environment.sessionVariables = {
+    # https://nixos.wiki/wiki/Wayland#Applications
+    NIXOS_OZONE_WL = "1";
+  };
 
   fonts.fontconfig.enable = true;
   fonts.packages =
@@ -146,41 +130,4 @@
       ubuntu_font_family
     ]
     ++ builtins.filter lib.attrsets.isDerivation (builtins.attrValues pkgs.nerd-fonts);
-
-  # quickshell
-  environment.sessionVariables = {
-    QT_QPA_PLATFORM = "wayland;xcb";
-    QT_WAYLAND_DISABLE_WINDOWDECORATION = "1";
-    QT_QUICK_CONTROLS_STYLE = "org.kde.desktop";
-    FONTCONFIG_PATH = "/etc/fonts";
-    FREETYPE_PROPERTIES = "truetype:interpreter-version=40";
-  };
-
-  # Environment variables for Qt/QML
-  environment.variables = {
-    QML2_IMPORT_PATH = "${pkgs.qt6.qt5compat}/lib/qt-6/qml:${pkgs.qt6.qtbase}/lib/qt-6/qml";
-    QT_AUTO_SCREEN_SCALE_FACTOR = "1";
-    QT_ENABLE_HIGHDPI_SCALING = "1";
-    QT_QPA_PLATFORMTHEME = "qt5ct";
-
-    # X11/AppImage compatibility for Wayland
-    DISPLAY = ":0";
-    XDG_SESSION_TYPE = "wayland";
-    XDG_CURRENT_DESKTOP = "Hyprland";
-    GDK_BACKEND = "wayland,x11";
-    CLUTTER_BACKEND = "wayland";
-    SDL_VIDEODRIVER = "wayland";
-    _JAVA_AWT_WM_NONREPARENTING = "1";
-    MOZ_ENABLE_WAYLAND = "1";
-    QT_WAYLAND_FORCE_DPI = "physical";
-
-    # Additional X11/Electron compatibility
-    ELECTRON_OZONE_PLATFORM_HINT = "wayland";
-    ELECTRON_ENABLE_LOGGING = "1";
-    ELECTRON_ENABLE_STACK_DUMPING = "1";
-    CHROME_EXTRA_ARGS = "--enable-features=Vulkan,VulkanFromANGLE --disable-gpu-sandbox --no-sandbox --disable-dev-shm-usage";
-
-    # Override problematic Qt style variable
-    QT_STYLE_OVERRIDE = "";
-  };
 }

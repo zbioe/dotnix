@@ -3,7 +3,6 @@
   imports = [
     ./user.nix
     ./ui.nix
-    ./polkit-rules.nix
     ./packages.nix
   ];
 

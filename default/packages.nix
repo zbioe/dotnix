@@ -1,7 +1,6 @@
 {
   pkgs,
   nvf,
-  quickshell,
   home-manager,
   ...
 }:
@@ -11,8 +10,6 @@
   environment.systemPackages = with pkgs; [
     # home manager
     home-manager
-    # shell toolkit
-    quickshell
     # custom neovim
     nvf
 

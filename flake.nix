@@ -1,5 +1,5 @@
 {
-  description = "d";
+  description = "dotnix";
 
   outputs =
     {
@@ -11,7 +11,6 @@
       hardware,
       hyprland,
       programsdb,
-      quickshell,
       nixpkgs-unstable,
       ...
     }@inputs:
@@ -23,7 +22,6 @@
         inherit (self.packages.${system}) nvf;
         inherit (home.packages.${system}) home-manager;
         inherit (hyprland.packages.${system}) hyprland xdg-desktop-portal-hyprland;
-        inherit (quickshell.packages.${system}) quickshell;
       };
       defaultModules = [
         ./modules
@@ -31,17 +29,6 @@
         programsdb.nixosModules.programs-sqlite
         home.nixosModules.home-manager
         stylix.nixosModules.stylix
-      ];
-      amDefaultModules = defaultModules ++ [
-        hardware.nixosModules.common-cpu-intel
-        hardware.nixosModules.common-gpu-nvidia
-        hardware.nixosModules.common-pc-laptop
-        hardware.nixosModules.common-pc-ssd
-        ./hosts/am
-      ];
-      lnDefaultModules = defaultModules ++ [
-        hardware.nixosModules.lenovo-thinkpad-x1-6th-gen
-        ./hosts/ln
       ];
     in
     {
@@ -54,50 +41,47 @@
             ./iso
           ];
         };
-        ln-iso = nixpkgs.lib.nixosSystem {
-          inherit system specialArgs;
-          modules = lnDefaultModules ++ [
-            "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
-          ];
-        };
-        am-iso = nixpkgs.lib.nixosSystem {
-          inherit system specialArgs;
-          modules = amDefaultModules ++ [
-            "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
-          ];
-        };
         am = nixpkgs.lib.nixosSystem {
           inherit system specialArgs;
-          modules = amDefaultModules;
+          modules = defaultModules ++ [
+            hardware.nixosModules.common-cpu-intel
+            hardware.nixosModules.common-gpu-nvidia
+            hardware.nixosModules.common-pc-laptop
+            hardware.nixosModules.common-pc-ssd
+            ./hosts/am
+          ];
+        };
+        ln = nixpkgs.lib.nixosSystem {
+          inherit system specialArgs;
+          modules = defaultModules ++ [
+            hardware.nixosModules.lenovo-thinkpad-x1-6th-gen
+            ./hosts/ln
+          ];
         };
       };
       # home-manager
-      homeConfigurations = {
-        am = home.lib.homeManagerConfiguration {
-          extraSpecialArgs = {
-            stateVersion = "24.11";
-            inherit username;
-            inherit (hyprland.packages.${system}) hyprland;
-          };
-          pkgs = import nixpkgs { inherit system; };
-          modules = [
-            stylix.homeModules.stylix
-            ./home
-          ];
+      homeConfigurations =
+        let
+          makeConfiguration =
+            stateVersion:
+            home.lib.homeManagerConfiguration {
+              extraSpecialArgs = {
+                inherit stateVersion;
+                inherit username;
+                inherit (hyprland.packages.${system}) hyprland;
+              };
+              pkgs = import nixpkgs { inherit system; };
+              modules = [
+                stylix.homeModules.stylix
+                ./home
+              ];
+            };
+        in
+        {
+          am = makeConfiguration "24.11";
+          ln = makeConfiguration "25.05";
         };
-        ln = home.lib.homeManagerConfiguration {
-          extraSpecialArgs = {
-            stateVersion = "25.05";
-            inherit username;
-            inherit (hyprland.packages.${system}) hyprland;
-          };
-          pkgs = import nixpkgs { inherit system; };
-          modules = [
-            stylix.homeModules.stylix
-            ./home
-          ];
-        };
-      };
+
       # nvim
       packages."${system}" = {
         nvf =
@@ -109,6 +93,7 @@
           }).neovim;
       };
     };
+
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.05-small";
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable-small";
@@ -132,12 +117,6 @@
         flake-parts.follows = "parts";
       };
     };
-    quickshell = {
-      url = "git+https://git.outfoxxed.me/outfoxxed/quickshell";
-      inputs = {
-        nixpkgs.follows = "nixpkgs";
-      };
-    };
     nvf = {
       url = "github:notashelf/nvf";
       inputs = {
@@ -146,13 +125,6 @@
         flake-compat.follows = "compat";
         flake-parts.follows = "parts";
         mnw.follows = "mnw";
-      };
-    };
-    hyprpolkitagent = {
-      url = "github:hyprwm/hyprpolkitagent";
-      inputs = {
-        nixpkgs.follows = "nixpkgs-unstable";
-        systems.follows = "systems";
       };
     };
     hyprland = {
