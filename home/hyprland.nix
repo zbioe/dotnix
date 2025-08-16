@@ -67,6 +67,7 @@
           "$mod SHIFT, P, exec, uwsm app -- hyprpicker"
           "$mod, RETURN, exec, uwsm app -- kitty tmux new-session -A -D -s main && exit"
           "$mod, P, exec, uwsm app -- wofi --show drun"
+          "$mod, P, exec, uwsm app -- wofi --show drun"
           "$mod SHIFT, Q, killactive,"
           "$mod SHIFT, R, exec, uwsm app -- hyprlock"
           "$mod SHIFT, X, exit,"
@@ -74,6 +75,7 @@
           ", Print, exec, uwsm app -- grimblast copy area"
           ", XF86AudioRaiseVolume, exec, wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.1+"
           ", XF86AudioLowerVolume, exec, wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.1-"
+          ", XF86XK_AudioMute, exec, wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle"
           ", XF86MonBrightnessUp, exec, brightnessctl s +5%"
           ", XF86MonBrightnessDown, exec, brightnessctl s 5%-"
 

@@ -51,6 +51,36 @@
     };
   };
 
+  programs.dconf.enable = true;
+
+  services = {
+    udev = {
+      enable = true;
+      packages = with pkgs; [ gnome-settings-daemon ];
+    };
+
+    #
+    dbus = {
+      enable = true;
+      packages = with pkgs; [ gnome2.GConf ];
+    };
+    # auto mount/unmount a drive
+    gvfs.enable = true;
+    udisks2.enable = true;
+
+    # Thumbnail support for images
+    tumbler.enable = true;
+  };
+
+  programs.thunar = {
+    enable = true;
+    plugins = with pkgs.xfce; [
+      thunar-archive-plugin
+      thunar-volman
+    ];
+  };
+
+  # Console defaults
   console = {
     font = "ter-v32n";
     earlySetup = true;
@@ -58,12 +88,14 @@
     packages = with pkgs; [ terminus_font ];
   };
 
+  # Xdb defaults
   services.xserver.xkb = {
     layout = "br";
     model = "abnt2";
     options = "caps:ctrl_modifier";
   };
 
+  # Ensure environment
   environment = {
     etc = {
       "nix/inputs/nixpkgs".source = nixpkgs;

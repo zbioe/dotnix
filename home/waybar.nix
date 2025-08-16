@@ -45,14 +45,14 @@
 
         pulseaudio = {
           format = " {icon} ";
-          format-muted = "⋪";
+          format-muted = " ⋪ ";
           format-icons = [
             ""
             "󰖀"
             "󰕾"
           ];
           tooltip = true;
-          tooltip-format = "{volume}%";
+          tooltip-format = "{volume}% ";
           on-click = "pavucontrol";
         };
         "custom/separator" = {

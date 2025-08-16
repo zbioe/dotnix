@@ -59,9 +59,6 @@
     # wallpaper
     swww
 
-    # file manager
-    nautilus
-
     # player manager
     playerctl
 
