@@ -70,4 +70,7 @@
   home.packages = with pkgs; [
     networkmanagerapplet
   ];
+  stylix.targets.waybar = {
+    addCss = true;
+  };
 }

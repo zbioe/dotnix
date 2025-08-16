@@ -47,6 +47,7 @@
 
     # file manager
     nautilus
+    geeqie # image viewer
 
     # icon theme
     adwaita-icon-theme

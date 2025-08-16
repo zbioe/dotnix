@@ -8,6 +8,12 @@
   programs.waybar = {
     enable = true;
     systemd.enable = true;
+    style = lib.mkAfter ''
+      .modules-left #workspaces button.active {
+        background: @base01;
+        border-bottom: 0px solid @base05;
+      }
+    '';
     settings = {
       mainBar = {
         layer = "top";
@@ -19,18 +25,21 @@
           "hyprland/workspaces"
         ];
         modules-right = [
-          # "tray"
           "idle_inhibitor"
+          "bluetooth"
           "custom/separator"
           "memory"
           "cpu"
           "disk"
           "custom/separator"
-          # "bluetooth"
           "pulseaudio"
           "network"
           "clock"
           "battery"
+        ];
+
+        modules-center = [
+          "hyprland/window"
         ];
 
         "custom/logo" = {
@@ -41,22 +50,42 @@
         "hyprland/workspaces" = {
           disable-scroll = true;
           disable-click = false;
+          format = "{icon}";
+          format-icons = {
+            "2" = "";
+            "5" = "";
+            "7" = "";
+            "9" = "";
+            "10" = "";
+            "active" = "";
+            "default" = "";
+          };
+        };
+
+        "hyprland/window" = {
+          seaparate-outputs = true;
+          rewrite = {
+            "(.*) — Doom Emacs" = " $1";
+            "Tmux - (.*)" = " $1";
+          };
         };
 
         pulseaudio = {
           format = " {icon} ";
-          format-muted = " ⋪ ";
+          format-muted = "";
           format-icons = [
-            ""
+            ""
             "󰖀"
             "󰕾"
+            ""
+            "󱄡"
           ];
           tooltip = true;
           tooltip-format = "{volume}% ";
           on-click = "pavucontrol";
         };
         "custom/separator" = {
-          format = "|";
+          format = " | ";
           interval = "once";
           tooltip = false;
         };
@@ -74,9 +103,10 @@
         };
 
         bluetooth = {
-          format = " ";
-          format-disabled = " ᛒ";
-          format-connected = " ᚼᛒ";
+          format = "󰂯";
+          format-disabled = "󰂲";
+          format-connected = "󰂱";
+          format-no-controller = "";
           tooltip-format = "{device_alias}";
           format-connected-battery = "  {device_battery_percentage}% ";
           tooltip-format-enumerate-connected = "{device_alias}";
@@ -85,10 +115,10 @@
 
         network = {
           interval = 1;
-          format-disconnected = " ⃠ ";
-          format-wifi = " ";
-          format-ethernet = "≐ ";
-          tooltip-format = " {essid}  {signalStrength} | {ipaddr}/{cidr}  {bandwidthUpBytes} 󰁅 {bandwidthDownBytes}";
+          format-disconnected = " 󰤭 ";
+          format-wifi = " 󰖩 ";
+          format-ethernet = " 󰈀 ";
+          tooltip-format = "{essid}  {signalStrength} | {ipaddr}/{cidr}  {bandwidthUpBytes} 󰁅 {bandwidthDownBytes}";
           on-click = "wifimenu";
         };
 
@@ -136,14 +166,6 @@
           tooltip-format-activated = "Idle inhibitor active";
           tooltip-format-deactivated = "Idle inhibitor inactive";
         };
-
-        # tray = {
-        #   icon-size = 21;
-        #   spacing = 10;
-        #   icons = {
-        #     blueman = "bluetooth";
-        #   };
-        # };
       };
     };
   };

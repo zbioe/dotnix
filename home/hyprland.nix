@@ -75,7 +75,7 @@
           ", Print, exec, uwsm app -- grimblast copy area"
           ", XF86AudioRaiseVolume, exec, wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.1+"
           ", XF86AudioLowerVolume, exec, wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.1-"
-          ", XF86XK_AudioMute, exec, wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle"
+          ", XF86XK_AudioMute, exec, wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"
           ", XF86MonBrightnessUp, exec, brightnessctl s +5%"
           ", XF86MonBrightnessDown, exec, brightnessctl s 5%-"
 
