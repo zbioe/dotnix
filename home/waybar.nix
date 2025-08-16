@@ -45,7 +45,7 @@
 
         pulseaudio = {
           format = " {icon} ";
-          format-muted = "";
+          format-muted = "⋪";
           format-icons = [
             ""
             "󰖀"
