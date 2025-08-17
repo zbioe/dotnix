@@ -1,8 +1,9 @@
 { pkgs, nixpkgs, ... }:
 {
   imports = [
-    ./user.nix
     ./ui.nix
+    ./tmux.nix
+    ./user.nix
     ./packages.nix
   ];
 

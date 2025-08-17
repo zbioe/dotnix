@@ -71,7 +71,7 @@
         };
 
         pulseaudio = {
-          format = " {icon} ";
+          format = "{icon} ";
           format-muted = "";
           format-icons = [
             ""
@@ -115,9 +115,9 @@
 
         network = {
           interval = 1;
-          format-disconnected = " 󰤭 ";
-          format-wifi = " 󰖩 ";
-          format-ethernet = " 󰈀 ";
+          format-disconnected = "󰤭 ";
+          format-wifi = "󰖩 ";
+          format-ethernet = "󰈀 ";
           tooltip-format = "{essid}  {signalStrength} | {ipaddr}/{cidr}  {bandwidthUpBytes} 󰁅 {bandwidthDownBytes}";
           on-click = "wifimenu";
         };

@@ -41,7 +41,6 @@
     };
   };
 
-  programs.tmux.enable = true;
   programs.fish.enable = true;
 
   # hyprland
