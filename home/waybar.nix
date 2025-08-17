@@ -66,7 +66,7 @@
           seaparate-outputs = true;
           rewrite = {
             "(.*) — Doom Emacs" = " $1";
-            "Tmux - (.*)" = " $1";
+            "Tmux - (.*)" = "  $1";
           };
         };
 
