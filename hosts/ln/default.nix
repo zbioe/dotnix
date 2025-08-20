@@ -6,7 +6,7 @@
 }:
 {
   imports = [
-    # ./hardware.nix
+    ./hardware.nix
   ];
 
   modules = {
@@ -16,7 +16,7 @@
     };
     time.zone = "America/Sao_Paulo";
     audio.enable = true;
-    fish.enable = true;
+    bluetooth.enable = true;
     boot = {
       enable = true;
       kernelPackages = pkgs.linuxPackages_latest;

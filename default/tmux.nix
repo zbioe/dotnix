@@ -51,7 +51,7 @@
 
       setw -g automatic-rename-format "#{b:pane_current_path}"
       bind e 'attach -c "#{pane_current_path}"; display "default path setted"'
-      bind w run "tmux save-buffer - | xsel -ib"
+      bind w run "tmux save-buffer - | wl-copy"
       bind r 'source-file ~/.tmux.conf; display "reloaded"'
       bind ^R send-keys 'direnv reload' Enter
     '';

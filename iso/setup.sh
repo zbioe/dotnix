@@ -112,7 +112,7 @@ sgdisk -Z --clear \
     --new 1::+3M --typecode=1:ef02 --change-name=1:'BIOS' \
     --new 2::+1G --typecode=2:ef00 --change-name=2:'EFI' \
     --new 3::+26G --typecode=3:8200 --change-name=3:'SWAP' \
-    --new 4::${size:--0} --typecode=4:8309 --change-name=4:'BTRFS' \
+    --new 4::${size:--0} --typecode=4:8300 --change-name=4:'BTRFS' \
     $disk
 
 mapfile -t parts < <(lsblk -l $disk -p -o NAME -n | grep -v ^$disk$)

@@ -36,9 +36,9 @@ in
 
     boot = {
       inherit (cfg) kernelPackages;
-      consoleLogLevel = 5;
+      consoleLogLevel = 0;
       initrd = {
-        systemd.enable = false;
+        systemd.enable = true;
         verbose = false;
       };
       # The required kernel modules for USB
