@@ -7,8 +7,6 @@
 {
   imports = [
     # ./hardware.nix
-    # ./ui.nix
-    ./packages.nix
   ];
 
   modules = {
@@ -25,8 +23,32 @@
     };
     stylix = {
       enable = true;
+      autoEnable = true;
       theme = "gruvbox-dark-medium";
     };
+    evremap =
+      let
+        dual_role = [
+          {
+            input = "KEY_CAPSLOCK";
+            hold = [ "KEY_LEFTCTRL" ];
+            tap = [ "KEY_ESC" ];
+          }
+        ];
+      in
+      {
+        enable = true;
+        devices = {
+          internal = {
+            device_name = "AT Translated Set 2 keyboard";
+            inherit dual_role;
+          };
+          external = {
+            device_name = "SINO WEALTH Gaming KB ";
+            inherit dual_role;
+          };
+        };
+      };
   };
 
   # DO NOT CHANGE IT
