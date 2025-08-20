@@ -40,15 +40,6 @@
     luks.devices = {
       enc = {
         device = "/dev/disk/by-uuid/42b115e4-218e-47da-94d6-9425368de467";
-        keyFile = "/dev/sda";
-        keyFileSize = 256;
-        preLVM = true;
-        keyFileOffset = 1024;
-        fallbackToPassword = true;
-        allowDiscards = true;
-        # crypttabExtraOpts = [
-        #   "plain"
-        # ];
       };
     };
   };
