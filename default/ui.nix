@@ -118,6 +118,7 @@
       liberation_ttf
       dejavu_fonts
       ubuntu_font_family
+      meslo-lgs-nf
     ]
     ++ builtins.filter lib.attrsets.isDerivation (builtins.attrValues pkgs.nerd-fonts);
 }

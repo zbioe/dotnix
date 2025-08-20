@@ -120,7 +120,7 @@ mapfile -t parts < <(lsblk -l $disk -p -o NAME -n | grep -v ^$disk$)
 mkfs.vfat -n boot ${parts[1]}
 mkswap -L swap ${parts[2]}
 
-echo $password | cryptsetup -q luksFormat ${parts[3]} || error "can't format to luks"
+echo $password | cryptsetup -q luksFormat ${parts[3]} --label luks || error "can't format to luks"
 echo $password | cryptsetup luksOpen ${parts[3]} enc || error "can't open luks"
 
 mkfs.btrfs -L btree /dev/mapper/enc

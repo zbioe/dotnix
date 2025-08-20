@@ -5,6 +5,9 @@
   ...
 }:
 {
+  imports = [
+
+  ];
   nix.settings.experimental-features = [
     "nix-command"
     "flakes"
@@ -32,6 +35,10 @@
     layout = "br";
     model = "abnt2";
     options = "caps:ctrl_modifier";
+  };
+
+  users.users.root = {
+    openssh.authorizedKeys.keys = import ../default/keys.nix;
   };
 
   environment.systemPackages = with pkgs; [

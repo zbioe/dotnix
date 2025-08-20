@@ -33,13 +33,23 @@ in
         message = "enable one bootloader or the system will not boot after disable this module.";
       }
     ];
+
     boot = {
       inherit (cfg) kernelPackages;
-      consoleLogLevel = 0;
+      consoleLogLevel = 5;
       initrd = {
-        systemd.enable = true;
+        systemd.enable = false;
         verbose = false;
       };
+      # The required kernel modules for USB
+      kernelModules = [
+        "vfat"
+        "usb_storage"
+        "usbcore"
+        "nls_cp437"
+        "nls_iso8859_1"
+      ];
+      # silent boot
       kernelParams = [
         "quiet"
         "splash"
