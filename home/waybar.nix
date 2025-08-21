@@ -124,7 +124,7 @@
 
         memory = {
           interval = 1;
-          format = " {percentage}%";
+          format = " {percentage}%";
           tooltip-format = "{used} / {total} G";
         };
         cpu = {
@@ -133,7 +133,7 @@
         };
         disk = {
           interval = 60;
-          format = " {percentage_used}%";
+          format = " {percentage_used}%";
           tooltip-format = "{used} used out of {total} on {path} ";
         };
 

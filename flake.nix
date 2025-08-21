@@ -63,11 +63,12 @@
       homeConfigurations =
         let
           makeConfiguration =
-            stateVersion:
+            stateVersion: input_model: input_variant:
             home.lib.homeManagerConfiguration {
               extraSpecialArgs = {
                 inherit stateVersion;
                 inherit username;
+		inherit input_model input_variant;
                 inherit (hyprland.packages.${system}) hyprland;
               };
               pkgs = import nixpkgs { inherit system; };
@@ -78,8 +79,8 @@
             };
         in
         {
-          am = makeConfiguration "24.11";
-          ln = makeConfiguration "25.05";
+          am = makeConfiguration "24.11" "abnt2" "";
+          ln = makeConfiguration "25.05" "thinkpad" "thinkpad";
         };
 
       # nvim

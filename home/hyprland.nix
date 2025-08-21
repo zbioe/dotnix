@@ -3,6 +3,8 @@
   lib,
   pkgs,
   hyprland,
+  input_model,
+  input_variant,
   ...
 }:
 
@@ -55,7 +57,8 @@
           accel_profile = "adaptive";
           kb_options = "caps:ctrl_modifier";
           kb_layout = "br";
-          kb_model = "abnt2";
+          kb_model = input_model;
+          kb_variant = input_variant;
         };
 
         monitor = ",preferred,auto,1";
