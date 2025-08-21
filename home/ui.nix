@@ -23,7 +23,7 @@
     theme = "gruvbox-dark-medium";
   };
 
-  programs.wofi = {
+  programs.fuzzel = {
     enable = true;
   };
 
