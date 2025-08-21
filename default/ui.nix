@@ -11,24 +11,6 @@
 {
 
   # Display Manager
-  # services.greetd =
-  #   let
-  #     cmd = "uwsm start hyprland-uwsm.desktop";
-  #     command = "${pkgs.greetd.greetd}/bin/agreety --cmd '${cmd}'";
-  #   in
-  #   {
-  #     enable = true;
-  #     settings = {
-  #       default_session = {
-  #         inherit command;
-  #       };
-  #       initial_session = {
-  #         command = cmd;
-  #         user = config.modules.user.name;
-  #       };
-  #     };
-  #   };
-
   services.displayManager = {
     autoLogin = {
       enable = true;

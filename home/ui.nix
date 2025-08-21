@@ -2,6 +2,7 @@
   config,
   lib,
   pkgs,
+  # username,
   ...
 }:
 {
@@ -31,13 +32,23 @@
     enable = true;
   };
 
+  services.mako = {
+    enable = true;
+    settings = {
+      layer = "overlay";
+      default-timeout = 5000;
+      icons = true;
+      border-radius = 15;
+    };
+  };
+
   programs.hyprlock = {
     enable = true;
     settings = {
       general = {
         disable_loading_bar = true;
         immediate_render = true;
-        hide_cursor = false;
+        hide_cursor = true;
       };
       image = [
         {

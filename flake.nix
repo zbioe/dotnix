@@ -68,7 +68,7 @@
               extraSpecialArgs = {
                 inherit stateVersion;
                 inherit username;
-		inherit input_model input_variant;
+                inherit input_model input_variant;
                 inherit (hyprland.packages.${system}) hyprland;
               };
               pkgs = import nixpkgs { inherit system; };

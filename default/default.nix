@@ -3,7 +3,7 @@
   imports = [
     ./ui.nix
     ./tmux.nix
-    ./user.nix
+    ./config.nix
     ./packages.nix
   ];
 
