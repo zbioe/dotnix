@@ -34,9 +34,13 @@
     ];
   };
 
-  boot.initrd.luks.devices = {
-    "enc".device = "/dev/disk/by-uuid/c13ad67f-1440-41e9-983f-b000f5798481";
-  };
+  boot.initrd = {
+    luks.devices = {
+      enc = {
+        device = "/dev/disk/by-uuid/c13ad67f-1440-41e9-983f-b000f5798481";
+      };
+    };
+  }
 
   fileSystems."/home" = {
     device = "/dev/disk/by-uuid/d2159337-23ca-4839-9580-3853690a00b4";
