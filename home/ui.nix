@@ -75,7 +75,6 @@
         window_margin_width = 0;
       };
     };
-    alacritty.enable = true;
   };
 
   home.packages = with pkgs; [
