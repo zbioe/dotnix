@@ -8,6 +8,19 @@
   ...
 }:
 
+let
+  sddm_theme = pkgs.where-is-my-sddm-theme.override {
+    themeConfig.General = with config.lib.stylix.colors.withHashtag; {
+      hideCursor = true;
+      backgroundFill = "${base00}";
+      basicTextColor = "${base05}";
+      passwordCursorColor = "${base0B}";
+      passwordCharacter = "•";
+      passwordInputWidth = "1";
+      passwordFontSize = 62;
+    };
+  };
+in
 {
 
   # Display Manager
@@ -17,23 +30,18 @@
       enable = true;
       user = username;
     };
-    sddm =
-      let
-        sddm_theme = pkgs.where-is-my-sddm-theme.override {
-          themeConfig.General = with config.lib.stylix.colors.withHashtag; {
-            hideCursor = "true";
-
-            backgroundFill = base00;
-            basicTextColor = base05;
-            passwordCursorColor = base08;
-          };
-        };
-      in
-      {
+    sddm = {
+      enable = true;
+      package = pkgs.kdePackages.sddm;
+      theme = "where_is_my_sddm_theme";
+      wayland = {
         enable = true;
-        wayland.enable = true;
-        theme = "${sddm_theme}/share/sddm/themes/where_is_my_sddm_theme";
+        compositor = "kwin";
       };
+      extraPackages = [
+        pkgs.kdePackages.qt5compat
+      ];
+    };
   };
 
   programs.fish.enable = true;
@@ -60,7 +68,6 @@
   # Packages
   environment.systemPackages = with pkgs; [
     # notification
-    dunst
     libnotify
 
     # wallpaper
@@ -82,6 +89,8 @@
     # image manager
     imagemagick # editing and manipulating digital images
 
+    # sddm theme
+    sddm_theme
   ];
 
   environment.sessionVariables = {
@@ -113,7 +122,6 @@
       liberation_ttf
       dejavu_fonts
       ubuntu_font_family
-      meslo-lgs-nf
     ]
     ++ builtins.filter lib.attrsets.isDerivation (builtins.attrValues pkgs.nerd-fonts);
 }
