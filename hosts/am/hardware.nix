@@ -17,6 +17,8 @@
   boot.initrd.availableKernelModules = [
     "xhci_pci"
     "ahci"
+    "aesni_intel"
+    "cryptd"
     "nvme"
     "usb_storage"
     "sd_mod"
@@ -40,6 +42,10 @@
     luks.devices = {
       enc = {
         device = "/dev/disk/by-uuid/42b115e4-218e-47da-94d6-9425368de467";
+        keyFileSize = 4096;
+        keyFileOffset = 2048;
+        keyFileTimeout = 10;
+        keyFile = "/dev/disk/by-id/usb-USB_Flash_Disk-0:0";
       };
     };
   };

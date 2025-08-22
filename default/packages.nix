@@ -52,5 +52,6 @@
     # icon theme
     adwaita-icon-theme
     gnomeExtensions.appindicator
+
   ];
 }

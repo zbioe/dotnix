@@ -19,6 +19,8 @@
     "nvme"
     "usb_storage"
     "sd_mod"
+    "cryptd"
+    "aesni_intel"
   ];
   boot.initrd.kernelModules = [ ];
   boot.kernelModules = [ "kvm-intel" ];
@@ -38,9 +40,13 @@
     luks.devices = {
       enc = {
         device = "/dev/disk/by-uuid/c13ad67f-1440-41e9-983f-b000f5798481";
+        keyFileOffset = 2048;
+        keyFileSize = 4096;
+        keyFileTimeout = 10;
+        keyFile = "/dev/disk/by-id/usb-USB_Flash_Disk-0:0";
       };
     };
-  }
+  };
 
   fileSystems."/home" = {
     device = "/dev/disk/by-uuid/d2159337-23ca-4839-9580-3853690a00b4";

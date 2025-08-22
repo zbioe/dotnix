@@ -46,6 +46,7 @@ in
         "vfat"
         "usb_storage"
         "usbcore"
+        "cryptd"
         "nls_cp437"
         "nls_iso8859_1"
       ];
