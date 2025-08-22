@@ -99,6 +99,7 @@ in
   };
 
   fonts.fontconfig.enable = true;
+  fonts.fontconfig.useEmbeddedBitmaps = true;
   fonts.packages =
     with pkgs;
     [
