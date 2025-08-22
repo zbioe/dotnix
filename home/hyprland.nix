@@ -1,7 +1,4 @@
 {
-  config,
-  lib,
-  pkgs,
   hyprland,
   input_model,
   input_variant,

@@ -12,15 +12,28 @@
 
   # Display Manager
   services.displayManager = {
+    defaultSession = "hyprland-uwsm";
     autoLogin = {
       enable = true;
       user = username;
     };
-    defaultSession = "hyprland-uwsm";
-    sddm = {
-      enable = true;
-      wayland.enable = true;
-    };
+    sddm =
+      let
+        sddm_theme = pkgs.where-is-my-sddm-theme.override {
+          themeConfig.General = with config.lib.stylix.colors.withHashtag; {
+            hideCursor = "true";
+
+            backgroundFill = base00;
+            basicTextColor = base05;
+            passwordCursorColor = base08;
+          };
+        };
+      in
+      {
+        enable = true;
+        wayland.enable = true;
+        theme = "${sddm_theme}/share/sddm/themes/where_is_my_sddm_theme";
+      };
   };
 
   programs.fish.enable = true;

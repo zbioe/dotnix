@@ -1,6 +1,5 @@
 # iso.nix
 {
-  config,
   pkgs,
   ...
 }:
