@@ -57,7 +57,7 @@ home-manager switch --flake .#<hostname>
 
 ## Add Key in USB
 
-see: https://nixos.wiki/wiki/Full_Disk_Encryption
+[Wiki](https://nixos.wiki/wiki/Full_Disk_Encryption)
 
 ### Generate and add key in LUKS
 
@@ -72,7 +72,7 @@ first format your usb with `fdisk` and granted at to skip at least `6144` bytes
 before first partition.\
 after it format the partition to vfat and you will can use it like any other pen
 drive.\
-For finish it, you will put the key after 2048 bytes.
+For finish it, you will put the key after `2048` bytes.
 
 ```sh
 dd if=hdd.key of=/dev/disk/by-id/<usb id> bs=1 seek=2048
