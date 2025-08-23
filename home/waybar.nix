@@ -77,13 +77,11 @@
           format-muted = " ";
           format-icons = [
             ""
-            "󰖀"
-            "󰕾"
+            ""
             ""
-            "󱄡"
           ];
           tooltip = true;
-          tooltip-format = "{volume}% ";
+          tooltip-format = "{volume}%";
           on-click = "pavucontrol";
         };
         "custom/separator" = {
@@ -112,7 +110,7 @@
           tooltip-format = "{device_alias}";
           format-connected-battery = "  {device_battery_percentage}% ";
           tooltip-format-enumerate-connected = "{device_alias}";
-          on-click = "btblock";
+          on-click = "blueman-manager";
         };
 
         network = {
@@ -121,7 +119,7 @@
           format-wifi = "󰖩 ";
           format-ethernet = "󰈀 ";
           tooltip-format = "{essid}  {signalStrength} | {ipaddr}/{cidr}  {bandwidthUpBytes} 󰁅 {bandwidthDownBytes}";
-          on-click = "wifimenu";
+          on-click = "nm-connection-editor";
         };
 
         memory = {

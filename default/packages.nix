@@ -47,14 +47,11 @@
     cloudflared # tunnel to access
     go-2fa # simple 2fa auth
     nomad # nomad cli tool
-
-    # file manager
-    nautilus
+    nautilus # file manager
     geeqie # image viewer
+    pavucontrol # sound control
 
     # icon theme
     adwaita-icon-theme
-    gnomeExtensions.appindicator
-
   ];
 }
