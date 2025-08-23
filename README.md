@@ -87,7 +87,7 @@ boot.initrd = {
       device = "/dev/disk/by-uuid/<device uuid>"; #luks device
       keyFileSize = 4096;
       keyFileOffset = 2048;
-      keyFileTimeout = 10;
+      keyFileTimeout = 10; # put it yo fallback to password after 10s
       keyFile = "/dev/disk/by-id/<usb id>";
     };
   };
