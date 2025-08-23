@@ -3,7 +3,7 @@
 Dotfiles for NixOS.\
 `LVM` with `luks` encryption formated in `btrfs`, using usb key dencryption with
 honeypot.\
-Ui with `Hyprland` as compositor and `waybar`.\
+Simple UI with `Hyprland` as compositor and `waybar`.\
 `Stylix` used to styling and `gruvbox` as color scheme
 
 ![screen](./assets/screen.png)
@@ -59,14 +59,14 @@ home-manager switch --flake .#<hostname>
 
 see: https://nixos.wiki/wiki/Full_Disk_Encryption
 
-### Generate and add keys
+### Generate and add key in LUKS
 
 ```sh
 dd if=/dev/random of=hdd.key bs=4096 count=1
 cryptsetup luksAddKey /dev/disk/by-id/<usb id> ./hdd.key
 ```
 
-### Setup your key in usb
+### Setup your Key in usb wih a honeypot
 
 first format your usb with `fdisk` and granted at to skip at least `6144` bytes
 before first partition.\
