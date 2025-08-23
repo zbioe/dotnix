@@ -18,7 +18,7 @@ ls result/
 Write in usb
 
 ```sh
-dd if=result/iso/nixos-minimal-<date-version>,iso
+dd if=result/iso/nixos-minimal-<date-version>.iso
 ```
 
 ## Setup partitions
@@ -94,5 +94,5 @@ boot.initrd = {
 };
 ```
 
-After it you will have a pen drive working as media, and workings as usb key.
+After it you will have a pen drive working as media, and workings as usb key.   
 Put some honeypot on it, and if someone find it, will not know it is a luks key.
