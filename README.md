@@ -1,10 +1,11 @@
 # Dotnix
 
-Dotfiles for NixOS.\
-`LVM` with `luks` encryption formated in `btrfs`, using usb key dencryption with
-honeypot.\
+Dotfiles for NixOS.  
+   
+It has `LVM` with `luks` encryption, ans is formated in `btrfs`, using usb key dencryption with
+honeypot.  
 Simple UI with `Hyprland` as compositor and `waybar`.\
-`Stylix` used to styling and `gruvbox` as color scheme
+`Stylix` used to styling and `gruvbox` as color scheme   
 
 ![screen](./assets/screen.png)
 
