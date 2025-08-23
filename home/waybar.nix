@@ -92,7 +92,7 @@
         };
         battery = {
           format = "{icon} ";
-          format-charging = "{icon}󰚥 ";
+          format-charging = "{icon} 󰚥 ";
           format-icons = [
             ""
             ""
@@ -100,6 +100,7 @@
             ""
             ""
           ];
+          interval = 10;
           tooltip = true;
           tooltip-format = "{capacity}%";
         };
