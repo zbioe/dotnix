@@ -24,17 +24,5 @@ _: {
       action = "<Left>";
       desc = "to left";
     }
-    {
-      key = "<C-h>";
-      mode = [ "n" ];
-      action = ":tabprevious<CR>";
-      desc = "previus tab";
-    }
-    {
-      key = "<C-l>";
-      mode = [ "n" ];
-      action = ":tabnext<CR>";
-      desc = "next tab";
-    }
   ];
 }
