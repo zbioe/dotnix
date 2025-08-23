@@ -87,12 +87,12 @@ boot.initrd = {
       device = "/dev/disk/by-uuid/<device uuid>"; #luks device
       keyFileSize = 4096;
       keyFileOffset = 2048;
-      keyFileTimeout = 10; # put it yo fallback to password after 10s
+      keyFileTimeout = 10; # put it to fallback to password after 10s
       keyFile = "/dev/disk/by-id/<usb id>";
     };
   };
 };
 ```
 
-After it you will have a pen drive working like any other, and can put some
-honeypot on it, and it also will work as your luks key.
+After it you will have a pen drive working as media, and workings as usb key.
+Put some honeypot on it, and if someone find it, will not know it is a luks key.
