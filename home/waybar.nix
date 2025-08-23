@@ -92,6 +92,7 @@
         };
         battery = {
           format = "{icon} ";
+          format-charging = "{icon}󰚥 ";
           format-icons = [
             ""
             ""

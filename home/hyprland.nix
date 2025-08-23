@@ -74,10 +74,10 @@
           ", Print, exec, uwsm app -- grimblast copy area"
 
           ", XF86AudioRaiseVolume, exec, wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.1+"
-          "$mod SHIFT, S, exec, wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.1+"
+          "$mod SHIFT, O, exec, wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.1+"
 
           ", XF86AudioLowerVolume, exec, wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.1-"
-          "$mod SHIFT, A, exec, wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.1-"
+          "$mod SHIFT, I, exec, wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.1-"
 
           ", XF86AudioMute, exec, wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"
           "$mod SHIFT, M, exec, wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"
