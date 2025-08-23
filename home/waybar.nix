@@ -83,6 +83,7 @@
           tooltip = true;
           tooltip-format = "{volume}%";
           on-click = "pavucontrol";
+          on-click-middle = "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle";
         };
         "custom/separator" = {
           format = " | ";
