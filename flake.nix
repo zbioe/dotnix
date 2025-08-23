@@ -11,9 +11,8 @@
       hardware,
       hyprland,
       programsdb,
-      nixpkgs-unstable,
       ...
-    }@inputs:
+    }:
     let
       username = "zbioe";
       system = "x86_64-linux";

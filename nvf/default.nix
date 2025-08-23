@@ -60,6 +60,9 @@ in
       enableExtraDiagnostics = true;
       nix = {
         enable = true;
+        extraDiagnostics.enable = true;
+        lsp.enable = true;
+        treesitter.enable = true;
         format = {
           enable = true;
           type = "nixfmt";
