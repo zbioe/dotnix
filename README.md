@@ -2,10 +2,10 @@
 
 Dotfiles for NixOS.  
    
-It has `LVM` with `luks` encryption, ans is formated in `btrfs`, using usb key dencryption with
+It has [LVM](https://sourceware.org/lvm2/) with [luks](https://gitlab.com/cryptsetup/cryptsetup/blob/master/README.md) encryption, ans is formated in [btrfs](https://www.kernel.org/doc/html/v6.17-rc1/filesystems/btrfs.html), using usb key to dencrypt with a
 honeypot.  
-Simple UI with `Hyprland` as compositor and `waybar`.\
-`Stylix` used to styling and `gruvbox` as color scheme   
+Simple UI with [Hyprland](https://github.com/hyprwm/Hyprland) as compositor and [waybar](https://github.com/Alexays/Waybar).\
+[Stylix](https://github.com/nix-community/stylix) used to styling and [gruvbox](https://github.com/dawikur/base16-gruvbox-scheme) as color scheme   
 
 ![screen](./assets/screen.png)
 
@@ -69,7 +69,7 @@ cryptsetup luksAddKey /dev/disk/by-id/<usb id> ./hdd.key
 
 ### Setup your Key in usb wih a honeypot
 
-first format your usb with `fdisk` and granted at to skip at least `6144` bytes
+first format your usb with `fdisk` and skip at least `6144` bytes
 before first partition.\
 after it format the partition to vfat and you will can use it like any other pen
 drive.\
