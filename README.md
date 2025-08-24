@@ -1,13 +1,21 @@
 # Dotnix
 
-Dotfiles for [NixOS](nixos.org).  
-   
-It has [LVM](https://sourceware.org/lvm2/) with [luks](https://gitlab.com/cryptsetup/cryptsetup/blob/master/README.md) encryption and is formated in [btrfs](https://www.kernel.org/doc/html/v6.17-rc1/filesystems/btrfs.html).  
-Uses usb key to dencrypt with a honeypot.  
-Simple UI with [Hyprland](https://github.com/hyprwm/Hyprland) as compositor and [waybar](https://github.com/Alexays/Waybar). as bar  \
-[Stylix](https://github.com/nix-community/stylix) used to styling and [gruvbox](https://github.com/dawikur/base16-gruvbox-scheme) as color scheme   
+Dotfiles for [NixOS](nixos.org).
 
-![screen](./assets/screen.png)
+It has [LVM](https://sourceware.org/lvm2/) with
+[luks](https://gitlab.com/cryptsetup/cryptsetup/blob/master/README.md)
+encryption and is formated in
+[btrfs](https://www.kernel.org/doc/html/v6.17-rc1/filesystems/btrfs.html).\
+Uses usb key to dencrypt with a honeypot.\
+Simple UI with [Hyprland](https://github.com/hyprwm/Hyprland) as compositor and
+[waybar](https://github.com/Alexays/Waybar). as bar\
+[Stylix](https://github.com/nix-community/stylix) used to styling and
+[gruvbox](https://github.com/dawikur/base16-gruvbox-scheme) as color scheme
+
+Dark\
+![screen](./assets/screen-dark.png)\
+Light\
+![screen](./assets/screen-light.png)
 
 ## Setup ISO
 
@@ -69,8 +77,8 @@ cryptsetup luksAddKey /dev/disk/by-id/<usb id> ./hdd.key
 
 ### Setup your Key in usb wih a honeypot
 
-first format your usb with `fdisk` and skip at least `6144` bytes
-before first partition.\
+first format your usb with `fdisk` and skip at least `6144` bytes before first
+partition.\
 after it format the partition to vfat and you will can use it like any other pen
 drive.\
 For finish it, you will put the key after `2048` bytes.
@@ -95,5 +103,5 @@ boot.initrd = {
 };
 ```
 
-After it you will have a pen drive working as media, and workings as usb key.   
+After it you will have a pen drive working as media, and workings as usb key.\
 Put some honeypot on it, and if someone find it, will not know it is a luks key.
