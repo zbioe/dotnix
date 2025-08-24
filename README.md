@@ -2,9 +2,9 @@
 
 Dotfiles for [NixOS](nixos.org).  
    
-It has [LVM](https://sourceware.org/lvm2/) with [luks](https://gitlab.com/cryptsetup/cryptsetup/blob/master/README.md) encryption, ans is formated in [btrfs](https://www.kernel.org/doc/html/v6.17-rc1/filesystems/btrfs.html), using usb key to dencrypt with a
-honeypot.  
-Simple UI with [Hyprland](https://github.com/hyprwm/Hyprland) as compositor and [waybar](https://github.com/Alexays/Waybar).\
+It has [LVM](https://sourceware.org/lvm2/) with [luks](https://gitlab.com/cryptsetup/cryptsetup/blob/master/README.md) encryption and is formated in [btrfs](https://www.kernel.org/doc/html/v6.17-rc1/filesystems/btrfs.html).  
+Uses usb key to dencrypt with a honeypot.  
+Simple UI with [Hyprland](https://github.com/hyprwm/Hyprland) as compositor and [waybar](https://github.com/Alexays/Waybar). as bar  \
 [Stylix](https://github.com/nix-community/stylix) used to styling and [gruvbox](https://github.com/dawikur/base16-gruvbox-scheme) as color scheme   
 
 ![screen](./assets/screen.png)
