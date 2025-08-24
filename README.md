@@ -1,6 +1,6 @@
 # Dotnix
 
-Dotfiles for NixOS.  
+Dotfiles for [NixOS](nixos.org).  
    
 It has [LVM](https://sourceware.org/lvm2/) with [luks](https://gitlab.com/cryptsetup/cryptsetup/blob/master/README.md) encryption, ans is formated in [btrfs](https://www.kernel.org/doc/html/v6.17-rc1/filesystems/btrfs.html), using usb key to dencrypt with a
 honeypot.  
