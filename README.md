@@ -27,7 +27,7 @@ ls result/
 Write in usb
 
 ```sh
-dd if=result/iso/nixos-minimal-<date-version>.iso
+dd if=result/iso/nixos-minimal-<date-version>.iso of=/dev/sdX
 ```
 
 ## Setup partitions
