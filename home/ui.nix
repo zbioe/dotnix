@@ -27,6 +27,7 @@
     enable = true;
     autoEnable = true;
     theme = "gruvbox-dark-medium";
+    polarity = "dark";
   };
 
   programs.fuzzel = {

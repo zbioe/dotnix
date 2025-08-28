@@ -50,6 +50,7 @@
     nautilus # file manager
     geeqie # image viewer
     pavucontrol # sound control
+    busybox # cli utilities
 
     # icon theme
     adwaita-icon-theme
