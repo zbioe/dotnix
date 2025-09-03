@@ -53,6 +53,7 @@
     busybox # cli utilities
     azure-cli # cli to access azure cloud
     kubectl # cli to access kubernetes
+    ansible # ansible cli
 
     # icon theme
     adwaita-icon-theme
