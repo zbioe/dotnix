@@ -51,6 +51,8 @@
     geeqie # image viewer
     pavucontrol # sound control
     busybox # cli utilities
+    azure-cli # cli to access azure cloud
+    kubectl # cli to access kubernetes
 
     # icon theme
     adwaita-icon-theme

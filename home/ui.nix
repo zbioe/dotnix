@@ -87,4 +87,8 @@
     networkmanagerapplet
   ];
 
+  programs.lutris = {
+    enable = true;
+  };
+
 }

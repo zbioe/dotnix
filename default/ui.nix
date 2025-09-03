@@ -125,4 +125,16 @@ in
       ubuntu_font_family
     ]
     ++ builtins.filter lib.attrsets.isDerivation (builtins.attrValues pkgs.nerd-fonts);
+
+  # Games
+  programs.steam = {
+    enable = true;
+    remotePlay.openFirewall = true; # Open ports in the firewall for Steam Remote Play
+    dedicatedServer.openFirewall = true; # Open ports in the firewall for Source Dedicated Server
+    localNetworkGameTransfers.openFirewall = true; # Open ports in the firewall for Steam Local Network Game Transfers
+  };
+  programs.appimage.enable = true;
+  programs.appimage.binfmt = true;
+  services.flatpak.enable = true;
+  programs.nix-ld.enable = true;
 }
