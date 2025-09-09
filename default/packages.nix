@@ -91,6 +91,7 @@
       nchat # TUI for whatsapp and telegram
       neovim # vim improved
       gcc # gnu compiler
+      vi-mongo # mongo tui
 
       terraformWithPlugins # terraform with used plugins
 
