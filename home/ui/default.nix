@@ -4,7 +4,7 @@
 }:
 {
   imports = [
-    ../modules/stylix.nix
+    ../../modules/stylix.nix
     ./hyprland.nix
     ./waybar.nix
   ];
@@ -28,14 +28,6 @@
     autoEnable = true;
     theme = "gruvbox-dark-medium";
     polarity = "dark";
-  };
-
-  programs.fuzzel = {
-    enable = true;
-  };
-
-  programs.ripgrep = {
-    enable = true;
   };
 
   services.mako = {
@@ -86,9 +78,5 @@
   home.packages = with pkgs; [
     networkmanagerapplet
   ];
-
-  programs.lutris = {
-    enable = true;
-  };
 
 }

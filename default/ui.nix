@@ -136,5 +136,21 @@ in
   programs.appimage.enable = true;
   programs.appimage.binfmt = true;
   services.flatpak.enable = true;
-  programs.nix-ld.enable = true;
+  programs.nix-ld = {
+    enable = true;
+    libraries = with pkgs; [
+      libglvnd
+      xorg.libX11
+      xorg.libXrandr
+      xorg.libXext
+      krb5
+      mesa
+      alsa-lib
+      libGL
+      libpng
+      expat
+      zlib
+    ];
+  };
+  hardware.graphics.enable32Bit = true;
 }

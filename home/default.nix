@@ -8,10 +8,8 @@
 
 {
   imports = [
-    ./ui.nix
-    ./hyprland.nix
-    ./waybar.nix
-    ../modules/stylix.nix
+    ./ui
+    ./tools.nix
   ];
 
   home.username = username;
