@@ -1,4 +1,9 @@
-{ pkgs, nixpkgs, ... }:
+{
+  pkgs,
+  nixpkgs,
+  home-module,
+  ...
+}:
 {
   imports = [
     ./ui.nix
@@ -11,7 +16,10 @@
   nixpkgs.config.allowUnfree = true;
 
   nix = {
-    nixPath = [ "nixpkgs=${pkgs.path}" ];
+    nixPath = [
+      "nixpkgs=${pkgs.path}"
+      "home-manager=${home-module}"
+    ];
     registry = {
       nixpkgs.flake = nixpkgs;
     };

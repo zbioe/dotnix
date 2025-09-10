@@ -21,6 +21,7 @@
         inherit (self.packages.${system}) nvf;
         inherit (home.packages.${system}) home-manager;
         inherit (hyprland.packages.${system}) hyprland xdg-desktop-portal-hyprland;
+        home-module = home.nixosModules.home-manager;
       };
       defaultModules = [
         ./modules

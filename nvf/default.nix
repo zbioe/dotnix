@@ -61,7 +61,17 @@ in
       nix = {
         enable = true;
         extraDiagnostics.enable = true;
-        lsp.enable = true;
+        lsp = {
+          enable = true;
+          package = pkgs.nixd;
+          server = "nixd";
+          options = {
+            nixpkgs.expr = "import <nixpkgs> {}";
+            nixos.expr = "(import <nixpkgs/nixos> {}).config";
+            home.expr = "(import <home-manager> {}).config";
+            formatting.command = [ "nixfmt" ];
+          };
+        };
         treesitter.enable = true;
         format = {
           enable = true;
