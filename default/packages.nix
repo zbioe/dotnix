@@ -110,5 +110,8 @@
 
       #wireguard
       wireguard-tools
+
+      # mongo shell
+      mongosh
     ];
 }
