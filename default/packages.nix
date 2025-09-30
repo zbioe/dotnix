@@ -1,5 +1,6 @@
 {
   pkgs,
+  unstable,
   # nvf,
   home-manager,
   ...
@@ -10,7 +11,7 @@
   environment.systemPackages =
     with pkgs;
     let
-      terraformWithPlugins = terraform.withPlugins (p: [
+      terraformWithPlugins = unstable.terraform.withPlugins (p: [
         p.libvirt
         p.azurerm
         p.local
@@ -50,9 +51,11 @@
       # desktop apps
       github-desktop
       telegram-desktop
+      discord
 
       # utilities
       wget # send a get request
+      jq # json query
       btop # monitor of resources
       bottom # btop alternative
       nvtopPackages.intel # GPUs processing monitoring intel
@@ -72,6 +75,7 @@
       busybox # cli utilities
       azure-cli # cli to access azure cloud
       kubectl # cli to access kubernetes
+      kubelogin # tool to kubectl
       ansible # ansible cli
       lazydocker # tui to run rocker
       oxker # lazydocker alternative
@@ -100,5 +104,11 @@
 
       # game
       lutris
+
+      # certbot
+      certbot-full
+
+      #wireguard
+      wireguard-tools
     ];
 }

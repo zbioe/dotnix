@@ -8,6 +8,7 @@
       home,
       stylix,
       nixpkgs,
+      nixpkgs-unstable,
       hardware,
       hyprland,
       programsdb,
@@ -21,6 +22,10 @@
         inherit (self.packages.${system}) nvf;
         inherit (home.packages.${system}) home-manager;
         inherit (hyprland.packages.${system}) hyprland xdg-desktop-portal-hyprland;
+        unstable = import nixpkgs-unstable {
+          inherit system;
+          config.allowUnfree = true;
+        };
         home-module = home.nixosModules.home-manager;
       };
       defaultModules = [

@@ -1,6 +1,7 @@
 {
   pkgs,
   nixpkgs,
+  unstable,
   home-module,
   ...
 }:
@@ -18,6 +19,7 @@
   nix = {
     nixPath = [
       "nixpkgs=${pkgs.path}"
+      "unstable=${unstable.path}"
       "home-manager=${home-module}"
     ];
     registry = {
@@ -100,6 +102,8 @@
   environment = {
     etc = {
       "nix/inputs/nixpkgs".source = nixpkgs;
+      # keet io configurable from OS
+      hosts.enable = false;
     };
     variables = {
       EDITOR = "nvim";
