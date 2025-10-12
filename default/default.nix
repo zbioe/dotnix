@@ -11,6 +11,7 @@
     ./tmux.nix
     ./config.nix
     ./packages.nix
+    ./samba.nix
   ];
 
   hardware.enableAllFirmware = true;

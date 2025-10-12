@@ -4,6 +4,7 @@
   pkgs,
   hyprland,
   username,
+  unstable,
   xdg-desktop-portal-hyprland,
   ...
 }:
@@ -135,7 +136,10 @@ in
   };
   programs.appimage.enable = true;
   programs.appimage.binfmt = true;
-  services.flatpak.enable = true;
+  services.flatpak = {
+    enable = true;
+    package = unstable.flatpak;
+  };
   programs.nix-ld = {
     enable = true;
     libraries = with pkgs; [

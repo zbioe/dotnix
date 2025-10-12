@@ -35,10 +35,14 @@
       librewolf-wayland # firefox like
       brave # chromium like
       tor-browser # firefox like using tor network
+      alacritty # alternative terminal
 
       # disk utilities
       gnome-disk-utility # to see partitions visually
       ntfs3g # support to ntfs
+
+      # display utilities
+      wdisplays # arandr like to wayland
 
       # color picker
       hyprpicker
