@@ -58,7 +58,9 @@
           kb_variant = input_variant;
         };
 
-        monitor = ",preferred,auto,1";
+        monitor = [
+        ",preferred,auto-left,1"
+        ];
 
         bind = [
           "$mod, F, fullscreen,"
