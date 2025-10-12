@@ -1,4 +1,5 @@
 {
+  lib,
   hyprland,
   input_model,
   input_variant,
@@ -41,9 +42,11 @@
         animations = {
           enabled = "no";
         };
+
         decoration = {
           rounding = 0;
         };
+
         windowrulev2 = [
           "noborder, class:.*"
         ];
@@ -129,5 +132,4 @@
       };
     };
   };
-
 }

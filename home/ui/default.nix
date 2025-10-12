@@ -66,11 +66,12 @@
         hide_window_decorations = "yes";
         titlebar_style = "none";
         window_border_width = 0;
-        draw_minimal_borders = "yes";
+        draw_minimal_borders = "no";
         placement_strategy = "top-right";
         tab_bar_style = "hidden";
         window_padding_width = 0;
         window_margin_width = 0;
+        font_size = 10.26;
       };
     };
   };
