@@ -12,9 +12,9 @@ Simple UI with [Hyprland](https://github.com/hyprwm/Hyprland) as compositor and
 [Stylix](https://github.com/nix-community/stylix) used to styling and
 [gruvbox](https://github.com/dawikur/base16-gruvbox-scheme) as color scheme
 
-Dark\
-![screen](./assets/screen-dark.png)\
-Light\
+### Dark
+![screen](./assets/screen-dark.png)
+### Light
 ![screen](./assets/screen-light.png)
 
 ## Setup ISO
