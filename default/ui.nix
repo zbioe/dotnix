@@ -86,6 +86,7 @@ in
     slurp # select utility
     grim # screenshot utility
     grimblast # screenshot
+    tesseract # image to text
 
     # image manager
     imagemagick # editing and manipulating digital images

@@ -19,9 +19,10 @@
         "path" = "/mnt/Shares/Public";
         "browseable" = "yes";
         "read only" = "no";
-        "guest ok" = "yes";
+        "guest ok" = "no";
         "create mask" = "0644";
         "directory mask" = "0755";
+        "valid users" = "zbioe";
       };
     };
   };

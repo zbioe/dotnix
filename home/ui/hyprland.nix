@@ -62,7 +62,7 @@
         };
 
         monitor = [
-        ",preferred,auto-left,1"
+          ",preferred,auto-left,1"
         ];
 
         bind = [
@@ -77,6 +77,7 @@
           "$mod SHIFT, X, exit,"
 
           ", Print, exec, uwsm app -- grimblast copy area"
+          "$mod SHIFT, Y, exec, uwsm app -- grimblast save area - | tesseract stdin stdout | wl-copy"
 
           ", XF86AudioRaiseVolume, exec, wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.1+"
           "$mod SHIFT, O, exec, wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.1+"

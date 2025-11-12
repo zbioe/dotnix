@@ -48,9 +48,11 @@
       hyprpicker
 
       # dev
+      unstable.elixir
       python313
       vim
       git
+      go
 
       # desktop apps
       github-desktop
@@ -100,8 +102,10 @@
       neovim # vim improved
       gcc # gnu compiler
       vi-mongo # mongo tui
+      dig # dns lookup
 
       terraformWithPlugins # terraform with used plugins
+      ansible # config manager
 
       # icon theme
       adwaita-icon-theme
@@ -114,6 +118,9 @@
 
       #wireguard
       wireguard-tools
+
+      # ISO
+      ventoy-full
 
       # mongo shell
       mongosh
