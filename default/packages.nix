@@ -103,6 +103,7 @@
       gcc # gnu compiler
       vi-mongo # mongo tui
       dig # dns lookup
+      haskellPackages.commonmark-cli # markdown formatter
 
       terraformWithPlugins # terraform with used plugins
       ansible # config manager
@@ -124,5 +125,6 @@
 
       # mongo shell
       mongosh
+
     ];
 }
