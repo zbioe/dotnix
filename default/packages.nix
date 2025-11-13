@@ -104,6 +104,7 @@
       vi-mongo # mongo tui
       dig # dns lookup
       haskellPackages.commonmark-cli # markdown formatter
+      ispell # spell checker
 
       terraformWithPlugins # terraform with used plugins
       ansible # config manager
