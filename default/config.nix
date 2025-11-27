@@ -20,6 +20,7 @@
         "systemd-journal"
         "dbus"
         "bluetooth"
+        "docker"
       ];
     };
     time.zone = "America/Sao_Paulo";
@@ -32,7 +33,7 @@
     stylix = {
       enable = true;
       autoEnable = true;
-      theme = "gruvbox-dark-medium";
+      theme = "nord";
       polarity = "dark";
     };
     evremap =

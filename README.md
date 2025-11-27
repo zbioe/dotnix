@@ -4,18 +4,18 @@ Dotfiles for [NixOS](nixos.org).
 
 It has [LVM](https://sourceware.org/lvm2/) with
 [luks](https://gitlab.com/cryptsetup/cryptsetup/blob/master/README.md)
-encryption and is formated in
+encryption and formatted in
 [btrfs](https://www.kernel.org/doc/html/v6.17-rc1/filesystems/btrfs.html).\
-Uses usb key to dencrypt with a honeypot.\
+Uses USB key to decrypt, and can keep the USB usable to other thinks (like a Honeypot).\
 Simple UI with [Hyprland](https://github.com/hyprwm/Hyprland) as compositor and
-[waybar](https://github.com/Alexays/Waybar). as bar\
-[Stylix](https://github.com/nix-community/stylix) used to styling and
-[gruvbox](https://github.com/dawikur/base16-gruvbox-scheme) as color scheme
+[waybar](https://github.com/Alexays/Waybar) as bar.\
+[Stylix](https://github.com/nix-community/stylix) used as Theming framework
 
-### Dark
-![screen](./assets/screen-dark.png)
-### Light
-![screen](./assets/screen-light.png)
+### Gruvbox Dark
+![screen](./assets/gruvbox-dark.png)
+
+### Gruvbox Light
+![screen](./assets/gruvbox-light.png)
 
 ## Setup ISO
 
@@ -48,11 +48,11 @@ systemctl reboot -i
 
 It will give you minimal installation to reboot and boot in HD
 
-## Apply System Config
+## Apply System configuration
 
-first edit `flake.nix` to ensure your user is added and `default/config.nix` and
-`default/key.nix`\
-Also add `hosts/<your host>/default.nix` and `hosts/<your host>/hardware.nix`
+first edit `flake.nix` to ensure change user to yours, `default/config.nix` and
+`default/key.nix`.\
+Also add `hosts/<your host>/default.nix` and `hosts/<your host>/hardware.nix`.
 
 ```sh
 sudo nixos-rebuild switch --flake .#<hostname>
@@ -103,5 +103,5 @@ boot.initrd = {
 };
 ```
 
-After it you will have a pen drive working as media, and workings as usb key.\
-Put some honeypot on it, and if someone find it, will not know it is a luks key.
+After it you will have a pen drive working as media, and workings as USB key.\
+Put some honeypot on it, and if someone find it, will not know it is a LUKs key.

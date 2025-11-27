@@ -108,6 +108,7 @@
 
       terraformWithPlugins # terraform with used plugins
       ansible # config manager
+      openssl # cripto lib
 
       # icon theme
       adwaita-icon-theme
