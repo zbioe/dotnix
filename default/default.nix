@@ -121,6 +121,13 @@
     };
   };
 
+  systemd.tmpfiles.rules = [
+    # grant permission to main user read the system logs
+    "a+ /var/log/boot.log - - - - u:1000:r"
+    "a+ /var/log/auth.log - - - - u:1000:r"
+    "a+ /var/log/syslog   - - - - u:1000:r"
+  ];
+
   # Ensure environment
   environment = {
     etc = {
