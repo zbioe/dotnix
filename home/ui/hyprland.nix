@@ -69,7 +69,7 @@
           "$mod, F, fullscreen,"
           "$mod SHIFT, B, exec, uwsm app -- librewolf"
           "$mod SHIFT, N, exec, uwsm app -- nautilus"
-          "$mod SHIFT, P, exec, uwsm app -- hyprpicker"
+          "$mod SHIFT, P, exec, uwsm app -- hyprpicker | wl-copy"
           "$mod, RETURN, exec, uwsm app -- kitty tmux new-session -A -D -s main && exit"
           "$mod, P, exec, uwsm app -- fuzzel"
           "$mod SHIFT, Q, killactive,"
