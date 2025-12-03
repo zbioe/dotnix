@@ -128,5 +128,14 @@
       # mongo shell
       mongosh
 
+      # image editor
+      krita
+      gimp
+      inkscape
+      potrace
+
+      # screen recorder
+      wf-recorder
+
     ];
 }
