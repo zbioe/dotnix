@@ -35,7 +35,7 @@ in
     };
     image = mkOption {
       type = nullOr (coercedTo package toString path);
-      default = ../assets/wallpaper-nord.png;
+      default = ../assets/wallpaper-gruvbox.jpg;
       example = "./path/to/image";
       description = ''
         The image to use as background.

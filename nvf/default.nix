@@ -1,6 +1,6 @@
 { pkgs, ... }:
 let
-  theme = "nord";
+  theme = "gruvbox";
 in
 {
   imports = [

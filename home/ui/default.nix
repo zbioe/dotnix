@@ -26,7 +26,7 @@
   modules.stylix = {
     enable = true;
     autoEnable = true;
-    theme = "nord";
+    theme = "gruvbox-dark-medium";
     polarity = "dark";
   };
 
