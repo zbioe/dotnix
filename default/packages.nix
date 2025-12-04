@@ -84,6 +84,7 @@
       kubelogin # tool to kubectl
       ansible # ansible cli
       lazydocker # tui to run rocker
+      docker-compose # to test docker infra local
       oxker # lazydocker alternative
       eza # ls alternative
       fd # find ls alternative
