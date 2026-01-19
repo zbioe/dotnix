@@ -18,7 +18,7 @@
   nixpkgs.config = {
     allowUnfree = true;
     permittedInsecurePackages = [
-      "ventoy-1.1.05"
+      # "ventoy-1.1.07"
     ];
   };
 
@@ -67,6 +67,8 @@
       PermitRootLogin = "no";
     };
   };
+
+  programs.command-not-found.enable = true;
 
   programs.dconf.enable = true;
 

@@ -12,12 +12,12 @@
     with pkgs;
     let
       terraformWithPlugins = unstable.terraform.withPlugins (p: [
-        p.libvirt
-        p.azurerm
-        p.local
-        p.acme
-        p.aws
-        p.ansible
+        p.dmacvicar_libvirt
+        p.hashicorp_azurerm
+        p.hashicorp_local
+        p.vancluever_acme
+        p.hashicorp_aws
+        p.nbering_ansible
       ]);
     in
     [
@@ -32,7 +32,7 @@
       nixfmt-rfc-style # formatter
 
       # browser
-      librewolf-wayland # firefox like
+      librewolf # firefox like
       brave # chromium like
       tor-browser # firefox like using tor network
       alacritty # alternative terminal
@@ -67,7 +67,6 @@
       nvtopPackages.intel # GPUs processing monitoring intel
       nvtopPackages.nvidia # GPUs processing monitoring nvidia
       process-compose # TUI for running apps and processes
-      junkie # nettop
       nethogs # TUI for nettop
       broot # TUI file manager
       mkpasswd # create password
@@ -123,9 +122,6 @@
       #wireguard
       wireguard-tools
 
-      # ISO
-      ventoy-full
-
       # mongo shell
       mongosh
 
@@ -138,5 +134,13 @@
       # screen recorder
       wf-recorder
 
+      # music
+      yt-dlp
+      ffmpeg
+      video-downloader
+      media-downloader
+
+      # audio
+      vlc
     ];
 }

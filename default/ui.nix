@@ -107,9 +107,8 @@ in
     [
       noto-fonts
       noto-fonts-cjk-sans
-      noto-fonts-emoji
+      noto-fonts-color-emoji
       noto-fonts-cjk-serif
-      noto-fonts-extra
       symbola
       vegur
       meslo-lgs-nf
@@ -124,7 +123,7 @@ in
       freetype
       liberation_ttf
       dejavu_fonts
-      ubuntu_font_family
+      ubuntu-classic
     ]
     ++ builtins.filter lib.attrsets.isDerivation (builtins.attrValues pkgs.nerd-fonts);
 
