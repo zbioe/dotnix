@@ -20,6 +20,7 @@
           "XDG_CURRENT_DESKTOP,Hyprland"
           "XDG_SESSION_TYPE,wayland"
           "XDG_SESSION_DESKTOP,Hyprland"
+          "GTK_IM_MODULE,wayland"
         ];
 
         misc = {
@@ -72,7 +73,7 @@
           "$mod SHIFT, B, exec, uwsm app -- librewolf"
           "$mod SHIFT, N, exec, uwsm app -- nautilus"
           "$mod SHIFT, P, exec, uwsm app -- hyprpicker | wl-copy"
-          "$mod, RETURN, exec, uwsm app -- ghostty -e tmux new-session -A -D -s main"
+          "$mod, RETURN, exec, uwsm app -- ghostty -e tmux new-session -A -D -s main && exit"
           "$mod, P, exec, uwsm app -- fuzzel"
           "$mod SHIFT, Q, killactive,"
           "$mod SHIFT, R, exec, uwsm app -- hyprlock"
