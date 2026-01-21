@@ -55,6 +55,12 @@ in
     portalPackage = xdg-desktop-portal-hyprland;
     xwayland.enable = true;
   };
+
+  # fix the start hyprland in proper way
+  # https://github.com/NixOS/nixpkgs/commit/874985cfccbb94ed17cc19d2ae1c8e9191b1f886#diff-2a0030aad6c6a750df9d7404cc5f71bd41e6a3ff0183e5b80c5b79254637e0aa
+  # when this change merge in the current version, this can be removed
+  programs.uwsm.waylandCompositors.hyprland.binPath = lib.mkForce "${hyprland}/bin/start-hyprland";
+
   xdg.portal.extraPortals = [
     xdg-desktop-portal-hyprland
     pkgs.xdg-desktop-portal-gtk

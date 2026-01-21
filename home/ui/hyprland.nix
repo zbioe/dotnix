@@ -11,6 +11,7 @@
     hyprland = {
       enable = true;
       package = hyprland;
+      systemd.enable = false; # DISABLE this integration to UWSM can handle it
       xwayland.enable = true;
       settings = {
         "$mod" = "SUPER";
