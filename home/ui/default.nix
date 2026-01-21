@@ -1,5 +1,6 @@
 {
   pkgs,
+  unstable,
   ...
 }:
 {
@@ -60,8 +61,25 @@
   };
 
   programs = {
+    bat = {
+      enable = true;
+    };
+    alacritty = {
+      enable = true;
+      package = unstable.alacritty;
+    };
+    ghostty = {
+      enable = true;
+      package = unstable.ghostty;
+      systemd.enable = true;
+      installVimSyntax = true;
+      installBatSyntax = true;
+      enableBashIntegration = true;
+      enableFishIntegration = true;
+    };
     kitty = {
       enable = true;
+      package = unstable.kitty;
       settings = {
         hide_window_decorations = "yes";
         titlebar_style = "none";

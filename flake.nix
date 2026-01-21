@@ -17,15 +17,16 @@
     let
       username = "zbioe";
       system = "x86_64-linux";
+      unstable = import nixpkgs-unstable {
+        inherit system;
+        config.allowUnfree = true;
+      };
       specialArgs = {
         inherit nixpkgs username;
         inherit (self.packages.${system}) nvf;
         inherit (home.packages.${system}) home-manager;
         inherit (hyprland.packages.${system}) hyprland xdg-desktop-portal-hyprland;
-        unstable = import nixpkgs-unstable {
-          inherit system;
-          config.allowUnfree = true;
-        };
+        inherit unstable;
         home-module = home.nixosModules.home-manager;
       };
       defaultModules = [
@@ -75,6 +76,7 @@
                 inherit username;
                 inherit input_model input_variant;
                 inherit (hyprland.packages.${system}) hyprland;
+                inherit unstable;
               };
               pkgs = import nixpkgs { inherit system; };
               modules = [
