@@ -20,7 +20,7 @@
           "XDG_CURRENT_DESKTOP,Hyprland"
           "XDG_SESSION_TYPE,wayland"
           "XDG_SESSION_DESKTOP,Hyprland"
-          "GTK_IM_MODULE,wayland"
+          "GTK_IM_MODULE,simple"
         ];
 
         misc = {
