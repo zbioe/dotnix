@@ -61,6 +61,7 @@
 
       # utilities
       wget # send a get request
+      hurl # HTTP requests defined in a simple plain text format.
       jq # json query
       btop # monitor of resources
       bottom # btop alternative
@@ -69,6 +70,7 @@
       process-compose # TUI for running apps and processes
       nethogs # TUI for nettop
       broot # TUI file manager
+      lstr # tree alternative
       mkpasswd # create password
       libossp_uuid # generate uuid
       cloudflared # tunnel to access
