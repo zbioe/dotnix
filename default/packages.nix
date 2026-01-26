@@ -30,6 +30,7 @@
       # nix utilities
       nixd # debuger
       nixfmt-rfc-style # formatter
+      cachix # nix cache repository
 
       # browser
       librewolf # firefox like
@@ -53,6 +54,10 @@
       vim
       git
       go
+
+      # alternative editors
+      zed
+      helix
 
       # desktop apps
       github-desktop
