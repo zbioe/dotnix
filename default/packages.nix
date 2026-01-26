@@ -56,7 +56,7 @@
       go
 
       # alternative editors
-      zed
+      zed-editor
       helix
 
       # desktop apps
