@@ -47,9 +47,27 @@
       # dev
       unstable.elixir
       python313
+      python313Packages.pip
+      lua
+      ruby
+      gem
+      php
+      jdk
+      julia
       vim
       git
       go
+      argc
+      trashy
+      css-checker
+      scss-lint
+      svelte-check
+      vue
+      typst
+      ghostscript
+      tectonic
+      tetex
+      mermaid-cli
 
       # alternative editors
       zed-editor

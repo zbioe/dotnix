@@ -10,6 +10,8 @@ _:
       set-option -g set-titles on
       set-option -g set-titles-string "Tmux - #S #T"
       setw -g automatic-rename-format "#{b:pane_current_path}"
+      set-option -sg escape-time 10
+      set-option -g focus-events on
 
       # Color
       set -g status-bg black
