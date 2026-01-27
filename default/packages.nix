@@ -1,7 +1,6 @@
 {
   pkgs,
   unstable,
-  # nvf,
   home-manager,
   ...
 }:
@@ -23,9 +22,6 @@
     [
       # home manager
       home-manager
-
-      # custom neovim
-      # nvf
 
       # nix utilities
       nixd # debuger
@@ -131,11 +127,11 @@
 
       # mongo shell
       mongosh
-      
+
       # IA agents
       gemini-cli
       claude-code
-      
+
       # LSP
       nil # nix
 

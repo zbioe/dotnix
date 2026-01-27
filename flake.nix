@@ -3,8 +3,6 @@
 
   outputs =
     {
-      self,
-      nvf,
       home,
       stylix,
       nixpkgs,
@@ -23,7 +21,6 @@
       };
       specialArgs = {
         inherit nixpkgs username;
-        inherit (self.packages.${system}) nvf;
         inherit (home.packages.${system}) home-manager;
         inherit (hyprland.packages.${system}) hyprland xdg-desktop-portal-hyprland;
         inherit unstable;
@@ -89,17 +86,6 @@
           am = makeConfiguration "24.11" "abnt2" "";
           ln = makeConfiguration "25.05" "thinkpad" "thinkpad";
         };
-
-      # nvim
-      packages."${system}" = {
-        nvf =
-          (nvf.lib.neovimConfiguration {
-            pkgs = import nixpkgs { inherit system; };
-            modules = [
-              ./nvf
-            ];
-          }).neovim;
-      };
     };
 
   inputs = {
@@ -123,16 +109,6 @@
         nixpkgs.follows = "nixpkgs";
         systems.follows = "systems";
         flake-parts.follows = "parts";
-      };
-    };
-    nvf = {
-      url = "github:notashelf/nvf";
-      inputs = {
-        nixpkgs.follows = "nixpkgs";
-        systems.follows = "systems";
-        flake-compat.follows = "compat";
-        flake-parts.follows = "parts";
-        mnw.follows = "mnw";
       };
     };
     hyprland = {
