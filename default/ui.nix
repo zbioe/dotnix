@@ -149,6 +149,12 @@ in
   programs.nix-ld = {
     enable = true;
     libraries = with pkgs; [
+      stdenv.cc.cc
+      fuse3
+      icu
+      nss
+      openssl
+      curl
       libglvnd
       xorg.libX11
       xorg.libXrandr

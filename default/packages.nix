@@ -92,6 +92,13 @@
       fd # find ls alternative
       fzf # fuzzy finder
       ripgrep # live grep
+      unzip # extract zip files
+      gzip # zip manipulation
+      gnumake # gnu make
+      nodejs_20 # copilot requirement and some LSPs
+      cargo # Rust support
+      luajitPackages.luarocks # lua package manager
+      gnutar # tar manipulation
       lazygit # TUI for git commands
       dblab # TUI for SQL dbs like PostgreSQL, MySQL, SQLite3, Oracle and SQL Server
       lazysql # alternative to dblab in Go
