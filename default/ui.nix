@@ -61,10 +61,14 @@ in
   # when this change merge in the current version, this can be removed
   programs.uwsm.waylandCompositors.hyprland.binPath = lib.mkForce "${hyprland}/bin/start-hyprland";
 
-  xdg.portal.extraPortals = [
-    xdg-desktop-portal-hyprland
-    pkgs.xdg-desktop-portal-gtk
-  ];
+  xdg.portal = {
+    enable = true;
+    extraPortals = [
+      xdg-desktop-portal-hyprland
+      pkgs.xdg-desktop-portal-gtk
+    ];
+    config.common.default = "*";
+  };
 
   # Hardware
   hardware = {
