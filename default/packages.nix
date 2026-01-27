@@ -131,6 +131,13 @@
 
       # mongo shell
       mongosh
+      
+      # IA agents
+      gemini-cli
+      claude-code
+      
+      # LSP
+      nil # nix
 
       # image editor
       krita
