@@ -152,5 +152,10 @@
 
       # audio
       vlc
+
+      # bug bounty
+      caido
+      burpsuite
+      zap
     ];
 }
