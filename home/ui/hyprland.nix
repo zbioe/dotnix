@@ -1,5 +1,4 @@
 {
-  lib,
   hyprland,
   input_model,
   input_variant,

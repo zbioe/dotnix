@@ -1,7 +1,6 @@
 # from: emmanuelrosa/erosanix/modules/protonvpn.nix
 {
   config,
-  pkgs,
   lib,
   ...
 }:

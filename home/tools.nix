@@ -1,5 +1,4 @@
 {
-  pkgs,
   lib,
   ...
 }:
@@ -77,22 +76,22 @@
       settings = {
         format = lib.concatStrings [
           "$username"
-            "$hostname"
-            "$directory"
-            "$git_branch"
-            "$git_commit"
-            "$git_metrics"
-            "$git_status"
-            "$nix_shell"
-            "$shell"
-            "$memory_usage"
-            "$cmd_duration"
-            "$line_break"
-            "$jobs"
-            "$battery"
-            "$time"
-            "$status"
-            "$character"
+          "$hostname"
+          "$directory"
+          "$git_branch"
+          "$git_commit"
+          "$git_metrics"
+          "$git_status"
+          "$nix_shell"
+          "$shell"
+          "$memory_usage"
+          "$cmd_duration"
+          "$line_break"
+          "$jobs"
+          "$battery"
+          "$time"
+          "$status"
+          "$character"
         ];
         character = {
           error_symbol = "[≻](bold red)";
