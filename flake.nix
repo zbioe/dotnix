@@ -132,6 +132,7 @@
     };
     systems.url = "github:nix-systems/default";
   };
+
   nixConfig = {
     extra-experimental-features = "nix-command flakes";
     extra-substituters = [
