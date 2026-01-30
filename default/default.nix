@@ -89,7 +89,12 @@
 
     # Thumbnail support for images
     tumbler.enable = true;
+
+    # Gnome Keyring service
+    gnome.gnome-keyring.enable = true;
+
   };
+  security.pam.services.login.enableGnomeKeyring = true;
 
   # Console defaults
   console = {

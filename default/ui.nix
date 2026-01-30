@@ -112,30 +112,19 @@ in
 
   fonts.fontconfig.enable = true;
   fonts.fontconfig.useEmbeddedBitmaps = true;
-  fonts.packages =
-    with pkgs;
-    [
-      noto-fonts
-      noto-fonts-cjk-sans
-      noto-fonts-color-emoji
-      noto-fonts-cjk-serif
-      symbola
-      vegur
-      meslo-lgs-nf
-      fira-sans
-      fira-code
-      fira-code-symbols
-      roboto
-      jetbrains-mono
-      material-symbols
-      material-icons
-      fontconfig
-      freetype
-      liberation_ttf
-      dejavu_fonts
-      ubuntu-classic
-    ]
-    ++ builtins.filter lib.attrsets.isDerivation (builtins.attrValues pkgs.nerd-fonts);
+  fonts.packages = with pkgs; [
+    noto-fonts
+    noto-fonts-cjk-sans
+    noto-fonts-color-emoji
+    meslo-lgs-nf
+    fira-code
+    inter
+    material-icons
+    iosevka
+    jetbrains-mono
+    hack-font
+    nerd-fonts.symbols-only
+  ];
 
   # Games
   programs.steam = {
