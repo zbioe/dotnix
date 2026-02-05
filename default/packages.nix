@@ -182,5 +182,8 @@
       caido
       burpsuite
       zap
+
+      # desktop apps
+      unstable.proton-pass
     ];
 }
