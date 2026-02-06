@@ -72,6 +72,7 @@
       # alternative editors
       zed-editor
       helix
+      unstable.code-cursor
 
       # desktop apps
       github-desktop
