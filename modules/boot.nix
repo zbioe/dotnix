@@ -69,7 +69,7 @@ in
         btrfs = true;
       };
       loader = {
-        efi.canTouchEfiVariables = true;
+        efi.canTouchEfiVariables = false;
         # make sure system-boot is disabled
         systemd-boot.enable = false;
         timeout = 0;
@@ -78,6 +78,8 @@ in
           device = "nodev";
           efiSupport = true;
           enableCryptodisk = true;
+          gfxmodeEfi = "1920x1200";
+          efiInstallAsRemovable = true;
         };
       };
     };

@@ -10,6 +10,7 @@
       hardware,
       hyprland,
       programsdb,
+      impermanence,
       ...
     }:
     let
@@ -32,6 +33,7 @@
         programsdb.nixosModules.programs-sqlite
         home.nixosModules.home-manager
         stylix.nixosModules.stylix
+        impermanence.nixosModules.impermanence
       ];
     in
     {
@@ -84,6 +86,7 @@
               pkgs = import nixpkgs { inherit system; };
               modules = [
                 stylix.homeModules.stylix
+                impermanence.nixosModules.home-manager.impermanence
                 ./home
               ];
             };
@@ -138,6 +141,7 @@
       url = "github:hercules-ci/flake-parts";
     };
     systems.url = "github:nix-systems/default";
+    impermanence.url = "github:nix-community/impermanence";
   };
 
   nixConfig = {
