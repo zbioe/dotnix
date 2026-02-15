@@ -111,7 +111,7 @@ done
 sgdisk -Z --clear \
     --new 1::+3M --typecode=1:ef02 --change-name=1:'BIOS' \
     --new 2::+1G --typecode=2:ef00 --change-name=2:'EFI' \
-    --new 3::+26G --typecode=3:8200 --change-name=3:'SWAP' \
+    --new 3::+70G --typecode=3:8200 --change-name=3:'SWAP' \
     --new 4::${size:--0} --typecode=4:8300 --change-name=4:'BTRFS' \
     $disk
 
@@ -134,6 +134,9 @@ btrfs subvolume create /mnt/home
 btrfs subvolume create /mnt/nix
 btrfs subvolume create /mnt/persist
 btrfs subvolume create /mnt/log
+btrfs subvolume create /mnt/nodatacow
+
+chattr +C /mnt/nodatacow
 
 btrfs subvolume snapshot -r /mnt/root /mnt/root-blank
 
@@ -152,6 +155,13 @@ mount -o subvol=persist,compress=zstd,noatime /dev/mapper/enc /mnt/persist
 
 mkdir -p /mnt/var/log
 mount -o subvol=log,compress=zstd,noatime /dev/mapper/enc /mnt/var/log
+
+mkdir -p /mnt/var/lib/nodatacow
+mount -o subvol=nodatacow,noatime /dev/mapper/enc /mnt/var/lib/nodatacow
+
+# initial binds
+mkdir -p /mnt/var/lib/nodatacow/docker
+chmod 710 /mnt/var/lib/nodatacow/docker
 
 mkdir /mnt/boot
 mount ${parts[1]} /mnt/boot
