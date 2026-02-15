@@ -8,10 +8,6 @@
     host = {
       name = "te";
     };
-    boot = {
-      enable = true;
-      kernelPackages = pkgs.linuxPackages_latest;
-    };
   };
 
   # force deep sleep
