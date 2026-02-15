@@ -62,6 +62,7 @@
             hardware.nixosModules.lenovo-thinkpad-x1-6th-gen
             ./hosts/ln
           ];
+        };
         te = nixpkgs.lib.nixosSystem {
           inherit system specialArgs;
           modules = defaultModules ++ [
