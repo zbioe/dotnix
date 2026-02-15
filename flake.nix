@@ -60,6 +60,12 @@
             hardware.nixosModules.lenovo-thinkpad-x1-6th-gen
             ./hosts/ln
           ];
+        te = nixpkgs.lib.nixosSystem {
+          inherit system specialArgs;
+          modules = defaultModules ++ [
+            hardware.nixosModules.lenovo-thinkpad-e14-amd
+            ./hosts/te
+          ];
         };
       };
       # home-manager
@@ -85,6 +91,7 @@
         {
           am = makeConfiguration "24.11" "abnt2" "";
           ln = makeConfiguration "25.05" "thinkpad" "thinkpad";
+          te = makeConfiguration "25.11" "thinkpad" "thinkpad";
         };
     };
 
