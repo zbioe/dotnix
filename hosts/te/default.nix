@@ -8,6 +8,10 @@
     host = {
       name = "te";
     };
+    boot = {
+      enable = true;
+      kernelPackages = pkgs.linuxPackages_latest;
+    };
   };
 
   # force deep sleep
@@ -30,8 +34,6 @@
   };
 
   services.xserver.videoDrivers = [ "amdgpu" ];
-
-  boot.kernelPackages = pkgs.linuxPackages_latest;
 
   hardware.graphics = {
     enable = true;
