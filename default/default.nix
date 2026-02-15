@@ -107,7 +107,8 @@
   # Xdb defaults
   services.xserver.xkb = {
     layout = "br";
-    model = "abnt2";
+    model = "thinkpad";
+    variant = "";
     options = "caps:ctrl_modifier";
   };
 

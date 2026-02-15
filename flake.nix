@@ -87,7 +87,6 @@
               pkgs = import nixpkgs { inherit system; };
               modules = [
                 stylix.homeModules.stylix
-                impermanence.nixosModules.home-manager.impermanence
                 ./home
               ];
             };
