@@ -36,11 +36,23 @@
 
       mount -o subvolid=5 /dev/mapper/enc /mnt
 
+      delete_subvolume_recursively() {
+        IFS=$'\n'
+        for i in $(btrfs subvolume list -o "$1" | cut -f 9- -d ' '); do
+          delete_subvolume_recursively "/mnt/$i"
+        done
+        btrfs subvolume delete "$1"
+      }
+
       if [ -d /mnt/root ]; then
-        btrfs subvolume delete /mnt/root
+	delete_subvolume_recursively /mnt/root
       fi
 
-      btrfs subvolume snapshot /mnt/root-blank /mnt/root
+      if [ -e /mnt/root-blank ]; then
+        btrfs subvolume snapshot /mnt/root-blank /mnt/root
+      else
+        echo "CAUTION: root-blank not found."
+      fi
 
       umount /mnt
     '';
