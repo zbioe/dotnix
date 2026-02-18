@@ -100,7 +100,7 @@
             ""
             ""
           ];
-          interval = 10;
+          interval = 60;
           tooltip = true;
           tooltip-format = "{capacity}%";
         };
@@ -117,7 +117,7 @@
         };
 
         network = {
-          interval = 1;
+          interval = 5;
           format-disconnected = "󰤭 ";
           format-wifi = "󰖩 ";
           format-ethernet = "󰈀 ";
@@ -126,12 +126,12 @@
         };
 
         memory = {
-          interval = 1;
+          interval = 10;
           format = " {percentage}%";
           tooltip-format = "{used} / {total} G";
         };
         cpu = {
-          interval = 1;
+          interval = 5;
           format = " {usage}%";
         };
         disk = {
@@ -141,9 +141,9 @@
         };
 
         clock = {
-          format = ''{:%H:%M}'';
-          format-alt = ''{:%d.%m.%Y}'';
-          tooltip-format = ''<tt>{calendar}</tt>'';
+          format = "{:%H:%M}";
+          format-alt = "{:%d.%m.%Y}";
+          tooltip-format = "<tt>{calendar}</tt>";
           calendar = {
             mode = "month";
             mode-mon-col = 3;

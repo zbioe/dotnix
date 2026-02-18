@@ -27,6 +27,7 @@
       nixd # debuger
       nixfmt-rfc-style # formatter
       cachix # nix cache repository
+      fwupd # bios update
 
       # browser
       librewolf # firefox like

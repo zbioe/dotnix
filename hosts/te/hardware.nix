@@ -45,7 +45,7 @@
       }
 
       if [ -d /mnt/root ]; then
-	delete_subvolume_recursively /mnt/root
+      	delete_subvolume_recursively /mnt/root
       fi
 
       if [ -e /mnt/root-blank ]; then
@@ -68,7 +68,17 @@
     ];
   };
 
-  boot.initrd.luks.devices."enc".device = "/dev/disk/by-uuid/6809fd8d-bbe9-4415-b5f0-f57a64ce7443";
+  boot.initrd = {
+    luks.devices = {
+      enc = {
+        device = "/dev/disk/by-uuid/6809fd8d-bbe9-4415-b5f0-f57a64ce7443";
+        keyFileOffset = 2048;
+        keyFileSize = 4096;
+        keyFileTimeout = 10;
+        keyFile = "/dev/disk/by-id/usb-USB_Flash_Disk-0:0";
+      };
+    };
+  };
 
   fileSystems."/home" = {
     device = "/dev/mapper/enc";

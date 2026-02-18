@@ -58,6 +58,8 @@
     "2606:4700:4700::1001"
   ];
 
+  services.fstrim.enable = true;
+
   services.openssh = {
     enable = true;
     openFirewall = true;
@@ -90,11 +92,8 @@
     # Thumbnail support for images
     tumbler.enable = true;
 
-    # Gnome Keyring service
-    gnome.gnome-keyring.enable = true;
-
   };
-  security.pam.services.login.enableGnomeKeyring = true;
+  security.pam.services.login.enableGnomeKeyring = false;
 
   # Console defaults
   console = {
@@ -114,7 +113,7 @@
 
   # Docker defaults
   virtualisation.docker = {
-    enable = true;
+    enable = false;
     daemon.settings = {
       dns = [
         "1.1.1.1"

@@ -26,9 +26,10 @@
     time.zone = "America/Sao_Paulo";
     audio.enable = true;
     bluetooth.enable = true;
+
     boot = {
       enable = true;
-      kernelPackages = pkgs.linuxPackages_latest;
+      kernelPackages = pkgs.linuxPackages_zen;
     };
     stylix = {
       enable = true;

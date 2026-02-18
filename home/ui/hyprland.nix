@@ -1,4 +1,5 @@
 {
+  pkgs,
   hyprland,
   input_model,
   input_variant,
@@ -25,6 +26,12 @@
         misc = {
           disable_hyprland_logo = true;
           force_default_wallpaper = 0;
+          vfr = true;
+          vrr = 1;
+        };
+
+        render = {
+          direct_scanout = true;
         };
 
         general = {
@@ -67,71 +74,86 @@
           ",preferred,auto-left,1"
         ];
 
-        bind = [
-          "$mod, F, fullscreen,"
-          "$mod SHIFT, B, exec, uwsm app -- librewolf"
-          "$mod SHIFT, N, exec, uwsm app -- nautilus"
-          "$mod SHIFT, P, exec, uwsm app -- hyprpicker | wl-copy"
-          "$mod, RETURN, exec, uwsm app -- ghostty -e tmux new-session -A -D -s main && exit"
-          "$mod, P, exec, uwsm app -- fuzzel"
-          "$mod SHIFT, Q, killactive,"
-          "$mod SHIFT, R, exec, uwsm app -- hyprlock"
-          "$mod SHIFT, X, exit,"
+        bind =
+          let
+            toggleMic = pkgs.writeShellScript "toggle-mic" ''
+              ${pkgs.wireplumber}/bin/wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle
 
-          ", Print, exec, uwsm app -- grimblast copy area"
-          "$mod SHIFT, Y, exec, uwsm app -- grimblast save area - | tesseract stdin stdout | wl-copy"
+              STATUS=$(${pkgs.wireplumber}/bin/wpctl get-volume @DEFAULT_AUDIO_SOURCE@)
 
-          ", XF86AudioRaiseVolume, exec, wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.1+"
-          "$mod SHIFT, O, exec, wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.1+"
+              if [[ "$STATUS" == *"[MUTED]"* ]]; then
+                echo 1 > /sys/class/leds/platform::micmute/brightness
+              else
+                echo 0 > /sys/class/leds/platform::micmute/brightness
+              fi
+            '';
+          in
+          [
+            "$mod, F, fullscreen,"
+            "$mod SHIFT, B, exec, uwsm app -- librewolf"
+            "$mod SHIFT, N, exec, uwsm app -- nautilus"
+            "$mod SHIFT, P, exec, uwsm app -- hyprpicker | wl-copy"
+            "$mod, RETURN, exec, uwsm app -- ghostty -e tmux new-session -A -D -s main && exit"
+            "$mod, P, exec, uwsm app -- fuzzel"
+            "$mod SHIFT, Q, killactive,"
+            "$mod SHIFT, R, exec, uwsm app -- hyprlock"
+            "$mod SHIFT, X, exit,"
 
-          ", XF86AudioLowerVolume, exec, wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.1-"
-          "$mod SHIFT, I, exec, wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.1-"
+            ", Print, exec, uwsm app -- grimblast copy area"
+            "$mod SHIFT, Y, exec, uwsm app -- grimblast save area - | tesseract stdin stdout | wl-copy"
 
-          ", XF86AudioMute, exec, wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"
-          "$mod SHIFT, M, exec, wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"
+            ", XF86AudioRaiseVolume, exec, wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.1+"
+            "$mod SHIFT, O, exec, wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.1+"
 
-          ", XF86MonBrightnessUp, exec, brightnessctl s +5%"
-          ", XF86MonBrightnessDown, exec, brightnessctl s 5%-"
+            ", XF86AudioLowerVolume, exec, wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.1-"
+            "$mod SHIFT, I, exec, wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.1-"
 
-          "$mod, w, workspace, previous"
-          "$mod SHIFT, w, movetoworkspace, previous"
+            ", XF86AudioMute, exec, wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"
+            "$mod SHIFT, M, exec, wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"
 
-          "$mod, 1, workspace, 1"
-          "$mod, 2, workspace, 2"
-          "$mod, 3, workspace, 3"
-          "$mod, 4, workspace, 4"
-          "$mod, 5, workspace, 5"
-          "$mod, 6, workspace, 6"
-          "$mod, 7, workspace, 7"
-          "$mod, 8, workspace, 8"
-          "$mod, 9, workspace, 9"
-          "$mod, 0, workspace, 10"
+            ", XF86MonBrightnessUp, exec, brightnessctl s +5%"
+            ", XF86MonBrightnessDown, exec, brightnessctl s 5%-"
+            ", XF86AudioMicMute, exec, ${toggleMic}"
 
-          "$mod SHIFT, 1, movetoworkspace, 1"
-          "$mod SHIFT, 2, movetoworkspace, 2"
-          "$mod SHIFT, 3, movetoworkspace, 3"
-          "$mod SHIFT, 4, movetoworkspace, 4"
-          "$mod SHIFT, 5, movetoworkspace, 5"
-          "$mod SHIFT, 6, movetoworkspace, 6"
-          "$mod SHIFT, 7, movetoworkspace, 7"
-          "$mod SHIFT, 8, movetoworkspace, 8"
-          "$mod SHIFT, 9, movetoworkspace, 9"
-          "$mod SHIFT, 0, movetoworkspace, 10"
+            "$mod, w, workspace, previous"
+            "$mod SHIFT, w, movetoworkspace, previous"
 
-          "$mod, S, togglespecialworkspace, magic"
-          "$mod SHIFT, S, movetoworkspace, special:magic"
+            "$mod, 1, workspace, 1"
+            "$mod, 2, workspace, 2"
+            "$mod, 3, workspace, 3"
+            "$mod, 4, workspace, 4"
+            "$mod, 5, workspace, 5"
+            "$mod, 6, workspace, 6"
+            "$mod, 7, workspace, 7"
+            "$mod, 8, workspace, 8"
+            "$mod, 9, workspace, 9"
+            "$mod, 0, workspace, 10"
 
-          "$mod, h, movefocus, l"
-          "$mod, l, movefocus, r"
-          "$mod, k, movefocus, u"
-          "$mod, j, movefocus, d"
+            "$mod SHIFT, 1, movetoworkspace, 1"
+            "$mod SHIFT, 2, movetoworkspace, 2"
+            "$mod SHIFT, 3, movetoworkspace, 3"
+            "$mod SHIFT, 4, movetoworkspace, 4"
+            "$mod SHIFT, 5, movetoworkspace, 5"
+            "$mod SHIFT, 6, movetoworkspace, 6"
+            "$mod SHIFT, 7, movetoworkspace, 7"
+            "$mod SHIFT, 8, movetoworkspace, 8"
+            "$mod SHIFT, 9, movetoworkspace, 9"
+            "$mod SHIFT, 0, movetoworkspace, 10"
 
-          "$mod SHIFT, h, movewindow, l"
-          "$mod SHIFT, l, movewindow, r"
-          "$mod SHIFT, k, movewindow, u"
-          "$mod SHIFT, j, movewindow, d"
+            "$mod, S, togglespecialworkspace, magic"
+            "$mod SHIFT, S, movetoworkspace, special:magic"
 
-        ];
+            "$mod, h, movefocus, l"
+            "$mod, l, movefocus, r"
+            "$mod, k, movefocus, u"
+            "$mod, j, movefocus, d"
+
+            "$mod SHIFT, h, movewindow, l"
+            "$mod SHIFT, l, movewindow, r"
+            "$mod SHIFT, k, movewindow, u"
+            "$mod SHIFT, j, movewindow, d"
+
+          ];
       };
     };
   };
