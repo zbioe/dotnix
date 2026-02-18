@@ -140,19 +140,19 @@
     ];
   };
 
-  # Binds
-  fileSystems."/var/lib/docker" = {
-    device = "/var/lib/nodatacow/docker";
-    fsType = "none";
-    options = [ "bind" ];
-  };
-
   swapDevices = [
     {
       device = "/dev/disk/by-partuuid/353ac003-1244-4840-973a-37c8911a2e3e";
       randomEncryption.enable = true;
     }
   ];
+
+  # Binds
+  fileSystems."/var/lib/docker" = {
+    device = "/var/lib/nodatacow/docker";
+    fsType = "none";
+    options = [ "bind" ];
+  };
 
   nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
   hardware.cpu.amd.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;

@@ -109,18 +109,13 @@
 
   # Docker defaults
   virtualisation.docker = {
-    # only run it in rootless mode
-    enable = false;
+    enable = true;
     daemon.settings = {
       dns = [
         "1.1.1.1"
         "8.8.8.8"
       ];
-      storage-driver = "overlay2";
-    };
-    rootless = {
-      enable = true;
-      setSocketVariable = true;
+      storage-driver = "btrfs";
     };
   };
 
