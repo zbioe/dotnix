@@ -109,17 +109,17 @@
 
   # Docker defaults
   virtualisation.docker = {
+    # only run it in rootless mode
     enable = false;
     daemon.settings = {
       dns = [
         "1.1.1.1"
         "8.8.8.8"
       ];
-      log-driver = "journald";
       storage-driver = "overlay2";
     };
     rootless = {
-      enable = false;
+      enable = true;
       setSocketVariable = true;
     };
   };
