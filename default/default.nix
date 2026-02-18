@@ -11,15 +11,11 @@
     ./tmux.nix
     ./config.nix
     ./packages.nix
-    ./samba.nix
   ];
 
   hardware.enableAllFirmware = true;
   nixpkgs.config = {
     allowUnfree = true;
-    permittedInsecurePackages = [
-      # "ventoy-1.1.07"
-    ];
   };
 
   nix = {
@@ -123,7 +119,7 @@
       storage-driver = "overlay2";
     };
     rootless = {
-      enable = true;
+      enable = false;
       setSocketVariable = true;
     };
   };

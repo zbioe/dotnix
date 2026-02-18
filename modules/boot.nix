@@ -40,12 +40,25 @@ in
       initrd = {
         systemd.enable = true;
         verbose = false;
+        availableKernelModules = [
+          "nvme"
+          "xhci_pci"
+          "usb_storage"
+          "sd_mod"
+        ];
+        kernelModules = [
+          "xhci_pci"
+          "usb_storage"
+          "uas"
+          "usbcore"
+        ];
       };
-      # The required kernel modules for USB
       kernelModules = [
         "vfat"
+        "uas"
         "usb_storage"
         "usbcore"
+        "xhci_pci"
         "cryptd"
         "nls_cp437"
         "nls_iso8859_1"
@@ -58,7 +71,7 @@ in
         "boot.shell_on_fail"
         "udev.log_priority=3"
         "rd.udev.log_level=3"
-        "rd.systemd.show_status=false"
+        # "mem_sleep_default=deep"
       ];
       plymouth = {
         enable = true;
