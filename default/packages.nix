@@ -94,6 +94,8 @@
       nethogs # TUI for nettop
       broot # TUI file manager
       lstr # tree alternative
+      lsix # ls image viewer
+      chafa # imave viewer
       mkpasswd # create password
       libossp_uuid # generate uuid
       cloudflared # tunnel to access
