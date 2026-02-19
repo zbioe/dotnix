@@ -1,4 +1,5 @@
 {
+  lib,
   pkgs,
   unstable,
   ...
@@ -8,6 +9,8 @@
     ../../modules/stylix.nix
     ./hyprland.nix
     ./waybar.nix
+    # ./river.nix
+    # ./yambar.nix
   ];
 
   stylix = {
@@ -64,6 +67,15 @@
     bat = {
       enable = true;
     };
+    foot = {
+      enable = true;
+      server.enable = true;
+      settings = {
+        main = {
+          term = "xterm-256color";
+        };
+      };
+    };
     alacritty = {
       enable = true;
       package = unstable.alacritty;
@@ -92,10 +104,35 @@
         font_size = 10.26;
       };
     };
+    tofi = {
+      enable = true;
+      settings = {
+        width = "100%";
+        height = "100%";
+        border-width = 0;
+        outline-width = 0;
+        padding-left = "35%";
+        padding-top = "35%";
+        result-spacing = 25;
+        num-results = 5;
+        background-color = lib.mkForce "#00000080";
+      };
+    };
+    yazi = {
+      enable = true;
+      enableFishIntegration = true;
+    };
   };
 
   home.packages = with pkgs; [
+    libnotify
     networkmanagerapplet
+    wirelesstools
+    brightnessctl
+    wl-clipboard
+    grimblast
+    hyprpicker
+    nautilus
   ];
 
 }

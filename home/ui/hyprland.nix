@@ -93,8 +93,9 @@
             "$mod SHIFT, B, exec, uwsm app -- librewolf"
             "$mod SHIFT, N, exec, uwsm app -- nautilus"
             "$mod SHIFT, P, exec, uwsm app -- hyprpicker | wl-copy"
-            "$mod, RETURN, exec, uwsm app -- ghostty -e tmux new-session -A -D -s main && exit"
-            "$mod, P, exec, uwsm app -- fuzzel"
+            "$mod, RETURN, exec, uwsm app -- foot tmux new-session -A -D -s main && exit"
+            "$mod, Y, exec, foot -e yazi"
+            "$mod, P, exec, uwsm app -- tofi-drun --drun-launch=true"
             "$mod SHIFT, Q, killactive,"
             "$mod SHIFT, R, exec, uwsm app -- hyprlock"
             "$mod SHIFT, X, exit,"
@@ -117,6 +118,11 @@
 
             "$mod, w, workspace, previous"
             "$mod SHIFT, w, movetoworkspace, previous"
+
+            "$mod, H, movefocus, l"
+            "$mod, L, movefocus, r"
+            "$mod, K, movefocus, u"
+            "$mod, J, movefocus, d"
 
             "$mod, 1, workspace, 1"
             "$mod, 2, workspace, 2"
