@@ -74,6 +74,8 @@
       zed-editor
       helix
       unstable.code-cursor
+      unstable.opencode
+      unstable.windsurf
 
       # desktop apps
       github-desktop
