@@ -70,10 +70,10 @@
             device_name = "AT Translated Set 2 keyboard";
             inherit dual_role remap;
           };
-          # external = {
-          #   device_name = "SINO WEALTH Gaming KB ";
-          #   inherit dual_role remap;
-          # };
+          external = {
+            device_name = "SINO WEALTH Bluetooth Keyboard";
+            inherit dual_role remap;
+          };
         };
       };
   };
