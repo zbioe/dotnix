@@ -37,44 +37,5 @@
       theme = "gruvbox-dark-medium";
       polarity = "dark";
     };
-    evremap =
-      let
-        dual_role = [
-          {
-            input = "KEY_CAPSLOCK";
-            hold = [ "KEY_LEFTCTRL" ];
-            tap = [ "KEY_ESC" ];
-          }
-        ];
-        remap = [
-          {
-            input = [
-              "KEY_LEFTCTRL"
-              "KEY_M"
-            ];
-            output = [ "KEY_ENTER" ];
-          }
-          {
-            input = [
-              "KEY_LEFTCTRL"
-              "KEY_H"
-            ];
-            output = [ "KEY_BACKSPACE" ];
-          }
-        ];
-      in
-      {
-        enable = true;
-        devices = {
-          internal = {
-            device_name = "AT Translated Set 2 keyboard";
-            inherit dual_role remap;
-          };
-          external = {
-            device_name = "SINO WEALTH Bluetooth Keyboard";
-            inherit dual_role remap;
-          };
-        };
-      };
   };
 }

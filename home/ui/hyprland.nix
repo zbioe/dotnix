@@ -1,8 +1,6 @@
 {
   pkgs,
   hyprland,
-  input_model,
-  input_variant,
   ...
 }:
 
@@ -64,11 +62,23 @@
           follow_mouse = 2;
           sensitivity = 0;
           accel_profile = "adaptive";
-          kb_options = "caps:ctrl_modifier";
-          kb_layout = "br";
-          kb_model = input_model;
-          kb_variant = input_variant;
+          kb_layout = "us";
+          kb_model = "";
+          kb_variant = "intl";
         };
+
+        device = [
+          {
+            name = "kanata-internal";
+            kb_layout = "br";
+            kb_variant = "thinkpad";
+          }
+          {
+            name = "kanata-external";
+            kb_layout = "us";
+            kb_variant = "intl";
+          }
+        ];
 
         monitor = [
           ",preferred,auto-left,1"
@@ -82,9 +92,9 @@
               STATUS=$(${pkgs.wireplumber}/bin/wpctl get-volume @DEFAULT_AUDIO_SOURCE@)
 
               if [[ "$STATUS" == *"[MUTED]"* ]]; then
-                echo 1 > /sys/class/leds/platform::micmute/brightness
+                echo 1 | sudo tee /sys/class/leds/platform::micmute/brightness
               else
-                echo 0 > /sys/class/leds/platform::micmute/brightness
+                echo 0 | sudo tee /sys/class/leds/platform::micmute/brightness
               fi
             '';
           in
@@ -95,7 +105,7 @@
             "$mod SHIFT, P, exec, uwsm app -- hyprpicker | wl-copy"
             "$mod, RETURN, exec, uwsm app -- foot tmux new-session -A -D -s main && exit"
             "$mod, Y, exec, foot -e yazi"
-            "$mod, P, exec, uwsm app -- tofi-drun --drun-launch=true"
+            "$mod, P, exec, uwsm app -- fuzzel"
             "$mod SHIFT, Q, killactive,"
             "$mod SHIFT, R, exec, uwsm app -- hyprlock"
             "$mod SHIFT, X, exit,"

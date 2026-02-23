@@ -46,23 +46,6 @@
             ./iso
           ];
         };
-        am = nixpkgs.lib.nixosSystem {
-          inherit system specialArgs;
-          modules = defaultModules ++ [
-            hardware.nixosModules.common-cpu-intel
-            hardware.nixosModules.common-gpu-nvidia
-            hardware.nixosModules.common-pc-laptop
-            hardware.nixosModules.common-pc-ssd
-            ./hosts/am
-          ];
-        };
-        ln = nixpkgs.lib.nixosSystem {
-          inherit system specialArgs;
-          modules = defaultModules ++ [
-            hardware.nixosModules.lenovo-thinkpad-x1-6th-gen
-            ./hosts/ln
-          ];
-        };
         te = nixpkgs.lib.nixosSystem {
           inherit system specialArgs;
           modules = defaultModules ++ [
@@ -75,12 +58,11 @@
       homeConfigurations =
         let
           makeConfiguration =
-            stateVersion: input_model: input_variant:
+            stateVersion:
             home.lib.homeManagerConfiguration {
               extraSpecialArgs = {
                 inherit stateVersion;
                 inherit username;
-                inherit input_model input_variant;
                 inherit (hyprland.packages.${system}) hyprland;
                 inherit unstable;
               };
@@ -92,9 +74,7 @@
             };
         in
         {
-          am = makeConfiguration "24.11" "abnt2" "";
-          ln = makeConfiguration "25.05" "thinkpad" "thinkpad";
-          te = makeConfiguration "25.11" "thinkpad" "thinkpad";
+          te = makeConfiguration "25.11";
         };
     };
 

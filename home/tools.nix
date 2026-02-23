@@ -54,9 +54,6 @@
     ripgrep = {
       enable = true;
     };
-    fuzzel = {
-      enable = true;
-    };
     eza = {
       enable = true;
       enableFishIntegration = true;

@@ -104,6 +104,20 @@
         font_size = 10.26;
       };
     };
+    fuzzel = {
+      enable = true;
+      settings = {
+        main = {
+          terminal = "foot";
+          layer = "overlay";
+        };
+        key-bindings = {
+          execute = "Return KP_Enter Control+m";
+          delete-prev = "BackSpace Control+h";
+          delete-prev-word = "Mod1+BackSpace Control+w";
+        };
+      };
+    };
     tofi = {
       enable = true;
       settings = {
@@ -122,6 +136,11 @@
       enable = true;
       enableFishIntegration = true;
     };
+  };
+  gtk = {
+    enable = true;
+    gtk3.extraConfig.gtk-key-theme-name = "Emacs";
+    gtk4.extraConfig.gtk-key-theme-name = "Emacs";
   };
 
   home.packages = with pkgs; [
