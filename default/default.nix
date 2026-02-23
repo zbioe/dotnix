@@ -74,6 +74,13 @@
     udev = {
       enable = true;
       packages = with pkgs; [ gnome-settings-daemon ];
+      extraRules = ''
+        # RK61 Bluetooth
+        KERNEL=="event*", SUBSYSTEM=="input", ATTR{name}=="RK61RGB 5.0*", SYMLINK+="input/rk61"
+          
+        # RK61 USB 
+        KERNEL=="event*", SUBSYSTEM=="input", ATTR{name}=="SINO WEALTH*", SYMLINK+="input/rk61"
+      '';
     };
 
     #
@@ -130,7 +137,9 @@
         '';
       };
       external = {
-        devices = [ "/dev/input/by-id/usb-SINO_WEALTH_Bluetooth_Keyboard-event-kbd" ];
+        devices = [
+          "/dev/input/rk61"
+        ];
         extraDefCfg = ''
           process-unmapped-keys yes
           linux-output-device-name "kanata-external"
