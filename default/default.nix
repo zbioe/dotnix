@@ -76,10 +76,10 @@
       packages = with pkgs; [ gnome-settings-daemon ];
       extraRules = ''
         # RK61 Bluetooth
-        KERNEL=="event*", SUBSYSTEM=="input", ATTR{name}=="RK61RGB 5.0*", SYMLINK+="input/rk61"
-          
-        # RK61 USB 
-        KERNEL=="event*", SUBSYSTEM=="input", ATTR{name}=="SINO WEALTH*", SYMLINK+="input/rk61"
+        ACTION=="add", KERNEL=="event*", SUBSYSTEM=="input", ATTRS{name}=="RK61RGB 5.0 Keyboard", SYMLINK+="input/rk61", TAG+="systemd", ENV{SYSTEMD_WANTS}+="kanata-external.service"
+
+        # RK61 USB (Adicionado o ATTRS com 'S' aqui também para garantir)
+        ACTION=="add", KERNEL=="event*", SUBSYSTEM=="input", ATTRS{name}=="*SINO WEALTH*", SYMLINK+="input/rk61", TAG+="systemd", ENV{SYSTEMD_WANTS}+="kanata-external.service"
       '';
     };
 
