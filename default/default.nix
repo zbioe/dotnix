@@ -76,10 +76,7 @@
       packages = with pkgs; [ gnome-settings-daemon ];
       extraRules = ''
         # RK61 Bluetooth
-        ACTION=="add", KERNEL=="event*", SUBSYSTEM=="input", ATTRS{name}=="RK61RGB 5.0 Keyboard", SYMLINK+="input/rk61", TAG+="systemd", ENV{SYSTEMD_WANTS}+="kanata-external.service"
-
-        # RK61 USB (Adicionado o ATTRS com 'S' aqui também para garantir)
-        ACTION=="add", KERNEL=="event*", SUBSYSTEM=="input", ATTRS{name}=="*SINO WEALTH*", SYMLINK+="input/rk61", TAG+="systemd", ENV{SYSTEMD_WANTS}+="kanata-external.service"
+        ACTION=="add", KERNEL=="event*", SUBSYSTEM=="input", ATTRS{name}=="RK61RGB 5.0 Keyboard", SYMLINK+="input/rk61_bt", TAG+="systemd", ENV{SYSTEMD_WANTS}+="kanata-external.service"
       '';
     };
 
@@ -121,7 +118,10 @@
     enable = true;
     keyboards = {
       internal = {
-        devices = [ "/dev/input/by-path/platform-i8042-serio-0-event-kbd" ];
+        devices = [
+
+          "/dev/input/by-path/platform-i8042-serio-0-event-kbd"
+        ];
         extraDefCfg = ''
           process-unmapped-keys yes
           linux-output-device-name "kanata-internal"
@@ -138,7 +138,15 @@
       };
       external = {
         devices = [
-          "/dev/input/rk61"
+          # bluetooth
+          "/dev/input/rk61_bt"
+
+          # USB
+          "/dev/input/by-id/usb-SINO_WEALTH_Bluetooth_Keyboard-event-kbd"
+          "/dev/input/by-id/usb-258a_00e1*-event-kbd" # Curinga pelo ID
+
+          # Wireless
+          "/dev/input/by-id/usb-Compx_2.4G_Wireless_Receiver-event-kbd"
         ];
         extraDefCfg = ''
           process-unmapped-keys yes
