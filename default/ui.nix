@@ -64,10 +64,19 @@ in
   xdg.portal = {
     enable = true;
     extraPortals = [
-      xdg-desktop-portal-hyprland
       pkgs.xdg-desktop-portal-gtk
     ];
-    config.common.default = "*";
+    config = {
+      hyprland = {
+        default = [
+          "hyprland"
+          "gtk"
+        ];
+      };
+      common = {
+        default = [ "gtk" ];
+      };
+    };
   };
 
   # Hardware
@@ -108,6 +117,9 @@ in
   environment.sessionVariables = {
     # https://nixos.wiki/wiki/Wayland#Applications
     NIXOS_OZONE_WL = "1";
+    XDG_CURRENT_DESKTOP = "Hyprland";
+    XDG_SESSION_TYPE = "wayland";
+    XDG_SESSION_DESKTOP = "Hyprland";
   };
 
   fonts.fontconfig.enable = true;

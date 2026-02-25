@@ -70,6 +70,13 @@
 
   programs.dconf.enable = true;
 
+  # AI services
+  services.ollama = {
+    enable = true;
+    acceleration = "rocm";
+  };
+  ####
+
   services = {
     udev = {
       enable = true;

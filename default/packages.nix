@@ -71,11 +71,7 @@
       mermaid-cli
 
       # alternative editors
-      zed-editor
       helix
-      unstable.code-cursor
-      unstable.opencode
-      unstable.windsurf
 
       # desktop apps
       github-desktop
@@ -159,9 +155,15 @@
       # mongo shell
       mongosh
 
-      # IA agents
+      # AI agents
       gemini-cli
-      claude-code
+
+      # AI editors
+      unstable.zed-editor
+      unstable.code-cursor
+      unstable.windsurf
+      unstable.claude-code
+      unstable.opencode
 
       # LSP
       nil # nix
