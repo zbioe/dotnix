@@ -74,6 +74,15 @@
   services.ollama = {
     enable = true;
     acceleration = "rocm";
+    host = "0.0.0.0";
+  };
+  services.open-webui = {
+    enable = true;
+    port = 3333;
+    environment = {
+      OLLAMA_API_BASE_URL = "http://127.0.0.1:11434";
+      WEBUI_AUTH = "False";
+    };
   };
   ####
 
