@@ -28,6 +28,12 @@ in
     hardware.bluetooth = {
       enable = true;
       powerOnBoot = cfg.powerOnBoot;
+      settings = {
+        General = {
+          FastConnectable = true;
+          UserspaceHID = true; 
+        };
+      };
     };
     services.blueman.enable = true;
   };

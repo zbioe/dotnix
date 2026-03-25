@@ -82,6 +82,7 @@
 
         monitor = [
           ",preferred,auto-left,1"
+	  "DP-1, 1920x1080@180, 0x0, 1"
         ];
 
         bind =
@@ -128,11 +129,6 @@
 
             "$mod, w, workspace, previous"
             "$mod SHIFT, w, movetoworkspace, previous"
-
-            "$mod, H, movefocus, l"
-            "$mod, L, movefocus, r"
-            "$mod, K, movefocus, u"
-            "$mod, J, movefocus, d"
 
             "$mod, 1, workspace, 1"
             "$mod, 2, workspace, 2"

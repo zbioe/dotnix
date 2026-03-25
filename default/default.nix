@@ -11,6 +11,7 @@
     ./tmux.nix
     ./config.nix
     ./packages.nix
+    ./webcam.nix
   ];
 
   hardware.enableAllFirmware = true;
@@ -46,6 +47,7 @@
   };
 
   networking.networkmanager.enable = true;
+  networking.networkmanager.wifi.powersave = false;
   networking.firewall.enable = true;
   networking.nameservers = [
     "1.1.1.1"
@@ -235,6 +237,53 @@
     };
   };
 
+  # search engine
+  #
+  services.whoogle-search = {
+    enable = true;
+    port = 8821;
+    extraEnv = {
+      WHOOGLE_CONFIG_THEME = "dark";
+      WHOOGLE_CONFIG_LANGUAGE = "pt-br";
+      WHOOGLE_CONFIG_SEARCH_LANGUAGE = "pt-br";
+      WHOOGLE_CONFIG_COUNTRY = "BR";
+    };
+  };
+  services.searx = {
+    enable = true;
+    package = pkgs.searxng;
+    settings = {
+      server = {
+        port = 8822;
+        bind_address = "127.0.0.1";
+        secret_key = "ihae3ael8iequeiZaipahyahzeewohdo"; 
+      };
+  
+      search = {
+        safe_search = 0;
+        autocomplete = "duckduckgo"; 
+        default_lang = "pt-BR";
+      };
+  
+      ui = {
+        theme = "simple";
+        default_locale = "pt-BR";
+      };
+  
+      engines = pkgs.lib.mkForce [
+        # O Startpage is the google
+        { name = "startpage"; engine = "startpage"; shortcut = "s"; weight = 3; }
+        { name = "duckduckgo"; engine = "duckduckgo"; shortcut = "d"; weight = 2; }
+        { name = "brave"; engine = "brave"; shortcut = "b"; weight = 1; }
+        { name = "bing"; engine = "bing"; shortcut = "bi"; weight = 1; }
+        
+        # Motores de Dev Nativos e Estáveis
+        { name = "github"; engine = "github"; shortcut = "gh"; }
+        { name = "stackoverflow"; engine = "stackexchange"; shortcut = "st"; }
+        { name = "nixos wiki"; engine = "mediawiki"; base_url = "https://nixos.wiki/"; shortcut = "nw"; }
+      ];
+    };
+  };
   systemd.tmpfiles.rules = [
     # grant permission to main user read the system logs
     "a+ /var/log/boot.log - - - - u:1000:r"

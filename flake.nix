@@ -53,6 +53,17 @@
             ./hosts/te
           ];
         };
+        bx = nixpkgs.lib.nixosSystem {
+          inherit system specialArgs;
+          modules = defaultModules ++ [
+            hardware.nixosModules.common-pc
+            hardware.nixosModules.common-cpu-amd
+            hardware.nixosModules.common-cpu-amd-pstate
+            hardware.nixosModules.common-gpu-amd
+            hardware.nixosModules.common-pc-ssd
+            ./hosts/bx
+          ];
+        };
       };
       # home-manager
       homeConfigurations =
@@ -75,6 +86,7 @@
         in
         {
           te = makeConfiguration "25.11";
+          bx = makeConfiguration "25.11";
         };
     };
 

@@ -41,14 +41,16 @@
 
       # display utilities
       wdisplays # arandr like to wayland
+      wlr-randr
 
       # color picker
       hyprpicker
 
       # dev
       unstable.elixir
-      python313
-      python313Packages.pip
+      python312
+      python312Packages.pip
+      uv
       lua
       ruby
       gem
@@ -163,7 +165,7 @@
       unstable.code-cursor
       unstable.windsurf
       unstable.claude-code
-      unstable.opencode
+      opencode
 
       # LSP
       nil # nix

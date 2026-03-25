@@ -21,11 +21,15 @@
         "dbus"
         "bluetooth"
         "docker"
+        "adbusers"
       ];
     };
     time.zone = "America/Sao_Paulo";
     audio.enable = true;
-    bluetooth.enable = true;
+    bluetooth = {
+      enable = true;
+      powerOnBoot = true;
+    };
 
     boot = {
       enable = true;
