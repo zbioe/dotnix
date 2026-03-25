@@ -61,7 +61,17 @@
       ];
     };
 
-  boot.initrd.luks.devices."enc".device = "/dev/disk/by-uuid/8e7e951a-5b4c-4bfe-92f2-57d1f88da1d7";
+  boot.initrd = {
+    luks.devices = {
+      enc = {
+        device = "/dev/disk/by-uuid/8e7e951a-5b4c-4bfe-92f2-57d1f88da1d7";
+        keyFileOffset = 2048;
+        keyFileSize = 4096;
+        keyFileTimeout = 10;
+        keyFile = "/dev/disk/by-id/usb-Generic_Flash_Disk_5FDD1A0C-0:0";
+      };
+    };
+  };
 
   fileSystems."/home" = {
     device = "/dev/mapper/enc";
