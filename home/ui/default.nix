@@ -141,10 +141,6 @@
     enable = true;
     gtk3.extraConfig.gtk-key-theme-name = "Emacs";
     gtk4.extraConfig.gtk-key-theme-name = "Emacs";
-    theme = {
-      name = "gruvbox-dark";
-      package = pkgs.gruvbox-dark-gtk;
-    };
   };
 
   home.packages = with pkgs; [
