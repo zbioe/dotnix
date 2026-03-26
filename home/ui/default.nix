@@ -136,6 +136,13 @@
       enable = true;
       enableFishIntegration = true;
     };
+    brave = {
+      package = unstable.brave;
+      enable = true;
+      extensions = [
+        { id = "giokfhncgfjkoamdbhfhfhpikaiocccc"; }
+      ];
+    };
   };
   gtk = {
     enable = true;

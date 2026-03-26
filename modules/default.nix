@@ -14,7 +14,6 @@ in
     ./nvidia.nix
     ./boot.nix
     ./stylix.nix
-    # ./evremap.nix
     ./bluetooth.nix
     ./protonvpn.nix
   ];

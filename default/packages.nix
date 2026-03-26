@@ -31,7 +31,7 @@
 
       # browser
       librewolf # firefox like
-      brave # chromium like
+      # brave # chromium like
       tor-browser # firefox like using tor network
       alacritty # alternative terminal
 
