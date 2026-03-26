@@ -55,6 +55,8 @@
     ];
   };
 
+  services.ollama.acceleration = null;
+
   # DO NOT CHANGE IT
   system.stateVersion = "25.11";
 }

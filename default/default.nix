@@ -76,7 +76,6 @@
   # AI services
   services.ollama = {
     enable = true;
-    acceleration = null;
     host = "0.0.0.0";
   };
   services.open-webui = {

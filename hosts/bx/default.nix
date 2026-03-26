@@ -54,6 +54,10 @@
       "/etc/ssh/ssh_host_rsa_key.pub"
     ];
   };
+  services.ollama = {
+    acceleration = "rocm";
+    rocmOverrideGfx = "11.0.0";
+  };
 
   # DO NOT CHANGE IT
   system.stateVersion = "25.11";
