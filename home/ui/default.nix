@@ -139,9 +139,6 @@
     brave = {
       package = unstable.brave;
       enable = true;
-      extensions = [
-        { id = "giokfhncgfjkoamdbhfhfhpikaiocccc"; }
-      ];
     };
   };
   gtk = {

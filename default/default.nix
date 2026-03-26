@@ -1,4 +1,5 @@
 {
+  lib,
   pkgs,
   nixpkgs,
   unstable,
@@ -75,7 +76,7 @@
   # AI services
   services.ollama = {
     enable = true;
-    acceleration = "rocm";
+    acceleration = null;
     host = "0.0.0.0";
   };
   services.open-webui = {
@@ -337,6 +338,7 @@
     };
   };
 
-  programs.chromium.extraOpts = { };
+  # fix brave policy block
+  programs.chromium.extraOpts = lib.mkForce { };
 
 }
