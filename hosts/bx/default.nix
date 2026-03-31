@@ -47,6 +47,7 @@
       "/etc/NetworkManager/system-connections"
     ];
     files = [
+      "/etc/hosts"
       "/etc/machine-id"
       "/etc/ssh/ssh_host_ed25519_key"
       "/etc/ssh/ssh_host_ed25519_key.pub"

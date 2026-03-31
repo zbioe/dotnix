@@ -136,6 +136,8 @@ in
     jetbrains-mono
     hack-font
     nerd-fonts.symbols-only
+    roboto
+    montserrat
   ];
 
   # Games

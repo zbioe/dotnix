@@ -163,9 +163,8 @@
       # AI editors
       unstable.zed-editor
       unstable.code-cursor
-      unstable.windsurf
       unstable.claude-code
-      opencode
+      unstable.opencode
 
       # LSP
       nil # nix

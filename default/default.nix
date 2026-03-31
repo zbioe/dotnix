@@ -111,7 +111,11 @@
     tumbler.enable = true;
 
   };
-  security.pam.services.login.enableGnomeKeyring = false;
+  security = {
+    pki.certificateFiles = [
+      ../certs/dev-root-ca.pem
+    ];
+  };
 
   # Console defaults
   console = {
