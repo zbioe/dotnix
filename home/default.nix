@@ -24,10 +24,18 @@
     EDITOR = "nvim";
   };
 
-   # Let Home Manager install and manage itself.
+  # Let Home Manager install and manage itself.
   programs.home-manager = {
     enable = true;
   };
+
+  home.sessionVariablesExtra = ''
+    if [ -f "${config.home.homeDirectory}/.env" ]; then
+      set -a
+      source "${config.home.homeDirectory}/.env"
+      set +a
+    fi
+  '';
 
   # This value determines the Home Manager release that your configuration is
   # compatible with. This helps avoid breakage when a new Home Manager release

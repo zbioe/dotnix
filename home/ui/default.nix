@@ -9,6 +9,7 @@
     ../../modules/stylix.nix
     ./hyprland.nix
     ./waybar.nix
+    ./insightful.nix
     # ./river.nix
     # ./yambar.nix
   ];
