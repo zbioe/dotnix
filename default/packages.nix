@@ -32,6 +32,7 @@
       # browser
       librewolf # firefox like
       # brave # chromium like
+      chromium # if I need more permission
       tor-browser # firefox like using tor network
       alacritty # alternative terminal
 
@@ -42,6 +43,7 @@
       # display utilities
       wdisplays # arandr like to wayland
       wlr-randr
+      simplescreenrecorder # screen recorder
 
       # color picker
       hyprpicker
@@ -186,6 +188,9 @@
 
       # audio
       vlc
+
+      # AI tools
+      harbor-cli
 
       # bug bounty
       caido
