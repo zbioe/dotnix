@@ -199,5 +199,8 @@
 
       # desktop apps
       unstable.proton-pass
+
+      # container app
+      distrobox
     ];
 }
