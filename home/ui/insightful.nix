@@ -1,229 +1,511 @@
-{ config, pkgs, ... }:
+{
+  config,
+  pkgs,
+  lib,
+  ...
+}:
 
 let
-  # 1. O script que injeta o comando direto no Distrobox
-  insightful-wrapper = pkgs.writeShellScriptBin "insightful" ''
-    distrobox enter ubuntu-work -- bash -c "
-      export DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$(id -u)/bus
-      unset GIO_EXTRA_MODULES
-      cd $HOME/apps/insightful-root && ./Workpuls --no-sandbox
-    "
+  proxyPython = pkgs.python3;
+
+  insightful-daemon = pkgs.writeShellScriptBin "insightful-daemon" ''
+    exec ${proxyPython}/bin/python ${config.home.homeDirectory}/.local/share/insightful-proxy/insightful-daemon.py
   '';
-
-  # 2. O atalho para o seu Rofi / Menu de Aplicativos
-  insightful-desktop = pkgs.makeDesktopItem {
-    name = "insightful";
-    desktopName = "Insightful (Work)";
-    exec = "${insightful-wrapper}/bin/insightful";
-    icon = "${config.home.homeDirectory}/apps/insightful-root/Workpuls.png";
-    categories = [
-      "Utility"
-      "Office"
-    ];
-    terminal = false;
-  };
-
-  proxyPython = pkgs.python3.withPackages (
-    ps: with ps; [
-      dbus-python # ← fornece dbus.mainloop.glib
-      pygobject3 # ← fornece gi.repository.GLib
-      evdev # ← monitor de input real
-      xlib
-    ]
-  );
 
 in
 {
   home.packages = with pkgs; [
     proxyPython
-    socat
     xorg.xprop
     xorg.xsetroot
-    swayidle # monitor de ociosidade universal do wayland
     xdotool
-    glib
-    insightful-wrapper
-    insightful-desktop
-    xset
+    jq
+    swayidle
+    insightful-daemon
   ];
-  home.file.".local/bin/hypr-insightful-proxy.py" = {
+
+  home.file.".local/share/insightful-proxy/insightful-proxy.c" = {
+    text = builtins.readFile ./insightful-proxy/insightful-proxy.c;
+  };
+
+  home.file.".local/share/insightful-proxy/insightful-daemon.py" = {
     executable = true;
     text = ''
       #!/usr/bin/env python3
-      import dbus
-      import dbus.service
-      import dbus.mainloop.glib
-      from gi.repository import GLib
-      import json
-      import subprocess
-      import time
-      import threading
-      import os
-      from evdev import InputDevice, ecodes
-      from pathlib import Path
+      """
+      insightful-daemon.py - runs on HOST (outside Distrobox)
 
-      dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
+      Monitors:
+        1. Hyprland active window (title + class) via hyprctl
+        2. Mouse movement via hyprctl cursorpos polling (100ms)
+        3. Hyprland socket events (window/workspace switches)
+        4. Creates a uinput virtual input device so tracker.node
+           can read real kernel-level input events (needed for APM)
 
-      os.environ["DISPLAY"] = ":0"
+      Writes to /dev/shm/insightful_state for the LD_PRELOAD hook.
 
-      last_activity = time.time()
-      last_x11_pulse = 0 # <-- Controle para não sobrecarregar o X11
+      SHM layout (must match insightful-proxy.c):
+        int64_t last_activity  -- Unix timestamp of last activity
+        int32_t idle_ms        -- reserved (0)
+        int32_t force_window   -- always 1
+        char    window_title[256]
+        char    window_class[256]
+      Total: 528 bytes
+      """
+      import fcntl, json, os, signal, struct, subprocess, sys, socket, threading, time
 
+      # ----------------------------------------------------------------
+      # Shared memory
+      # ----------------------------------------------------------------
+      SHM_PATH = "/dev/shm/insightful_state"
+
+      _last_activity = time.time()
+      _activity_lock = threading.Lock()
+      _shm_fd = -1       # opened once in run_daemon(), reused by write_shm()
+      running = True
 
       def update_activity():
-          global last_activity, last_x11_pulse
-          current_time = time.time()
-          last_activity = current_time
+          global _last_activity
+          with _activity_lock:
+              _last_activity = time.time()
 
-          # PULSO X11 CONTROLADO: Acorda o XWayland no máximo 1 vez por segundo
-          if current_time - last_x11_pulse >= 1.0:
-              subprocess.Popen(["xset", "s", "reset"], stderr=subprocess.DEVNULL)
-              last_x11_pulse = current_time
+      def get_last_activity():
+          with _activity_lock:
+              return _last_activity
 
-      def get_idle_time_ms():
-          return int((time.time() - last_activity) * 1000)
-
-      class IdleMonitor(dbus.service.Object):
-          def __init__(self):
-              bus_name = dbus.service.BusName("org.gnome.Mutter.IdleMonitor", bus=dbus.SessionBus())
-              dbus.service.Object.__init__(self, bus_name, "/org/gnome/Mutter/IdleMonitor/Core")
-
-          @dbus.service.method("org.gnome.Mutter.IdleMonitor", in_signature="", out_signature="t")
-          def GetIdletime(self): return dbus.UInt64(get_idle_time_ms())
-
-      class ScreenSaver(dbus.service.Object):
-          def __init__(self):
-              bus_name = dbus.service.BusName("org.freedesktop.ScreenSaver", bus=dbus.SessionBus())
-              dbus.service.Object.__init__(self, bus_name, "/ScreenSaver")
-
-          @dbus.service.method("org.freedesktop.ScreenSaver", in_signature="", out_signature="b")
-          def GetActive(self): return dbus.Boolean(False)
-
-          @dbus.service.method("org.freedesktop.ScreenSaver", in_signature="", out_signature="u")
-          def GetActiveTime(self): return dbus.UInt32(get_idle_time_ms() // 1000)
-
-      def mouse_event_poller():
-          mouse_dev = None
-          for path in Path("/dev/input").glob("event*"):
-              try:
-                  dev = InputDevice(str(path))
-                  if dev.name == "INSTANT USB GAMING MOUSE ":
-                      mouse_dev = dev
-                      break
-              except:
-                  pass
-
-          if not mouse_dev:
-              return
-
-          while True:
-              try:
-                  for event in mouse_dev.read_loop():
-                      if event.type in (ecodes.EV_KEY, ecodes.EV_REL, ecodes.EV_ABS):
-                          update_activity()
-              except Exception as e:
-                  print(f"[ERROR] Erro no mouse: {e}")
-                  time.sleep(0.1)
-              time.sleep(0.05)
-
-      def keyboard_poller():
-          devices = []
-          for name in ["kanata-external", "kanata-internal"]:
-              for path in Path("/dev/input").glob("event*"):
-                  try:
-                      dev = InputDevice(str(path))
-                      if name in dev.name.lower():
-                          devices.append(dev)
-                          break
-                  except:
-                      pass
-
-          if not devices:
-              return
-
-          while True:
-              for dev in devices:
-                  try:
-                      for event in dev.read_loop():
-                          if event.type == ecodes.EV_KEY and event.value == 1:
-                              update_activity()
-                  except:
-                      pass
-              time.sleep(0.05)
-
-      def title_updater():
-          from Xlib import display, X
-
-          # Cria a "Janela Fantasma" invisível usando Xlib nativo
+      def get_hyprland_window():
           try:
-              d = display.Display()
-              root = d.screen().root
-              # Janela de 1x1 pixel, escondida, sem interface
-              dummy_win = root.create_window(0, 0, 1, 1, 0, d.screen().root_depth, X.InputOutput, X.CopyFromParent)
-              dummy_id = str(dummy_win.id)
-              print(f"Janela Fantasma criada com sucesso. ID: {dummy_id}")
+              r = subprocess.run(["hyprctl", "activewindow", "-j"],
+                                 capture_output=True, text=True, timeout=2)
+              if r.returncode == 0 and r.stdout.strip():
+                  d = json.loads(r.stdout)
+                  if d and d.get("title"):
+                      return d.get("title","Desktop")[:200], d.get("class","Desktop")[:200]
+          except Exception:
+              pass
+          return "Desktop", "Desktop"
+
+      def shm_open_once():
+          """Open (or create) the SHM file once. Returns fd."""
+          global _shm_fd
+          if _shm_fd >= 0:
+              return _shm_fd
+          _shm_fd = os.open(SHM_PATH, os.O_CREAT | os.O_RDWR, 0o666)
+          # Pre-fill 528 bytes so the mmap in the C hook has valid backing pages
+          os.ftruncate(_shm_fd, 528)
+          print(f"[SHM] opened fd={_shm_fd}", file=sys.stderr)
+          return _shm_fd
+
+      def write_shm(title, cls, ts):
+          """Write state to SHM in-place (seek to 0, no truncate).
+          This preserves the mmap backing pages so the C hook's
+          mmap pointer stays valid for the lifetime of the file."""
+          try:
+              fd = shm_open_once()
+              tb = title.encode("utf-8","replace")[:255]
+              cb = cls.encode("utf-8","replace")[:255]
+              t256 = tb + b"\x00"*(256-len(tb))
+              c256 = cb + b"\x00"*(256-len(cb))
+              data = struct.pack("<qii256s256s", int(ts), 0, 1, t256, c256)
+              os.lseek(fd, 0, os.SEEK_SET)
+              os.write(fd, data)
           except Exception as e:
-              print(f"Erro ao criar janela fantasma: {e}")
-              return
+              print(f"[SHM] write error: {e}", file=sys.stderr)
 
-          last_title = ""
-          while True:
+      # ----------------------------------------------------------------
+      # uinput virtual device
+      # ----------------------------------------------------------------
+      UINPUT_PATH   = "/dev/uinput"
+      UI_DEV_CREATE = 0x5501
+      UI_DEV_DESTROY= 0x5502
+      UI_SET_EVBIT  = 0x40045564
+      UI_SET_RELBIT = 0x40045566
+      UI_DEV_SETUP  = 0x405c5503
+      EV_SYN=0; EV_REL=2; REL_X=0
+
+      _uinput_fd = None
+      _uinput_lock = threading.Lock()
+
+      def uinput_open():
+          global _uinput_fd
+          try:
+              fd = os.open(UINPUT_PATH, os.O_WRONLY | os.O_NONBLOCK)
+              fcntl.ioctl(fd, UI_SET_EVBIT, EV_SYN)
+              fcntl.ioctl(fd, UI_SET_EVBIT, EV_REL)
+              fcntl.ioctl(fd, UI_SET_RELBIT, REL_X)
+              name = b"insightful-virtual-mouse" + b"\x00"*56   # 80 bytes total
+              setup = struct.pack("=HHHH80sI", 0x06, 0, 0, 1, name, 0)
+              fcntl.ioctl(fd, UI_DEV_SETUP, setup)
+              fcntl.ioctl(fd, UI_DEV_CREATE)
+              _uinput_fd = fd
+              print("[uinput] Virtual mouse created", file=sys.stderr)
+              return True
+          except Exception as e:
+              print(f"[uinput] Cannot create device: {e}", file=sys.stderr)
+              return False
+
+      def uinput_close():
+          global _uinput_fd
+          if _uinput_fd is not None:
               try:
-                  # Pega a verdade absoluta do Hyprland
-                  active_json = subprocess.check_output(["hyprctl", "activewindow", "-j"], text=True).strip()
-                  if active_json and active_json != "null" and active_json != "{}":
-                      data = json.loads(active_json)
-                      title = data.get("title", "Desktop")[:255]
-                      wm_class = data.get("class", "Desktop")[:255]
+                  fcntl.ioctl(_uinput_fd, UI_DEV_DESTROY)
+                  os.close(_uinput_fd)
+              except Exception:
+                  pass
+              _uinput_fd = None
 
-                      if title != last_title:
-                          # 1. Carimba o título e a classe na nossa Janela Fantasma (que o app não sabe que é nossa)
-                          subprocess.call(["xdotool", "set_window", "--name", title, dummy_id], stderr=subprocess.DEVNULL)
-                          subprocess.call(["xprop", "-id", dummy_id, "-f", "WM_CLASS", "8s", "-set", "WM_CLASS", wm_class], stderr=subprocess.DEVNULL)
+      def uinput_inject():
+          """Write a REL_X + SYN event to the virtual device."""
+          with _uinput_lock:
+              if _uinput_fd is None:
+                  return
+              try:
+                  tv = int(time.time())
+                  # struct input_event: long tv_sec, long tv_usec, u16 type, u16 code, s32 value
+                  rel = struct.pack("=qqHHi", tv, 0, EV_REL, REL_X, 1)
+                  syn = struct.pack("=qqHHi", tv, 0, EV_SYN, 0,     0)
+                  os.write(_uinput_fd, rel)
+                  os.write(_uinput_fd, syn)
+              except Exception as e:
+                  print(f"[uinput] inject error: {e}", file=sys.stderr)
 
-                          # 2. Força o servidor X11 a dizer "A janela fantasma é a que está em foco!"
-                          subprocess.call(["xprop", "-root", "-f", "_NET_ACTIVE_WINDOW", "32a", "-set", "_NET_ACTIVE_WINDOW", dummy_id], stderr=subprocess.DEVNULL)
+      # ----------------------------------------------------------------
+      # Activity monitors
+      # ----------------------------------------------------------------
+      # How long to keep injecting uinput events after last detected activity.
+      # On Wayland, keyboard input cannot be detected (security), only mouse
+      # movement and Hyprland events (window/workspace switch). This timeout
+      # bridges keyboard-only periods: user moves mouse, then types for a
+      # while without touching mouse. 300s (5 min) is generous enough that
+      # normal work patterns (mouse move -> type -> mouse move) stay active.
+      ACTIVE_TIMEOUT = 120
 
-                          # 3. Mantém a Root Window atualizada para o seu 'watch xprop' no terminal continuar funcionando
-                          subprocess.call(["xprop", "-root", "-f", "WM_NAME", "8s", "-set", "WM_NAME", title], stderr=subprocess.DEVNULL)
+      # Linux input event types we care about
+      EV_KEY_T = 1    # keyboard key / mouse button
+      EV_REL_T = 2    # mouse relative movement / scroll wheel
 
-                          last_title = title
+      def evdev_monitor():
+          """Read real /dev/input devices for keyboard, mouse buttons, and scroll.
+          This detects ALL physical user input: key presses, mouse clicks,
+          scroll wheel, and mouse movement via the kernel evdev interface.
+          Runs on the HOST where we have the input group."""
+          import select as sel
+          fds = []
+          fd_names = {}
+
+          # Scan all input devices and open ones that support KEY or REL events
+          for i in range(30):
+              path = f"/dev/input/event{i}"
+              if not os.path.exists(path):
+                  continue
+              # Skip our own virtual device
+              try:
+                  name_path = f"/sys/class/input/event{i}/device/name"
+                  if os.path.exists(name_path):
+                      dname = open(name_path).read().strip()
+                      if "insightful" in dname.lower():
+                          continue
+                      # Skip audio/video/power devices (only want HID)
+                      if any(x in dname.lower() for x in ("hdmi", "audio", "video", "power", "mic", "headphone")):
+                          continue
               except Exception:
                   pass
 
-              # Mantém a janela fantasma viva e sincronizada no servidor X
-              d.sync()
-              time.sleep(1)
+              try:
+                  fd = os.open(path, os.O_RDONLY | os.O_NONBLOCK)
+                  # Check if device supports EV_KEY or EV_REL using EVIOCGBIT
+                  import fcntl as fc
+                  buf = bytearray(8)
+                  EVIOCGBIT_0 = (2 << 30) | (ord("E") << 8) | 0x20 | (8 << 16)
+                  fc.ioctl(fd, EVIOCGBIT_0, buf)
+                  bits = struct.unpack("<Q", bytes(buf))[0]
+                  has_key = bool(bits & (1 << EV_KEY_T))
+                  has_rel = bool(bits & (1 << EV_REL_T))
+                  if has_key or has_rel:
+                      fds.append(fd)
+                      fd_names[fd] = path
+                  else:
+                      os.close(fd)
+              except Exception:
+                  try: os.close(fd)
+                  except: pass
+
+          if not fds:
+              print("[evdev] No suitable input devices found", file=sys.stderr)
+              return
+
+          print(f"[evdev] Monitoring {len(fds)} devices: {list(fd_names.values())}", file=sys.stderr)
+
+          while running:
+              try:
+                  readable, _, _ = sel.select(fds, [], [], 1.0)
+                  for fd in readable:
+                      try:
+                          while True:
+                              data = os.read(fd, 72)  # up to 3 events at once
+                              if len(data) < 24:
+                                  break
+                              for off in range(0, len(data) - 23, 24):
+                                  chunk = data[off:off+24]
+                                  _, _, ev_type, _, _ = struct.unpack("=qqHHi", chunk)
+                                  if ev_type in (EV_KEY_T, EV_REL_T):
+                                      update_activity()
+                                      break  # one update per batch is enough
+                      except (BlockingIOError, OSError):
+                          pass
+              except Exception as e:
+                  print(f"[evdev] error: {e}", file=sys.stderr)
+                  time.sleep(1)
+
+          for fd in fds:
+              try: os.close(fd)
+              except: pass
+
+      def cursor_monitor():
+          """Poll hyprctl cursorpos every 100ms. Update activity on change.
+          This is a FALLBACK for when evdev can't detect certain mouse movements
+          (e.g. touchpad gestures routed through Wayland only)."""
+          last_pos = None
+          fails = 0
+          print("[cursor] Starting...", file=sys.stderr)
+          while running:
+              try:
+                  r = subprocess.run(["hyprctl","cursorpos"],
+                                     capture_output=True, text=True, timeout=1)
+                  if r.returncode == 0:
+                      pos = r.stdout.strip()
+                      if pos and pos != last_pos:
+                          if last_pos is not None:
+                              update_activity()
+                          last_pos = pos
+                      fails = 0
+                  time.sleep(0.5)  # slower polling since evdev is primary now
+              except Exception as e:
+                  fails += 1
+                  if fails > 10:
+                      print(f"[cursor] error: {e}", file=sys.stderr)
+                      fails = 0
+                  time.sleep(1)
+
+      def swayidle_monitor():
+          """Use swayidle (ext-idle-notify Wayland protocol) to detect
+          when user resumes from idle. This catches ALL input types
+          including keyboard, mouse clicks, and scroll - the only
+          reliable method on Wayland since evdev is blocked."""
+          import shutil
+          swayidle_bin = shutil.which("swayidle")
+          if not swayidle_bin:
+              print("[swayidle] Not found, skipping", file=sys.stderr)
+              return
+          print("[swayidle] Starting idle monitor...", file=sys.stderr)
+          while running:
+              try:
+                  proc = subprocess.Popen(
+                      [swayidle_bin, "-w",
+                       "timeout", "3", "echo idle",
+                       "resume", "echo resume"],
+                      stdout=subprocess.PIPE,
+                      stderr=subprocess.DEVNULL,
+                      text=True
+                  )
+                  while running and proc.poll() is None:
+                      line = proc.stdout.readline().strip()
+                      if line == "resume":
+                          update_activity()
+                      elif line == "idle":
+                          pass  # just note it, don't do anything
+                  proc.terminate()
+              except Exception as e:
+                  print(f"[swayidle] error: {e}", file=sys.stderr)
+                  time.sleep(5)
+
+      def activity_injector():
+          """Continuously inject uinput events while user is active.
+          The main loop handles SHM writes with the effective timestamp."""
+          print("[injector] Starting...", file=sys.stderr)
+          while running:
+              try:
+                  idle = time.time() - get_last_activity()
+                  if idle < ACTIVE_TIMEOUT:
+                      uinput_inject()
+                  time.sleep(0.5)
+              except Exception:
+                  time.sleep(1)
+
+      def hyprland_events():
+          """Listen for Hyprland compositor events (window switch, etc)."""
+          sig = os.environ.get("HYPRLAND_INSTANCE_SIGNATURE","")
+          if not sig:
+              try:
+                  sig = os.listdir("/run/user/1000/hypr")[0]
+              except Exception:
+                  print("[hypr] cannot find instance", file=sys.stderr)
+                  return
+          sock_path = f"/run/user/1000/hypr/{sig}/.socket2.sock"
+          if not os.path.exists(sock_path):
+              print(f"[hypr] socket not found: {sock_path}", file=sys.stderr)
+              return
+          print(f"[hypr] listening on {sock_path}", file=sys.stderr)
+          while running:
+              try:
+                  with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as s:
+                      s.connect(sock_path)
+                      s.settimeout(5.0)
+                      while running:
+                          try:
+                              raw = s.recv(4096)
+                              if raw:
+                                  for ev in raw.decode("utf-8","ignore").split("\n"):
+                                      if any(k in ev for k in
+                                             ("activewindow","fullscreen","workspace","focusedmon")):
+                                          update_activity()
+                                          uinput_inject()
+                          except socket.timeout:
+                              continue
+                          except Exception:
+                              break
+              except Exception as e:
+                  if running:
+                      print(f"[hypr] error: {e}", file=sys.stderr)
+                  time.sleep(5)
+
+      # ----------------------------------------------------------------
+      # Main
+      # ----------------------------------------------------------------
+      def run_daemon():
+          global running
+          print("[insightful-daemon] Starting...", file=sys.stderr)
+
+          uinput_open()
+
+          for target in (evdev_monitor, cursor_monitor, hyprland_events,
+                        swayidle_monitor, activity_injector):
+              threading.Thread(target=target, daemon=True).start()
+
+          def cleanup(sig=None, frame=None):
+              global running, _shm_fd
+              running = False
+              print("[insightful-daemon] Shutting down...", file=sys.stderr)
+              uinput_close()
+              # Write a stale timestamp (epoch 0) so the C hook reports high
+              # idle time, but do NOT unlink the file -- if Workpuls is still
+              # running, its mmap must remain valid for a future daemon restart.
+              try:
+                  if _shm_fd >= 0:
+                      data = struct.pack("<qii256s256s",
+                          0, 0, 0,
+                          b"\x00"*256,
+                          b"\x00"*256)
+                      os.lseek(_shm_fd, 0, os.SEEK_SET)
+                      os.write(_shm_fd, data)
+                      os.close(_shm_fd)
+                      _shm_fd = -1
+              except Exception:
+                  pass
+              sys.exit(0)
+
+          signal.signal(signal.SIGINT,  cleanup)
+          signal.signal(signal.SIGTERM, cleanup)
+
+          print(f"[insightful-daemon] SHM={SHM_PATH}", file=sys.stderr)
+
+          while running:
+              try:
+                  title, cls = get_hyprland_window()
+                  # Use the "effective" timestamp: if within ACTIVE_TIMEOUT
+                  # of last real activity, report current time (user active).
+                  # Otherwise report the actual last_activity (user idle).
+                  real_la = get_last_activity()
+                  idle = time.time() - real_la
+                  effective_ts = time.time() if idle < ACTIVE_TIMEOUT else real_la
+                  write_shm(title, cls, effective_ts)
+              except Exception as e:
+                  print(f"[daemon] error: {e}", file=sys.stderr)
+              time.sleep(0.5)
 
       if __name__ == "__main__":
-          update_activity()
-          threading.Thread(target=mouse_event_poller, daemon=True).start()
-          threading.Thread(target=keyboard_poller, daemon=True).start()
-          threading.Thread(target=title_updater, daemon=True).start()
-          IdleMonitor()
-          ScreenSaver()
-          loop = GLib.MainLoop()
-          loop.run()
+          run_daemon()
     '';
   };
 
-  systemd.user.services.hypr-insightful-proxy = {
+  home.file.".local/bin/insightful" = {
+    executable = true;
+    text = ''
+      #!/usr/bin/env bash
+      set -euo pipefail
+
+      LIB_DIR="$HOME/.local/share/insightful-proxy"
+      LIB_NAME="libinsightful-proxy.so"
+      SRC="$LIB_DIR/insightful-proxy.c"
+
+      SRC_HASH="$(md5sum "$SRC" 2>/dev/null | cut -d' ' -f1)"
+      HASH_FILE="$LIB_DIR/lib/.src_hash"
+      PREV_HASH="$(cat "$HASH_FILE" 2>/dev/null || true)"
+
+      build_library() {
+          echo "[Insightful] Building LD_PRELOAD library..."
+          distrobox enter ubuntu-work -- bash -c "
+              set -e
+              mkdir -p $LIB_DIR/lib
+              dpkg -l gcc libx11-dev libxss-dev libxext-dev 2>/dev/null | grep -q '^ii.*gcc' || \
+                  sudo apt-get install -y gcc libx11-dev libxss-dev libxext-dev 2>/dev/null
+              gcc -shared -fPIC -O2 \
+                  -o $LIB_DIR/lib/$LIB_NAME \
+                  $SRC \
+                  -lX11 -lXss -ldl -lpthread
+              echo '[Insightful] Build OK'
+              ls -la $LIB_DIR/lib/$LIB_NAME
+          "
+          echo "$SRC_HASH" > "$HASH_FILE"
+      }
+
+      if [ ! -f "$LIB_DIR/lib/$LIB_NAME" ] || [ "$SRC_HASH" != "$PREV_HASH" ]; then
+          build_library
+      fi
+
+      # Ensure input group (GID 174) exists in distrobox so tracker.node
+      # can read /dev/input/event* and find the uinput virtual device
+      ensure_input_group() {
+          local CONTAINER_ID
+          CONTAINER_ID=$(docker ps --format "{{.Names}}" 2>/dev/null | grep ubuntu-work | head -1)
+          if [ -n "$CONTAINER_ID" ]; then
+              HAS_GROUP=$(docker exec --user root "$CONTAINER_ID" \
+                  bash -c 'getent group 174 2>/dev/null | cut -d: -f4' 2>/dev/null)
+              if ! echo "$HAS_GROUP" | grep -q "zbioe"; then
+                  echo "[Insightful] Adding input group to distrobox..."
+                  docker exec --user root "$CONTAINER_ID" bash -c '
+                      groupadd -g 174 input 2>/dev/null || true
+                      usermod -aG input zbioe 2>/dev/null || true
+                  ' 2>/dev/null && echo "[Insightful] Input group configured"
+              fi
+          fi
+      }
+
+      ensure_input_group
+
+      echo "[Insightful] Starting Workpuls..."
+
+      exec distrobox enter ubuntu-work -- bash -c "
+          export LD_PRELOAD='$LIB_DIR/lib/$LIB_NAME'
+          # Suppress GIO/gvfs module errors from NixOS host libraries leaking in
+          unset GIO_EXTRA_MODULES
+          cd \"\$HOME/apps/insightful-root\"
+          exec ./Workpuls --no-sandbox >/dev/null 2>&1
+      "
+    '';
+  };
+
+  systemd.user.services.insightful-proxy-daemon = {
     Unit = {
-      Description = "Proxy D-Bus + evdev exato para mouse e kanata";
+      Description = "Insightful Proxy - Hyprland window + activity bridge for Workpuls";
       PartOf = [ "graphical-session.target" ];
-      After = [
-        "graphical-session.target"
-        "dbus.service"
-      ];
+      After = [ "graphical-session.target" ];
     };
     Service = {
-      ExecStart = "${proxyPython}/bin/python %h/.local/bin/hypr-insightful-proxy.py";
+      ExecStart = "${proxyPython}/bin/python %h/.local/share/insightful-proxy/insightful-daemon.py";
       Restart = "always";
       RestartSec = 3;
-      Environment = [
-        "PATH=${pkgs.hyprland}/bin:${pkgs.xorg.xprop}/bin:${pkgs.xorg.xset}/bin:${pkgs.xdotool}/bin"
-        "DISPLAY=:0"
-      ];
+      Environment = [ "DISPLAY=:0" ];
     };
     Install = {
       WantedBy = [ "graphical-session.target" ];

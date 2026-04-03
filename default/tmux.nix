@@ -13,6 +13,12 @@ _:
       set-option -sg escape-time 10
       set-option -g focus-events on
 
+      set -as terminal-features 'alacritty:sixel'
+      set -g allow-passthrough on
+
+      set -g default-terminal "alacritty"
+      set-option -ga terminal-overrides ",alacritty:Tc"
+
       # Color
       set -g status-bg black
       set -g status-fg white

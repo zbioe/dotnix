@@ -82,7 +82,7 @@
 
         monitor = [
           ",preferred,auto-left,1"
-	  "DP-1, 1920x1080@180, 0x0, 1"
+          "DP-1, 1920x1080@180, 0x0, 1"
         ];
 
         bind =
@@ -104,8 +104,8 @@
             "$mod SHIFT, B, exec, uwsm app -- librewolf"
             "$mod SHIFT, N, exec, uwsm app -- nautilus"
             "$mod SHIFT, P, exec, uwsm app -- hyprpicker | wl-copy"
-            "$mod, RETURN, exec, uwsm app -- foot tmux new-session -A -D -s main && exit"
-            "$mod, Y, exec, foot -e yazi"
+            "$mod, RETURN, exec, uwsm app -- alacritty -e tmux new-session -A -D -s main && exit"
+            "$mod, Y, exec, alacritty -e yazi"
             "$mod, P, exec, uwsm app -- fuzzel"
             "$mod SHIFT, Q, killactive,"
             "$mod SHIFT, R, exec, uwsm app -- hyprlock"
