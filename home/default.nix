@@ -18,10 +18,14 @@
     "${config.home.homeDirectory}/.config/emacs/bin"
     "${config.home.homeDirectory}/.local/bin"
     "${config.home.homeDirectory}/.emacs.d/bin"
+    "${config.home.homeDirectory}/bin"
+    "${config.home.homeDirectory}/go/bin"
   ];
 
   home.sessionVariables = {
     EDITOR = "nvim";
+    GOPATH = "${config.home.homeDirectory}/go";
+    GOBIN = "${config.home.homeDirectory}/go/bin";
   };
 
   # Let Home Manager install and manage itself.
