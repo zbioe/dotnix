@@ -8,20 +8,25 @@
 let
   proxyPython = pkgs.python3;
 
-  insightful-daemon = pkgs.writeShellScriptBin "insightful-daemon" ''
-    exec ${proxyPython}/bin/python ${config.home.homeDirectory}/.local/share/insightful-proxy/insightful-daemon.py
-  '';
+  insightful-desktop = pkgs.makeDesktopItem {
+    name = "insightful";
+    desktopName = "Insightful";
+    exec = "${config.home.homeDirectory}/.local/bin/insightful";
+    icon = "${config.home.homeDirectory}/apps/insightful-root/Workpuls.png";
+    categories = [
+      "Utility"
+      "Office"
+    ];
+    comment = "Insightful time tracking";
+    terminal = false;
+  };
 
 in
 {
   home.packages = with pkgs; [
     proxyPython
-    xorg.xprop
-    xorg.xsetroot
-    xdotool
-    jq
     swayidle
-    insightful-daemon
+    insightful-desktop
   ];
 
   home.file.".local/share/insightful-proxy/insightful-proxy.c" = {
@@ -173,11 +178,7 @@ in
       # Activity monitors
       # ----------------------------------------------------------------
       # How long to keep injecting uinput events after last detected activity.
-      # On Wayland, keyboard input cannot be detected (security), only mouse
-      # movement and Hyprland events (window/workspace switch). This timeout
-      # bridges keyboard-only periods: user moves mouse, then types for a
-      # while without touching mouse. 300s (5 min) is generous enough that
-      # normal work patterns (mouse move -> type -> mouse move) stay active.
+      # Matches the tracker's idle_setting (120s) from the server config.
       ACTIVE_TIMEOUT = 120
 
       # Linux input event types we care about
