@@ -55,14 +55,14 @@ in
     DOCKER="${pkgs.docker}/bin/docker"
     DISTROBOX="${pkgs.distrobox}/bin/distrobox"
     CURL="${pkgs.curl}/bin/curl"
-    # distrobox needs docker in PATH to detect the container manager
-    export PATH="${pkgs.docker}/bin:''$PATH"
+    # distrobox needs standard utils (awk, rev, sed, grep, etc.)
+    export PATH="${pkgs.docker}/bin:${pkgs.gawk}/bin:${pkgs.util-linux}/bin:${pkgs.gnused}/bin:${pkgs.gnugrep}/bin:${pkgs.coreutils}/bin:${pkgs.findutils}/bin:/run/current-system/sw/bin:''$PATH"
 
     # 1. Create and initialize the distrobox container if it doesn't exist
     if ! ''$DOCKER ps -a --format '{{.Names}}' 2>/dev/null | grep -qx "''$CONTAINER"; then
       echo "[Insightful] Creating distrobox container ''$CONTAINER..."
       ''$DISTROBOX create --yes --image "''$IMAGE" --name "''$CONTAINER" \
-        --additional-packages "gcc libx11-dev libxss-dev libxext-dev"
+        --additional-packages "gcc libx11-dev libxss-dev libxext-dev libnss3 libatk-bridge2.0-0 libgtk-3-0 libasound2 libxcomposite1 libxdamage1 libxrandr2 libxfixes3 libpango-1.0-0 libcairo2"
       # First enter initializes user mapping, mounts, and installs additional-packages
       echo "[Insightful] Initializing container (first enter)..."
       ''$DISTROBOX enter "''$CONTAINER" -- true
@@ -71,10 +71,10 @@ in
 
     # 2-3. Install build deps and input group (only if container is running)
     if ''$DOCKER ps --format '{{.Names}}' 2>/dev/null | grep -qx "''$CONTAINER"; then
-      if ! ''$DOCKER exec "''$CONTAINER" dpkg -l gcc 2>/dev/null | grep -q '^ii'; then
-        echo "[Insightful] Installing build dependencies in ''$CONTAINER..."
+      if ! ''$DOCKER exec "''$CONTAINER" dpkg -l gcc libnss3 2>/dev/null | grep -cq '^ii' | grep -q 2; then
+        echo "[Insightful] Installing dependencies in ''$CONTAINER..."
         ''$DOCKER exec --user root "''$CONTAINER" \
-          bash -c 'apt-get update -qq && apt-get install -y -qq gcc libx11-dev libxss-dev libxext-dev' \
+          bash -c 'apt-get update -qq && apt-get install -y -qq gcc libx11-dev libxss-dev libxext-dev libnss3 libatk-bridge2.0-0 libgtk-3-0 libasound2 libxcomposite1 libxdamage1 libxrandr2 libxfixes3 libpango-1.0-0 libcairo2' \
           2>/dev/null || true
       fi
       if ! ''$DOCKER exec "''$CONTAINER" bash -c "getent group 174 2>/dev/null | grep -q ''$USERNAME" 2>/dev/null; then
@@ -120,6 +120,7 @@ in
       set -euo pipefail
 
       # Ensure the distrobox container is running
+      export PATH="${pkgs.gawk}/bin:${pkgs.util-linux}/bin:/run/current-system/sw/bin:$PATH"
       if ! docker ps --format '{{.Names}}' 2>/dev/null | grep -qx '${containerName}'; then
           echo "[Insightful] Starting container ${containerName}..."
           distrobox enter ${containerName} -- true
