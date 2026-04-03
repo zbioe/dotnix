@@ -33,12 +33,35 @@
     enable = true;
   };
 
-  home.sessionVariablesExtra = ''
-    if [ -f "${config.home.homeDirectory}/.env" ]; then
+  # Load ~/.env file in bash and fish
+  programs.bash.profileExtra = ''
+    if [ -f "$HOME/.env" ]; then
       set -a
-      source "${config.home.homeDirectory}/.env"
+      source "$HOME/.env"
       set +a
     fi
+  '';
+
+  programs.bash.bashrcExtra = ''
+    if [ -f "$HOME/.env" ]; then
+      set -a
+      source "$HOME/.env"
+      set +a
+    fi
+  '';
+
+  programs.fish.interactiveShellInit = ''
+    if test -f "$HOME/.env"
+      while read -l line
+        # Ignora comentários (#) e linhas vazias
+        if not string match -q -r '^\s*#|^\s*$' "$line"
+          # Separa no primeiro '='
+          set -l kv (string split -m 1 "=" "$line")
+          # Exporta limpando aspas caso você tenha colocado no .env
+          set -gx $kv[1] (string trim -c '"\''' $kv[2])
+        end
+      end < "$HOME/.env"
+    end
   '';
 
   # This value determines the Home Manager release that your configuration is
