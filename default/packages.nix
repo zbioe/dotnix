@@ -139,7 +139,7 @@
       dig # dns lookup
       haskellPackages.commonmark-cli # markdown formatter
       ispell # spell checker
-
+      gh # github cli
       terraformWithPlugins # terraform with used plugins
       ansible # config manager
       openssl # cripto lib
