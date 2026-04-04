@@ -85,6 +85,27 @@
           "DP-1, 1920x1080@180, 0x0, 1"
         ];
 
+        windowrule = [
+          "workspace 2, match:class ^(librewolf)$"
+          "workspace 3, match:class ^(brave-browser)$"
+          "workspace 5 silent, match:class ^(discord)$"
+          "workspace 6, match:class ^(Gimp.*)"
+          "workspace 8 silent, match:class ^(workpuls-agent)$"
+          "workspace 9, match:class ^(alacritty)$"
+          "workspace 0, match:class ^(Emacs)$"
+
+          # Floating rules (strict typing requires the '1')
+          "float 1, match:class ^(pavucontrol)$"
+          "float 1, match:class ^(nm-connection-editor)$"
+          "float 1, match:class ^(.blueman-manager-wrapped)$"
+        ];
+
+        exec-once = [
+          "[workspace 2 silent] librewolf"
+          "[workspace 9 silent] alacritty -e tmux new-session -A -D -s main"
+          "[workspace 0 silent] emacsclient -cn ."
+        ];
+
         bind =
           let
             toggleMic = pkgs.writeShellScript "toggle-mic" ''
