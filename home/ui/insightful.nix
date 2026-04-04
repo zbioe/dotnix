@@ -6,7 +6,7 @@
 }:
 
 let
-  proxyPython = pkgs.python3;
+  proxyPython = pkgs.python312;
   containerName = "insightful-app";
   containerImage = "ubuntu:22.04";
   appImagePath = "${config.home.homeDirectory}/apps/insightful.AppImage";
