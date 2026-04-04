@@ -202,5 +202,8 @@
 
       # container app
       distrobox
+
+      # sync folder
+      mutagen
     ];
 }
