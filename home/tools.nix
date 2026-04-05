@@ -7,7 +7,7 @@ let
   emacs-wl = pkgs.emacs-pgtk.override {
     withNativeCompilation = true;
     withTreeSitter = true;
-    withXwidgets = false;
+    withXwidgets = true;
   };
 in
 {
