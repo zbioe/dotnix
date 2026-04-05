@@ -23,6 +23,14 @@ let
   };
 in
 {
+  environment.sessionVariables = {
+    # https://nixos.wiki/wiki/Wayland#Applications
+    NIXOS_OZONE_WL = "1";
+    XDG_CURRENT_DESKTOP = "Hyprland";
+    XDG_SESSION_TYPE = "wayland";
+    XDG_SESSION_DESKTOP = "Hyprland";
+    GDK_BACKEND = "wayland";
+  };
 
   # Display Manager
   services.displayManager = {
@@ -113,15 +121,6 @@ in
     # sddm theme
     sddm_theme
   ];
-
-  environment.sessionVariables = {
-    # https://nixos.wiki/wiki/Wayland#Applications
-    NIXOS_OZONE_WL = "1";
-    XDG_CURRENT_DESKTOP = "Hyprland";
-    XDG_SESSION_TYPE = "wayland";
-    XDG_SESSION_DESKTOP = "Hyprland";
-    GDK_BACKEND = "wayland";
-  };
 
   fonts.fontconfig.enable = true;
   fonts.fontconfig.useEmbeddedBitmaps = true;
