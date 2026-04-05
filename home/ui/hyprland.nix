@@ -89,13 +89,16 @@
           "workspace 2, match:class ^(librewolf)$"
           "workspace 3, match:class ^(brave-browser)$"
           "workspace 5 silent, match:class ^(discord)$"
-          "workspace 6, match:class ^(Gimp.*)"
+          "workspace 6, match:class ^(gimp)"
           "workspace 8 silent, match:class ^(workpuls-agent)$"
           "workspace 9, match:class ^(alacritty)$"
-          "workspace 0, match:class ^(Emacs)$"
+          "workspace 10, match:class ^(emacs)$"
+
+          # Emacs PGTK prevent popups and context menus to steal the focus
+          "stay_focused 1, match:class ^(emacs)$, match:title ^$"
 
           # Floating rules (strict typing requires the '1')
-          "float 1, match:class ^(pavucontrol)$"
+          "float 1, match:class ^(org.pulseaudio.pavucontrol)$"
           "float 1, match:class ^(nm-connection-editor)$"
           "float 1, match:class ^(.blueman-manager-wrapped)$"
         ];
@@ -103,7 +106,7 @@
         exec-once = [
           "[workspace 2 silent] librewolf"
           "[workspace 9 silent] alacritty -e tmux new-session -A -D -s main"
-          "[workspace 0 silent] emacsclient -cn ."
+          "[workspace 10 silent] emacsclient -cn ."
         ];
 
         bind =

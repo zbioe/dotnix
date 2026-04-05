@@ -1,19 +1,29 @@
 {
   lib,
+  pkgs,
   ...
 }:
+let
+  emacs-wl = pkgs.emacs-pgtk.override {
+    withNativeCompilation = true;
+    withTreeSitter = true;
+    withXwidgets = false;
+  };
+in
 {
   services = {
     emacs = {
-      enable = false;
+      enable = true;
+      package = emacs-wl;
       client = {
-        enable = false;
+        enable = true;
       };
     };
   };
 
   programs = {
     emacs = {
+      package = emacs-wl;
       enable = true;
     };
     direnv = {

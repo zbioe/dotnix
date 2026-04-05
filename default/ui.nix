@@ -120,6 +120,7 @@ in
     XDG_CURRENT_DESKTOP = "Hyprland";
     XDG_SESSION_TYPE = "wayland";
     XDG_SESSION_DESKTOP = "Hyprland";
+    GDK_BACKEND = "wayland";
   };
 
   fonts.fontconfig.enable = true;
