@@ -172,6 +172,7 @@
     nautilus
     gruvbox-gtk-theme
     gruvbox-material-gtk-theme
+    freelens-bin
   ];
 
 }
