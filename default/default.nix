@@ -59,7 +59,6 @@
   services.resolved.enable = false;
   networking.networkmanager.dns = "dnsmasq";
   environment.etc."NetworkManager/dnsmasq.d/devops.conf".text = ''
-    local=/devops.local/
     address=/.devops.local/172.18.0.2
   '';
 
