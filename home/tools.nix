@@ -4,11 +4,20 @@
   ...
 }:
 let
-  emacs-wl = pkgs.emacs-pgtk.override {
-    withNativeCompilation = true;
-    withTreeSitter = true;
-    withXwidgets = true;
-  };
+  emacs-wl =
+    (pkgs.emacs-pgtk.override {
+      withNativeCompilation = true;
+      withTreeSitter = true;
+      withXwidgets = true;
+    }).overrideAttrs
+      (old: {
+        meta = (old.meta or { }) // {
+          broken = false;
+        };
+        postPatch = (old.postPatch or "") + ''
+          sed -i 's/WEBKIT_BROKEN=2.41.92/WEBKIT_BROKEN=9.99.99/g' configure.ac configure || true
+        '';
+      });
 in
 {
   services = {

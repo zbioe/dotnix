@@ -106,7 +106,8 @@
         exec-once = [
           "[workspace 2 silent] librewolf"
           "[workspace 9 silent] alacritty -e tmux new-session -A -D -s main"
-          "[workspace 10 silent] emacsclient -cn ."
+          "[workspace 5 silent] discord"
+          "[workspace 10 silent] emacsclient -cn ~/dev/"
         ];
 
         bind =

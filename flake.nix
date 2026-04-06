@@ -11,6 +11,7 @@
       hyprland,
       programsdb,
       impermanence,
+      emacs-overlay,
       ...
     }:
     let
@@ -19,6 +20,7 @@
       unstable = import nixpkgs-unstable {
         inherit system;
         config.allowUnfree = true;
+        overlays = [ emacs-overlay.overlays.default ];
       };
       specialArgs = {
         inherit nixpkgs username;
@@ -77,7 +79,10 @@
                 inherit (hyprland.packages.${system}) hyprland;
                 inherit unstable;
               };
-              pkgs = import nixpkgs { inherit system; };
+              pkgs = import nixpkgs {
+                inherit system;
+                overlays = [ emacs-overlay.overlays.default ];
+              };
               modules = [
                 stylix.homeModules.stylix
                 ./home
@@ -119,6 +124,10 @@
         nixpkgs.follows = "nixpkgs-unstable";
         systems.follows = "systems";
       };
+    };
+    emacs-overlay = {
+      url = "github:nix-community/emacs-overlay";
+      inputs.nixpkgs.follows = "nixpkgs";
     };
     mnw.url = "github:Gerg-L/mnw";
     compat = {

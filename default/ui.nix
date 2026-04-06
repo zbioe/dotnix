@@ -29,7 +29,13 @@ in
     XDG_CURRENT_DESKTOP = "Hyprland";
     XDG_SESSION_TYPE = "wayland";
     XDG_SESSION_DESKTOP = "Hyprland";
+
+    # Emacs to use wayland in the right way
     GDK_BACKEND = "wayland";
+
+    # Xwidgets dont fight with hardware aceleration of GPU
+    WEBKIT_DISABLE_DMABUF_RENDERER = "1";
+    WEBKIT_DISABLE_COMPOSITING_MODE = "1";
   };
 
   # Display Manager

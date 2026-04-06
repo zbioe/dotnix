@@ -35,6 +35,12 @@
     polarity = "dark";
   };
 
+  dconf.settings = {
+    "org/gnome/desktop/interface" = {
+      color-scheme = "prefer-dark";
+    };
+  };
+
   services.mako = {
     enable = true;
     settings = {
@@ -144,8 +150,15 @@
   };
   gtk = {
     enable = true;
-    gtk3.extraConfig.gtk-key-theme-name = "Emacs";
+    gtk3.extraConfig = {
+      gtk-key-theme-name = "Emacs";
+      gtk-application-prefer-dark-theme = 1;
+    };
     gtk4.extraConfig.gtk-key-theme-name = "Emacs";
+    theme = lib.mkForce {
+      name = "Gruvbox-Material-Dark";
+      package = pkgs.gruvbox-material-gtk-theme;
+    };
   };
 
   home.packages = with pkgs; [
@@ -157,6 +170,8 @@
     grimblast
     hyprpicker
     nautilus
+    gruvbox-gtk-theme
+    gruvbox-material-gtk-theme
   ];
 
 }
