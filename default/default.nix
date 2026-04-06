@@ -56,6 +56,12 @@
     "2606:4700:4700::1111"
     "2606:4700:4700::1001"
   ];
+  services.resolved.enable = false;
+  networking.networkmanager.dns = "dnsmasq";
+  environment.etc."NetworkManager/dnsmasq.d/devops.conf".text = ''
+    local=/devops.local/
+    address=/.devops.local/172.18.0.2
+  '';
 
   services.fstrim.enable = true;
 
