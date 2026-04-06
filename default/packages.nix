@@ -205,5 +205,10 @@
 
       # sync folder
       mutagen
+
+      # K8s environment
+      kubernetes-helm
+      cilium-cli
+      sshuttle
     ];
 }
