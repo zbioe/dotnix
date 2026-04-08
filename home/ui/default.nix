@@ -172,7 +172,12 @@
     nautilus
     gruvbox-gtk-theme
     gruvbox-material-gtk-theme
+    # kubernetes
     freelens-bin
+    k9s
+    kdash
+    seabird
+    kubetui
   ];
 
 }
