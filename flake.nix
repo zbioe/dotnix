@@ -3,6 +3,7 @@
 
   outputs =
     {
+      bwt,
       home,
       stylix,
       nixpkgs,
@@ -26,6 +27,7 @@
         inherit nixpkgs username;
         inherit (home.packages.${system}) home-manager;
         inherit (hyprland.packages.${system}) hyprland xdg-desktop-portal-hyprland;
+        inherit bwt;
         inherit unstable;
         home-module = home.nixosModules.home-manager;
       };
@@ -143,5 +145,9 @@
     };
     systems.url = "github:nix-systems/default";
     impermanence.url = "github:nix-community/impermanence";
+    bwt = {
+      url = "github:bwt-dev/bwt";
+      flake = false;
+    };
   };
 }

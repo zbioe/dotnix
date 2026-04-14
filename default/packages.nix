@@ -210,8 +210,5 @@
       kubernetes-helm
       cilium-cli
       sshuttle
-
-      # Web3
-      liana
     ];
 }

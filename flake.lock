@@ -101,6 +101,22 @@
         "type": "github"
       }
     },
+    "bwt": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1648747273,
+        "narHash": "sha256-vsZy0LnJ8jId3Bo8YxNQGrmEEhryrtEevUuZc4dw5Tk=",
+        "owner": "bwt-dev",
+        "repo": "bwt",
+        "rev": "e1885d97eb70c8f84db3383e7e2d04ad063f3ec0",
+        "type": "github"
+      },
+      "original": {
+        "owner": "bwt-dev",
+        "repo": "bwt",
+        "type": "github"
+      }
+    },
     "compat": {
       "flake": false,
       "locked": {
@@ -812,6 +828,7 @@
     },
     "root": {
       "inputs": {
+        "bwt": "bwt",
         "compat": "compat",
         "emacs-overlay": "emacs-overlay",
         "hardware": "hardware",
