@@ -20,6 +20,9 @@ in
 {
   # Packages
   environment.systemPackages = with pkgs; [
+    # wallets
+    iron-wallet
+    foundry-bin
     liana
     (pkgs.symlinkJoin {
       name = "electrum-wayland";
