@@ -21,8 +21,8 @@ in
   # Packages
   environment.systemPackages = with pkgs; [
     # wallets
-    iron-wallet
-    foundry-bin
+    status-im
+    foundry
     liana
     (pkgs.symlinkJoin {
       name = "electrum-wayland";
