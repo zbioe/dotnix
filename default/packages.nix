@@ -106,6 +106,7 @@
       pavucontrol # sound control
       busybox # cli utilities
       azure-cli # cli to access azure cloud
+      oci-cli # oracle cloud cli
       kubectl # cli to access kubernetes
       kubelogin # tool to kubectl
       ansible # ansible cli
@@ -159,15 +160,6 @@
       # mongo shell
       mongosh
 
-      # AI agents
-      gemini-cli
-
-      # AI editors
-      unstable.zed-editor
-      unstable.code-cursor
-      unstable.claude-code
-      unstable.opencode
-
       # LSP
       nil # nix
 
@@ -188,9 +180,6 @@
 
       # audio
       vlc
-
-      # AI tools
-      harbor-cli
 
       # bug bounty
       caido

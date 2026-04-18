@@ -15,6 +15,7 @@
     ./webcam.nix
     ./web3.nix
     ./waydroid.nix
+    ./ai.nix
   ];
 
   hardware.enableAllFirmware = true;
@@ -79,21 +80,6 @@
   programs.command-not-found.enable = true;
 
   programs.dconf.enable = true;
-
-  # AI services
-  services.ollama = {
-    enable = true;
-    host = "0.0.0.0";
-  };
-  services.open-webui = {
-    enable = true;
-    port = 3333;
-    environment = {
-      OLLAMA_API_BASE_URL = "http://127.0.0.1:11434";
-      WEBUI_AUTH = "False";
-    };
-  };
-  ####
 
   services = {
     udev = {
