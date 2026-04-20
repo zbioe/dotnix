@@ -10,6 +10,7 @@
     ./hyprland.nix
     ./waybar.nix
     ./insightful.nix
+    ./trae.nix
     # ./river.nix
     # ./yambar.nix
   ];
