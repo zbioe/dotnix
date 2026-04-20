@@ -16,6 +16,7 @@ in
     ./stylix.nix
     ./bluetooth.nix
     ./protonvpn.nix
+    ./keyboard.nix
   ];
   options.modules = with types; {
     user.name = mkOption {

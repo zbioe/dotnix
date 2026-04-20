@@ -8,6 +8,11 @@
     host = {
       name = "bx";
     };
+    keyboard = {
+      layout = "us";
+      model = "";
+      variant = "intl";
+    };
   };
 
   # force deep sleep

@@ -8,6 +8,11 @@
     host = {
       name = "te";
     };
+    keyboard = {
+      layout = "br";
+      model = "thinkpad";
+      variant = "thinkpad";
+    };
   };
 
   # force deep sleep
