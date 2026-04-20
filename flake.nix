@@ -9,7 +9,6 @@
       nixpkgs,
       hardware,
       hyprland,
-      trae-deb,
       programsdb,
       impermanence,
       emacs-overlay,
@@ -28,7 +27,7 @@
         inherit nixpkgs username;
         inherit (home.packages.${system}) home-manager;
         inherit (hyprland.packages.${system}) hyprland xdg-desktop-portal-hyprland;
-        inherit bwt trae-deb;
+        inherit bwt;
         inherit unstable;
         home-module = home.nixosModules.home-manager;
       };
@@ -148,10 +147,6 @@
     impermanence.url = "github:nix-community/impermanence";
     bwt = {
       url = "github:bwt-dev/bwt";
-      flake = false;
-    };
-    trae-deb = {
-      url = "https://lf-cdn.trae.ai/obj/trae-ai-us/pkg/app/releases/stable/2.3.19583/linux/Trae-linux-x64.deb";
       flake = false;
     };
   };

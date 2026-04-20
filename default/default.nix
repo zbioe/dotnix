@@ -16,6 +16,7 @@
     ./web3.nix
     ./waydroid.nix
     ./ai.nix
+    ./crypto.nix
   ];
 
   hardware.enableAllFirmware = true;
