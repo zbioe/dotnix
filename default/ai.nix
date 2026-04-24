@@ -19,7 +19,10 @@
     zed-editor
     code-cursor
     claude-code
-    opencode
+    aider-chat
+
+    # upscaling
+    waifu2x-converter-cpp
   ];
 
   # services

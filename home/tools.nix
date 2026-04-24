@@ -1,6 +1,8 @@
 {
   lib,
   pkgs,
+  config,
+  unstable,
   ...
 }:
 let
@@ -20,6 +22,7 @@ let
       });
 in
 {
+
   services = {
     emacs = {
       enable = true;
@@ -132,4 +135,12 @@ in
       };
     };
   };
+
+  home.file.".npmrc".text = ''
+    prefix=${config.home.homeDirectory}/.npm-global
+  '';
+  home.sessionVariables = {
+    PATH = "$HOME/.npm-global/bin:$PATH";
+  };
+
 }

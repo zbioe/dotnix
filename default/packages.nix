@@ -148,6 +148,9 @@
       # icon theme
       adwaita-icon-theme
 
+      # office
+      onlyoffice-desktopeditors
+
       # game
       lutris
 

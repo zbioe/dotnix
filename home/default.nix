@@ -9,6 +9,7 @@
   imports = [
     ./ui
     ./tools.nix
+    ./ai.nix
   ];
 
   home.username = username;
