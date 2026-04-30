@@ -14,11 +14,11 @@
 
     # AI agents
     gemini-cli
+    claude-code
 
     # AI editors
     zed-editor
     code-cursor
-    claude-code
     aider-chat
 
     # upscaling

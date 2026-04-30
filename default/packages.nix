@@ -202,5 +202,6 @@
       kubernetes-helm
       cilium-cli
       sshuttle
+      poppler-utils
     ];
 }
