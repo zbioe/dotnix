@@ -12,6 +12,7 @@
         "wheel"
         "users"
         "input"
+        "uinput"
         "networkmanager"
         "audio"
         "video"

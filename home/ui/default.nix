@@ -160,7 +160,6 @@
       package = pkgs.gruvbox-material-gtk-theme;
     };
   };
-
   home.packages = with pkgs; [
     libnotify
     networkmanagerapplet

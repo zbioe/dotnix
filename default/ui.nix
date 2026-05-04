@@ -116,6 +116,7 @@ in
     # printscreen with selection
     # grim -l 0 -g "$(slurp)" - | wl-copy
     wl-clipboard # cli interface to clipboard (xclip anternative)
+    wtype # write with hyprland
     slurp # select utility
     grim # screenshot utility
     grimblast # screenshot

@@ -1,10 +1,17 @@
 {
   pkgs,
   hyprland,
+  lib,
   ...
 }:
 
 {
+  home.activation.criaMacrosHyprland = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    if [ ! -f ~/.config/hyprland/priv.conf ]; then
+      mkdir -p ~/.config/hyprland
+      touch ~/.config/hyprland/priv.conf
+    fi
+  '';
   wayland.windowManager = {
     hyprland = {
       enable = true;
@@ -20,6 +27,8 @@
           "XDG_SESSION_DESKTOP,Hyprland"
           "GTK_IM_MODULE,simple"
         ];
+
+        source = "$HOME/.config/hyprland/priv.conf";
 
         misc = {
           disable_hyprland_logo = true;

@@ -20,6 +20,7 @@
     zed-editor
     code-cursor
     aider-chat
+    antigravity
 
     # upscaling
     waifu2x-converter-cpp
