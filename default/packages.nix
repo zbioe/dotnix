@@ -35,6 +35,7 @@
       chromium # if I need more permission
       tor-browser # firefox like using tor network
       alacritty # alternative terminal
+      slack # slack chat
 
       # disk utilities
       gnome-disk-utility # to see partitions visually
@@ -144,6 +145,8 @@
       terraformWithPlugins # terraform with used plugins
       ansible # config manager
       openssl # cripto lib
+      gnupg # GNU Privacy Guard - gpg
+      pinentry-all # GnuPG’s interface to passphrase input
 
       # icon theme
       adwaita-icon-theme

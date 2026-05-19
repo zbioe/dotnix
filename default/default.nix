@@ -15,6 +15,7 @@
     ./webcam.nix
     ./web3.nix
     ./waydroid.nix
+    ./flatpak.nix
     ./ai.nix
     ./crypto.nix
   ];

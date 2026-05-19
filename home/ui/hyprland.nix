@@ -101,6 +101,7 @@
           "workspace 6, match:class ^(gimp)"
           "workspace 8 silent, match:class ^(workpuls-agent)$"
           "workspace 9, match:class ^(alacritty)$"
+          "workspace 9, match:class ^(foot)$"
           "workspace 10, match:class ^(emacs)$"
 
           # Emacs PGTK prevent popups and context menus to steal the focus
@@ -114,7 +115,7 @@
 
         exec-once = [
           "[workspace 2 silent] librewolf"
-          "[workspace 9 silent] alacritty -e tmux new-session -A -D -s main"
+          "[workspace 9 silent] foot -e tmux new-session -A -D -s main"
           "[workspace 5 silent] discord"
           "[workspace 10 silent] emacsclient -cn ~/dev/"
         ];
@@ -138,8 +139,8 @@
             "$mod SHIFT, B, exec, uwsm app -- librewolf"
             "$mod SHIFT, N, exec, uwsm app -- nautilus"
             "$mod SHIFT, P, exec, uwsm app -- hyprpicker | wl-copy"
-            "$mod, RETURN, exec, uwsm app -- alacritty -e tmux new-session -A -D -s main && exit"
-            "$mod, Y, exec, alacritty -e yazi"
+            "$mod, RETURN, exec, uwsm app -- foot -e tmux new-session -A -D -s main && exit"
+            "$mod, Y, exec, foot -e yazi"
             "$mod, P, exec, uwsm app -- fuzzel"
             "$mod SHIFT, Q, killactive,"
             "$mod SHIFT, R, exec, uwsm app -- hyprlock"
