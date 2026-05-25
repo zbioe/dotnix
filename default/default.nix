@@ -14,6 +14,7 @@
     ./packages.nix
     ./webcam.nix
     ./web3.nix
+    ./libvirt.nix
     ./waydroid.nix
     ./flatpak.nix
     ./ai.nix
