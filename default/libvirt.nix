@@ -5,8 +5,14 @@
 }:
 
 {
-  virtualisation.libvirtd.enable = true;
+  virtualisation.libvirtd = {
+    enable = true;
+    qemu = {
+      swtpm.enable = true;
+    };
+  };
 
+  virtualisation.spiceUSBRedirection.enable = true;
   programs.virt-manager.enable = true;
 
   users.users.${username}.extraGroups = [
@@ -15,6 +21,7 @@
   ];
 
   environment.systemPackages = with unstable; [
+    swtpm
     spice
     spice-gtk
     spice-protocol

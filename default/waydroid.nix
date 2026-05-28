@@ -20,6 +20,7 @@
   };
   environment.systemPackages = with pkgs; [
     waydroid-helper
+    mtkclient
   ];
   networking.firewall.trustedInterfaces = [ "waydroid0" ];
   boot.kernel.sysctl = {

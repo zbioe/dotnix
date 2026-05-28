@@ -23,6 +23,8 @@
         "bluetooth"
         "docker"
         "adbusers"
+        "libvirtd"
+        "kvm"
       ];
     };
     time.zone = "America/Sao_Paulo";
