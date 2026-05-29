@@ -38,6 +38,9 @@ in
     WEBKIT_DISABLE_COMPOSITING_MODE = "1";
 
     LC_CTYPE = "pt_BR.UTF-8";
+
+    XLOCALEDIR = "${pkgs.xorg.libX11}/share/X11/locale";
+    XCOMPOSEFILE = "${pkgs.xorg.libX11}/share/X11/locale/pt_BR.UTF-8/Compose";
   };
 
   # Display Manager

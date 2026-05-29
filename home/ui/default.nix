@@ -40,11 +40,6 @@
       color-scheme = "prefer-dark";
     };
   };
-  home.file.".XCompose".text = ''
-    include "%L"
-    <dead_acute> <c> : "ç" U00E7
-    <dead_acute> <C> : "Ç" U00C7
-  '';
   services.mako = {
     enable = true;
     settings = {
