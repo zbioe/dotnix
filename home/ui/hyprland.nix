@@ -29,7 +29,6 @@
             "XDG_CURRENT_DESKTOP,Hyprland"
             "XDG_SESSION_TYPE,wayland"
             "XDG_SESSION_DESKTOP,Hyprland"
-            "LC_CTYPE,pt_BR.UTF-8"
           ];
 
           source = "$HOME/.config/hyprland/priv.conf";

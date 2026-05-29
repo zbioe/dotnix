@@ -40,6 +40,8 @@ in
     GTK_IM_MODULE = "cedilla";
     QT_IM_MODULE = "cedilla";
     XMODIFIERS = "@im=cedilla";
+
+    LC_CTYPE = "pt_BR.UTF-8";
   };
 
   # Display Manager

@@ -128,7 +128,7 @@ in
               m_oci (macro S-6 o)     ;; ô (AltGr + l)
 
               m_acr (macro grv a)     ;; à (AltGr + z)
-              m_ced (macro RA-,)       ;; ç (AltGr + c)
+              m_ced (macro ' c)       ;; ç (AltGr + c)
               m_usd (macro S-4)       ;; $ (AltGr + b)
               m_nti (macro S-grv n)   ;; ñ (AltGr + n)
               m_int (macro RA-/)      ;; ¿ (AltGr + /)
