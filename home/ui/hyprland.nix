@@ -18,192 +18,197 @@
       package = hyprland;
       systemd.enable = false; # DISABLE this integration to UWSM can handle it
       xwayland.enable = true;
-      settings = {
-        "$mod" = "SUPER";
+      settings =
+        let
+          terminal = "uwsm app -- foot -e sh -c 'if [ -f ~/bin/start-tmux.sh ]; then bash ~/bin/start-tmux.sh; else tmux new-session -A -D -s main; fi'";
+        in
+        {
+          "$mod" = "SUPER";
 
-        env = [
-          "XDG_CURRENT_DESKTOP,Hyprland"
-          "XDG_SESSION_TYPE,wayland"
-          "XDG_SESSION_DESKTOP,Hyprland"
-          "GTK_IM_MODULE,cedilla"
-          "QT_IM_MODULE,cedilla"
-          "XMODIFIERS,@im=cedilla"
-        ];
-
-        source = "$HOME/.config/hyprland/priv.conf";
-
-        misc = {
-          disable_hyprland_logo = true;
-          force_default_wallpaper = 0;
-          vfr = true;
-          vrr = 1;
-        };
-
-        render = {
-          direct_scanout = true;
-        };
-
-        general = {
-          gaps_in = 0;
-          gaps_out = 0;
-          border_size = 0;
-          layout = "master";
-        };
-
-        master = {
-          new_on_top = false;
-          mfact = 0.5;
-        };
-
-        group = {
-          groupbar = {
-            render_titles = false;
-          };
-        };
-
-        animations = {
-          enabled = "no";
-        };
-
-        decoration = {
-          rounding = 0;
-        };
-
-        input = {
-          follow_mouse = 2;
-          sensitivity = 0;
-          accel_profile = "adaptive";
-          kb_layout = "us";
-          kb_model = "";
-          kb_variant = "intl";
-        };
-
-        device = [
-          {
-            name = "kanata-internal";
-            kb_layout = "br";
-            kb_variant = "thinkpad";
-          }
-          {
-            name = "kanata-external";
-            kb_layout = "us";
-            kb_variant = "intl";
-          }
-        ];
-
-        monitor = [
-          ",preferred,auto-left,1"
-          "DP-1, 1920x1080@180, 0x0, 1"
-        ];
-
-        windowrule = [
-          "workspace 2, match:class ^(librewolf)$"
-          "workspace 3, match:class ^(brave-browser)$"
-          "workspace 5 silent, match:class ^(discord)$"
-          "workspace 6, match:class ^(gimp)"
-          "workspace 8 silent, match:class ^(workpuls-agent)$"
-          "workspace 9, match:class ^(alacritty)$"
-          "workspace 9, match:class ^(foot)$"
-          "workspace 10, match:class ^(emacs)$"
-
-          # Emacs PGTK prevent popups and context menus to steal the focus
-          "stay_focused 1, match:class ^(emacs)$, match:title ^$"
-
-          # Floating rules (strict typing requires the '1')
-          "float 1, match:class ^(org.pulseaudio.pavucontrol)$"
-          "float 1, match:class ^(nm-connection-editor)$"
-          "float 1, match:class ^(.blueman-manager-wrapped)$"
-        ];
-
-        exec-once = [
-          "[workspace 2 silent] librewolf"
-          "[workspace 9 silent] foot -e tmux new-session -A -D -s main"
-          "[workspace 5 silent] discord"
-          "[workspace 10 silent] emacsclient -cn ~/dev/"
-        ];
-
-        bind =
-          let
-            toggleMic = pkgs.writeShellScript "toggle-mic" ''
-              ${pkgs.wireplumber}/bin/wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle
-
-              STATUS=$(${pkgs.wireplumber}/bin/wpctl get-volume @DEFAULT_AUDIO_SOURCE@)
-
-              if [[ "$STATUS" == *"[MUTED]"* ]]; then
-                echo 1 | sudo tee /sys/class/leds/platform::micmute/brightness
-              else
-                echo 0 | sudo tee /sys/class/leds/platform::micmute/brightness
-              fi
-            '';
-          in
-          [
-            "$mod, F, fullscreen,"
-            "$mod SHIFT, B, exec, uwsm app -- librewolf"
-            "$mod SHIFT, N, exec, uwsm app -- nautilus"
-            "$mod SHIFT, P, exec, uwsm app -- hyprpicker | wl-copy"
-            "$mod, RETURN, exec, uwsm app -- foot -e tmux new-session -A -D -s main && exit"
-            "$mod, Y, exec, foot -e yazi"
-            "$mod, P, exec, uwsm app -- fuzzel"
-            "$mod SHIFT, Q, killactive,"
-            "$mod SHIFT, R, exec, uwsm app -- hyprlock"
-            "$mod SHIFT, X, exit,"
-
-            ", Print, exec, uwsm app -- grimblast copy area"
-            "$mod SHIFT, Y, exec, uwsm app -- grimblast save area - | tesseract stdin stdout | wl-copy"
-
-            ", XF86AudioRaiseVolume, exec, wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.1+"
-            "$mod SHIFT, O, exec, wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.1+"
-
-            ", XF86AudioLowerVolume, exec, wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.1-"
-            "$mod SHIFT, I, exec, wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.1-"
-
-            ", XF86AudioMute, exec, wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"
-            "$mod SHIFT, M, exec, wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"
-
-            ", XF86MonBrightnessUp, exec, brightnessctl s +5%"
-            ", XF86MonBrightnessDown, exec, brightnessctl s 5%-"
-            ", XF86AudioMicMute, exec, ${toggleMic}"
-
-            "$mod, w, workspace, previous"
-            "$mod SHIFT, w, movetoworkspace, previous"
-
-            "$mod, 1, workspace, 1"
-            "$mod, 2, workspace, 2"
-            "$mod, 3, workspace, 3"
-            "$mod, 4, workspace, 4"
-            "$mod, 5, workspace, 5"
-            "$mod, 6, workspace, 6"
-            "$mod, 7, workspace, 7"
-            "$mod, 8, workspace, 8"
-            "$mod, 9, workspace, 9"
-            "$mod, 0, workspace, 10"
-
-            "$mod SHIFT, 1, movetoworkspace, 1"
-            "$mod SHIFT, 2, movetoworkspace, 2"
-            "$mod SHIFT, 3, movetoworkspace, 3"
-            "$mod SHIFT, 4, movetoworkspace, 4"
-            "$mod SHIFT, 5, movetoworkspace, 5"
-            "$mod SHIFT, 6, movetoworkspace, 6"
-            "$mod SHIFT, 7, movetoworkspace, 7"
-            "$mod SHIFT, 8, movetoworkspace, 8"
-            "$mod SHIFT, 9, movetoworkspace, 9"
-            "$mod SHIFT, 0, movetoworkspace, 10"
-
-            "$mod, S, togglespecialworkspace, magic"
-            "$mod SHIFT, S, movetoworkspace, special:magic"
-
-            "$mod, h, movefocus, l"
-            "$mod, l, movefocus, r"
-            "$mod, k, movefocus, u"
-            "$mod, j, movefocus, d"
-
-            "$mod SHIFT, h, movewindow, l"
-            "$mod SHIFT, l, movewindow, r"
-            "$mod SHIFT, k, movewindow, u"
-            "$mod SHIFT, j, movewindow, d"
-
+          env = [
+            "XDG_CURRENT_DESKTOP,Hyprland"
+            "XDG_SESSION_TYPE,wayland"
+            "XDG_SESSION_DESKTOP,Hyprland"
+            "GTK_IM_MODULE,cedilla"
+            "QT_IM_MODULE,cedilla"
+            "XMODIFIERS,@im=cedilla"
+            "LC_CTYPE,pt_BR.UTF-8"
           ];
-      };
+
+          source = "$HOME/.config/hyprland/priv.conf";
+
+          misc = {
+            disable_hyprland_logo = true;
+            force_default_wallpaper = 0;
+            vfr = true;
+            vrr = 1;
+          };
+
+          render = {
+            direct_scanout = true;
+          };
+
+          general = {
+            gaps_in = 0;
+            gaps_out = 0;
+            border_size = 0;
+            layout = "master";
+          };
+
+          master = {
+            new_on_top = false;
+            mfact = 0.5;
+          };
+
+          group = {
+            groupbar = {
+              render_titles = false;
+            };
+          };
+
+          animations = {
+            enabled = "no";
+          };
+
+          decoration = {
+            rounding = 0;
+          };
+
+          input = {
+            follow_mouse = 2;
+            sensitivity = 0;
+            accel_profile = "adaptive";
+            kb_layout = "us";
+            kb_model = "";
+            kb_variant = "intl";
+          };
+
+          device = [
+            {
+              name = "kanata-internal";
+              kb_layout = "br";
+              kb_variant = "thinkpad";
+            }
+            {
+              name = "kanata-external";
+              kb_layout = "us";
+              kb_variant = "intl";
+            }
+          ];
+
+          monitor = [
+            ",preferred,auto-left,1"
+            "DP-1, 1920x1080@180, 0x0, 1"
+          ];
+
+          windowrule = [
+            "workspace 2, match:class ^(librewolf)$"
+            "workspace 3, match:class ^(brave-browser)$"
+            "workspace 5 silent, match:class ^(discord)$"
+            "workspace 6, match:class ^(gimp)"
+            "workspace 8 silent, match:class ^(workpuls-agent)$"
+            "workspace 9, match:class ^(alacritty)$"
+            "workspace 9, match:class ^(foot)$"
+            "workspace 10, match:class ^(emacs)$"
+
+            # Emacs PGTK prevent popups and context menus to steal the focus
+            "stay_focused 1, match:class ^(emacs)$, match:title ^$"
+
+            # Floating rules (strict typing requires the '1')
+            "float 1, match:class ^(org.pulseaudio.pavucontrol)$"
+            "float 1, match:class ^(nm-connection-editor)$"
+            "float 1, match:class ^(.blueman-manager-wrapped)$"
+          ];
+
+          exec-once = [
+            "[workspace 2 silent] librewolf"
+            "[workspace 9 silent] ${terminal}"
+            "[workspace 5 silent] discord"
+            "[workspace 10 silent] emacsclient -cn ~/dev/"
+          ];
+
+          bind =
+            let
+              toggleMic = pkgs.writeShellScript "toggle-mic" ''
+                ${pkgs.wireplumber}/bin/wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle
+
+                STATUS=$(${pkgs.wireplumber}/bin/wpctl get-volume @DEFAULT_AUDIO_SOURCE@)
+
+                if [[ "$STATUS" == *"[MUTED]"* ]]; then
+                  echo 1 | sudo tee /sys/class/leds/platform::micmute/brightness
+                else
+                  echo 0 | sudo tee /sys/class/leds/platform::micmute/brightness
+                fi
+              '';
+            in
+            [
+              "$mod, F, fullscreen,"
+              "$mod SHIFT, B, exec, uwsm app -- librewolf"
+              "$mod SHIFT, N, exec, uwsm app -- nautilus"
+              "$mod SHIFT, P, exec, uwsm app -- hyprpicker | wl-copy"
+              "$mod, RETURN, exec, ${terminal} && exit"
+              "$mod, Y, exec, foot -e yazi"
+              "$mod, P, exec, uwsm app -- fuzzel"
+              "$mod SHIFT, Q, killactive,"
+              "$mod SHIFT, R, exec, uwsm app -- hyprlock"
+              "$mod SHIFT, X, exit,"
+
+              ", Print, exec, uwsm app -- grimblast copy area"
+              "$mod SHIFT, Y, exec, uwsm app -- grimblast save area - | tesseract stdin stdout | wl-copy"
+
+              ", XF86AudioRaiseVolume, exec, wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.1+"
+              "$mod SHIFT, O, exec, wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.1+"
+
+              ", XF86AudioLowerVolume, exec, wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.1-"
+              "$mod SHIFT, I, exec, wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.1-"
+
+              ", XF86AudioMute, exec, wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"
+              "$mod SHIFT, M, exec, wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"
+
+              ", XF86MonBrightnessUp, exec, brightnessctl s +5%"
+              ", XF86MonBrightnessDown, exec, brightnessctl s 5%-"
+              ", XF86AudioMicMute, exec, ${toggleMic}"
+
+              "$mod, w, workspace, previous"
+              "$mod SHIFT, w, movetoworkspace, previous"
+
+              "$mod, 1, workspace, 1"
+              "$mod, 2, workspace, 2"
+              "$mod, 3, workspace, 3"
+              "$mod, 4, workspace, 4"
+              "$mod, 5, workspace, 5"
+              "$mod, 6, workspace, 6"
+              "$mod, 7, workspace, 7"
+              "$mod, 8, workspace, 8"
+              "$mod, 9, workspace, 9"
+              "$mod, 0, workspace, 10"
+
+              "$mod SHIFT, 1, movetoworkspace, 1"
+              "$mod SHIFT, 2, movetoworkspace, 2"
+              "$mod SHIFT, 3, movetoworkspace, 3"
+              "$mod SHIFT, 4, movetoworkspace, 4"
+              "$mod SHIFT, 5, movetoworkspace, 5"
+              "$mod SHIFT, 6, movetoworkspace, 6"
+              "$mod SHIFT, 7, movetoworkspace, 7"
+              "$mod SHIFT, 8, movetoworkspace, 8"
+              "$mod SHIFT, 9, movetoworkspace, 9"
+              "$mod SHIFT, 0, movetoworkspace, 10"
+
+              "$mod, S, togglespecialworkspace, magic"
+              "$mod SHIFT, S, movetoworkspace, special:magic"
+
+              "$mod, h, movefocus, l"
+              "$mod, l, movefocus, r"
+              "$mod, k, movefocus, u"
+              "$mod, j, movefocus, d"
+
+              "$mod SHIFT, h, movewindow, l"
+              "$mod SHIFT, l, movewindow, r"
+              "$mod SHIFT, k, movewindow, u"
+              "$mod SHIFT, j, movewindow, d"
+
+            ];
+        };
     };
   };
 }
