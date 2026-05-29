@@ -42,6 +42,11 @@ in
     XLOCALEDIR = "${pkgs.xorg.libX11}/share/X11/locale";
     XCOMPOSEFILE = "${pkgs.xorg.libX11}/share/X11/locale/pt_BR.UTF-8/Compose";
   };
+  i18n.inputMethod = {
+    enable = true;
+    type = "fcitx5";
+    fcitx5.waylandFrontend = true;
+  };
 
   # Display Manager
   services.displayManager = {

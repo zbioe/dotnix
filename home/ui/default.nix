@@ -145,6 +145,9 @@
     brave = {
       package = unstable.brave;
       enable = true;
+      commandLineArgs = [
+        "--enable-wayland-ime"
+      ];
     };
   };
   gtk = {
