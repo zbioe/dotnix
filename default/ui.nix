@@ -37,10 +37,6 @@ in
     WEBKIT_DISABLE_DMABUF_RENDERER = "1";
     WEBKIT_DISABLE_COMPOSITING_MODE = "1";
 
-    GTK_IM_MODULE = "cedilla";
-    QT_IM_MODULE = "cedilla";
-    XMODIFIERS = "@im=cedilla";
-
     LC_CTYPE = "pt_BR.UTF-8";
   };
 
