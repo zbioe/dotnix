@@ -29,9 +29,6 @@
             "XDG_CURRENT_DESKTOP,Hyprland"
             "XDG_SESSION_TYPE,wayland"
             "XDG_SESSION_DESKTOP,Hyprland"
-            "GTK_IM_MODULE,cedilla"
-            "QT_IM_MODULE,cedilla"
-            "XMODIFIERS,@im=cedilla"
             "LC_CTYPE,pt_BR.UTF-8"
           ];
 
