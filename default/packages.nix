@@ -99,7 +99,6 @@
       chafa # imave viewer
       mkpasswd # create password
       libossp_uuid # generate uuid
-      cloudflared # tunnel to access
       go-2fa # simple 2fa auth
       nomad # nomad cli tool
       nautilus # file manager

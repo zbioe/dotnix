@@ -19,6 +19,7 @@
     ./flatpak.nix
     ./ai.nix
     ./crypto.nix
+    ./cloudflare.nix
   ];
 
   hardware.enableAllFirmware = true;
