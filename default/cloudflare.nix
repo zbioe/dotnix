@@ -18,8 +18,7 @@
     options = [ "bind" ];
   };
 
-  environment.etc."gai.conf".text = ''
-    # Precedence rules to prefer IPv4 over IPv6
-    precedence ::ffff:0:0/96  100
-  '';
+  systemd.services.cloudflare-warp.serviceConfig = {
+    IPAddressDeny = [ "2606:4700::/32" ];
+  };
 }
