@@ -14,7 +14,7 @@
   '';
 
   xdg.configFile."fcitx5/conf/wayland.conf".text = ''
-    EnableWaylandDiagnose=False
+    Allow Overriding System XKB Settings=False
   '';
   wayland.windowManager = {
     hyprland = {
