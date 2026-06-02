@@ -51,6 +51,7 @@
       "/var/lib/nixos"
       "/var/lib/systemd/coredump"
       "/etc/NetworkManager/system-connections"
+      "/var/lib/systemd/resolved"
     ];
     files = [
       "/etc/hosts"

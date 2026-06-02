@@ -13,7 +13,7 @@
     ./config.nix
     ./packages.nix
     ./webcam.nix
-    ./web3.nix
+    # ./web3.nix
     ./libvirt.nix
     ./waydroid.nix
     ./flatpak.nix
@@ -63,11 +63,6 @@
     "2606:4700:4700::1111"
     "2606:4700:4700::1001"
   ];
-  services.resolved.enable = false;
-  networking.networkmanager.dns = "dnsmasq";
-  environment.etc."NetworkManager/dnsmasq.d/devops.conf".text = ''
-    address=/.devops.local/172.18.0.2
-  '';
 
   services.fstrim.enable = true;
 

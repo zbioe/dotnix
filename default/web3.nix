@@ -43,7 +43,7 @@ in
 
   # BTC Node (Pruned)
   services.bitcoind."${instanceName}" = {
-    enable = true;
+    enable = false;
     # Keep the last 100GB blocks
     prune = 100000;
     extraConfig = ''
@@ -54,6 +54,7 @@ in
 
   # BWT - Bitcoin Wallet Tracker
   systemd.services.bwt = {
+    enable = false;
     description = "Bitcoin Wallet Tracker";
     after = [ "bitcoind-${instanceName}.service" ];
     wantedBy = [ "multi-user.target" ];

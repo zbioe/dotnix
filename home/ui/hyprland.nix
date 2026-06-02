@@ -12,6 +12,10 @@
       touch ~/.config/hyprland/priv.conf
     fi
   '';
+
+  xdg.configFile."fcitx5/conf/wayland.conf".text = ''
+    EnableWaylandDiagnose=False
+  '';
   wayland.windowManager = {
     hyprland = {
       enable = true;
