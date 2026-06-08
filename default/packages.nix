@@ -141,6 +141,7 @@
       haskellPackages.commonmark-cli # markdown formatter
       ispell # spell checker
       gh # github cli
+      hut # sourcehut cli
       terraformWithPlugins # terraform with used plugins
       ansible # config manager
       openssl # cripto lib

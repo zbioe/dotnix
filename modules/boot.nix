@@ -53,6 +53,7 @@ in
           "usbcore"
         ];
       };
+      binfmt.emulatedSystems = [ "aarch64-linux" ];
       kernelModules = [
         "vfat"
         "uas"
