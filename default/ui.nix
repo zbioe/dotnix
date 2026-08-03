@@ -138,6 +138,9 @@ in
     # image manager
     imagemagick # editing and manipulating digital images
 
+    # Diagrama
+    mermaid-cli
+
     # sddm theme
     sddm_theme
   ];

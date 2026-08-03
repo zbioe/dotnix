@@ -8,7 +8,10 @@
     enable = true;
     package = unstable.cloudflare-warp;
   };
-  environment.systemPackages = [ unstable.cloudflared ];
+  environment.systemPackages = with unstable; [
+    cloudflared
+    cloudflare-cli
+  ];
   systemd.user.services.warp-taskbar.wantedBy = [ "graphical.target" ];
 
   fileSystems."/var/lib/cloudflare-warp" = {

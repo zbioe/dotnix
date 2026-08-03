@@ -106,7 +106,9 @@
       pavucontrol # sound control
       busybox # cli utilities
       azure-cli # cli to access azure cloud
+      awscli2 # cli to access AWS
       oci-cli # oracle cloud cli
+      google-cloud-sdk # google cloud cli
       kubectl # cli to access kubernetes
       kubelogin # tool to kubectl
       ansible # ansible cli
@@ -145,6 +147,7 @@
       terraformWithPlugins # terraform with used plugins
       ansible # config manager
       openssl # cripto lib
+      pass # pass manager
       gnupg # GNU Privacy Guard - gpg
       pinentry-all # GnuPG’s interface to passphrase input
 
@@ -206,5 +209,9 @@
       cilium-cli
       sshuttle
       poppler-utils
+
+      # challenges
+      exercism
+      leetcode-cli
     ];
 }

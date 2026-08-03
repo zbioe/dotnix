@@ -154,6 +154,7 @@
               "$mod SHIFT, X, exit,"
 
               ", Print, exec, uwsm app -- grimblast copy area"
+              "SHIFT, Print, exec, uwsm app -- bash -c 'AREA=$(slurp) && sleep 2 && grim -g \"$AREA\" - | wl-copy'"
               "$mod SHIFT, Y, exec, uwsm app -- grimblast save area - | tesseract stdin stdout | wl-copy"
 
               ", XF86AudioRaiseVolume, exec, wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.1+"

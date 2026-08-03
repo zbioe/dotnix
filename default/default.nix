@@ -20,6 +20,8 @@
     ./ai.nix
     ./crypto.nix
     ./cloudflare.nix
+    ./mail.nix
+    ./pass.nix
   ];
 
   hardware.enableAllFirmware = true;
@@ -55,6 +57,12 @@
   };
 
   networking.networkmanager.enable = true;
+  networking.networkmanager.dns = "none";
+  networking.resolvconf.extraOptions = [
+    "rotate"
+    "timeout:1"
+    "attempts:2"
+  ];
   networking.networkmanager.wifi.powersave = false;
   networking.firewall.enable = true;
   networking.nameservers = [
