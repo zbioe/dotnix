@@ -56,14 +56,16 @@
     '';
   };
 
-  networking.networkmanager.enable = true;
-  networking.networkmanager.dns = "none";
   networking.resolvconf.extraOptions = [
     "rotate"
     "timeout:1"
     "attempts:2"
   ];
-  networking.networkmanager.wifi.powersave = false;
+  networking.networkmanager = {
+    enable = true;
+    wifi.powersave = false;
+    dns = "none";
+  };
   networking.firewall.enable = true;
   networking.nameservers = [
     "1.1.1.1"

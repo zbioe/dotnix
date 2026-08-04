@@ -20,7 +20,10 @@
   networking.firewall.enable = false;
 
   networking.wireless.enable = false;
-  networking.networkmanager.enable = true;
+  networking.networkmanager = {
+    enable = true;
+    wifi.powersave = false;
+  };
 
   time.timeZone = "America/Sao_Paulo";
   i18n.defaultLocale = "pt_BR.UTF-8";

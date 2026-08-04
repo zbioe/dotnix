@@ -71,6 +71,10 @@
   ];
   boot.extraModulePackages = [ ];
 
+  boot.extraModprobeConfig = ''
+    options mt7921e disable_aspm=1
+  '';
+
   fileSystems."/" = {
     device = "/dev/mapper/enc";
     fsType = "btrfs";

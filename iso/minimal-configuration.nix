@@ -37,7 +37,10 @@
   };
 
   networking.hostName = "tmp"; # Define your hostname.
-  networking.networkmanager.enable = true;
+  networking.networkmanager = {
+    enable = true;
+    wifi.powersave = false;
+  };
 
   services.openssh.enable = true;
   networking.firewall.enable = false;
