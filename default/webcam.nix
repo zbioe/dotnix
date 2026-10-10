@@ -17,9 +17,6 @@
     android-tools # adb
   ];
 
-  # enable  ADB
-  programs.adb.enable = true;
-
   services.pipewire.extraConfig.pipewire."99-rnnoise" = {
     "context.modules" = [
       {

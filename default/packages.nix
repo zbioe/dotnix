@@ -18,22 +18,26 @@
         p.hashicorp_aws
         p.nbering_ansible
       ]);
+      ansible-language-server = writeShellScriptBin "ansible-language-server" ''
+        exec ${nodejs_24}/bin/npx --yes @ansible/ansible-language-server@26.6.0 "$@"
+      '';
     in
     [
       # home manager
       home-manager
 
       # nix utilities
-      nixd # debuger
-      nixfmt-rfc-style # formatter
+      unstable.nixd # language server
+      nixfmt # formatter
+      statix # linter
       cachix # nix cache repository
       fwupd # bios update
 
       # browser
-      librewolf # firefox like
+      unstable.librewolf # firefox like
       # brave # chromium like
-      chromium # if I need more permission
-      tor-browser # firefox like using tor network
+      unstable.chromium # if I need more permission
+      unstable.tor-browser # firefox like using tor network
       alacritty # alternative terminal
       slack # slack chat
 
@@ -50,9 +54,9 @@
       hyprpicker
 
       # dev
-      unstable.elixir
-      python312
-      python312Packages.pip
+      unstable.beamPackages.elixir
+      python3
+      python3Packages.pip
       uv
       lua
       ruby
@@ -63,6 +67,32 @@
       vim
       git
       go
+      gopls
+      golangci-lint
+      ansible-lint
+      kind
+
+      # language servers, linters and formatters (doom emacs lsp)
+      gotools # goimports
+      gofumpt # stricter gofmt
+      gomodifytags # struct tags
+      gotests # test generation
+      gore # go repl
+      delve # go debugger
+      dockerfile-language-server # docker-langserver
+      hadolint # dockerfile linter
+      terraform-ls # terraform
+      tflint # terraform linter
+      ansible-language-server # ansible
+      yaml-language-server # yaml, compose, k8s
+      bash-language-server # sh/bash
+      shellcheck # used by bash-language-server
+      shfmt # sh formatter
+      vscode-langservers-extracted # json, html, css
+      basedpyright # python
+      ruff # python linter/formatter
+      unstable.elixir-ls # elixir
+      erlang-language-platform # erlang (ELP)
       argc
       trashy
       css-checker
@@ -122,7 +152,7 @@
       unzip # extract zip files
       gzip # zip manipulation
       gnumake # gnu make
-      nodejs_20 # copilot requirement and some LSPs
+      nodejs_24 # copilot requirement and some LSPs
       cargo # Rust support
       luajitPackages.luarocks # lua package manager
       gnutar # tar manipulation
@@ -131,7 +161,7 @@
       lazysql # alternative to dblab in Go
       rainfrog # alternative to dblab in Rust
       posting # TUI for exploring API (postman like)
-      discordo # TUI to discord
+      unstable.discordo # TUI to discord
       caligula # TUI for dd
       gdu # TUI for Disk analisys
       sc-im # TUI alternative to Excel
@@ -191,7 +221,7 @@
       vlc
 
       # bug bounty
-      caido
+      caido-desktop
       burpsuite
       zap
 

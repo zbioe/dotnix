@@ -39,8 +39,8 @@ in
 
     LC_CTYPE = "pt_BR.UTF-8";
 
-    XLOCALEDIR = "${pkgs.xorg.libX11}/share/X11/locale";
-    XCOMPOSEFILE = "${pkgs.xorg.libX11}/share/X11/locale/pt_BR.UTF-8/Compose";
+    XLOCALEDIR = "${pkgs.libx11}/share/X11/locale";
+    XCOMPOSEFILE = "${pkgs.libx11}/share/X11/locale/pt_BR.UTF-8/Compose";
   };
   i18n.inputMethod = {
     enable = true;
@@ -83,11 +83,6 @@ in
     xwayland.enable = true;
   };
 
-  # fix the start hyprland in proper way
-  # https://github.com/NixOS/nixpkgs/commit/874985cfccbb94ed17cc19d2ae1c8e9191b1f886#diff-2a0030aad6c6a750df9d7404cc5f71bd41e6a3ff0183e5b80c5b79254637e0aa
-  # when this change merge in the current version, this can be removed
-  programs.uwsm.waylandCompositors.hyprland.binPath = lib.mkForce "${hyprland}/bin/start-hyprland";
-
   xdg.portal = {
     enable = true;
     extraPortals = [
@@ -118,7 +113,7 @@ in
     libnotify
 
     # wallpaper
-    swww
+    awww
 
     # player manager
     playerctl
@@ -183,9 +178,9 @@ in
       openssl
       curl
       libglvnd
-      xorg.libX11
-      xorg.libXrandr
-      xorg.libXext
+      libx11
+      libxrandr
+      libxext
       krb5
       mesa
       alsa-lib

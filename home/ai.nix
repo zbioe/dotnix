@@ -15,6 +15,7 @@
   programs.opencode = {
     enable = true;
     package = unstable.opencode;
+    tui.plugin = [ "oh-my-opencode-slim" ];
   };
   home.sessionPath = [
     "${config.home.homeDirectory}/.cache/bun/bin"

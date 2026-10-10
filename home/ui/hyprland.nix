@@ -5,11 +5,32 @@
   ...
 }:
 
+let
+  terminal = "uwsm app -- foot -e sh -c 'if [ -f ~/bin/start-tmux.sh ]; then bash ~/bin/start-tmux.sh; else tmux new-session -A -D -s main; fi'";
+
+  toggleMic = pkgs.writeShellScript "toggle-mic" ''
+    ${pkgs.wireplumber}/bin/wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle
+
+    STATUS=$(${pkgs.wireplumber}/bin/wpctl get-volume @DEFAULT_AUDIO_SOURCE@)
+
+    if [[ "$STATUS" == *"[MUTED]"* ]]; then
+      echo 1 | sudo tee /sys/class/leds/platform::micmute/brightness
+    else
+      echo 0 | sudo tee /sys/class/leds/platform::micmute/brightness
+    fi
+  '';
+
+  # window_rule helper
+  toWorkspace = workspace: class: {
+    match.class = class;
+    inherit workspace;
+  };
+in
 {
   home.activation.criaMacrosHyprland = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-    if [ ! -f ~/.config/hyprland/priv.conf ]; then
+    if [ ! -f ~/.config/hyprland/priv.lua ]; then
       mkdir -p ~/.config/hyprland
-      touch ~/.config/hyprland/priv.conf
+      touch ~/.config/hyprland/priv.lua
     fi
   '';
 
@@ -20,32 +41,34 @@
     hyprland = {
       enable = true;
       package = hyprland;
+      configType = "lua";
       systemd.enable = false; # DISABLE this integration to UWSM can handle it
       xwayland.enable = true;
-      settings =
-        let
-          terminal = "uwsm app -- foot -e sh -c 'if [ -f ~/bin/start-tmux.sh ]; then bash ~/bin/start-tmux.sh; else tmux new-session -A -D -s main; fi'";
-        in
-        {
-          "$mod" = "SUPER";
+      settings = {
+        env = map (args: { _args = args; }) [
+          [
+            "XDG_CURRENT_DESKTOP"
+            "Hyprland"
+          ]
+          [
+            "XDG_SESSION_TYPE"
+            "wayland"
+          ]
+          [
+            "XDG_SESSION_DESKTOP"
+            "Hyprland"
+          ]
+        ];
 
-          env = [
-            "XDG_CURRENT_DESKTOP,Hyprland"
-            "XDG_SESSION_TYPE,wayland"
-            "XDG_SESSION_DESKTOP,Hyprland"
-          ];
-
-          source = "$HOME/.config/hyprland/priv.conf";
-
+        config = {
           misc = {
             disable_hyprland_logo = true;
             force_default_wallpaper = 0;
-            vfr = true;
             vrr = 1;
           };
 
           render = {
-            direct_scanout = true;
+            direct_scanout = 1;
           };
 
           general = {
@@ -67,7 +90,7 @@
           };
 
           animations = {
-            enabled = "no";
+            enabled = false;
           };
 
           decoration = {
@@ -82,134 +105,134 @@
             kb_model = "";
             kb_variant = "intl";
           };
-
-          device = [
-            {
-              name = "kanata-internal";
-              kb_layout = "br";
-              kb_variant = "thinkpad";
-            }
-            {
-              name = "kanata-external";
-              kb_layout = "us";
-              kb_variant = "intl";
-            }
-          ];
-
-          monitor = [
-            ",preferred,auto-left,1"
-            "DP-1, 1920x1080@180, 0x0, 1"
-          ];
-
-          windowrule = [
-            "workspace 2, match:class ^(librewolf)$"
-            "workspace 3, match:class ^(brave-browser)$"
-            "workspace 5 silent, match:class ^(discord)$"
-            "workspace 6, match:class ^(gimp)"
-            "workspace 8 silent, match:class ^(workpuls-agent)$"
-            "workspace 9, match:class ^(alacritty)$"
-            "workspace 9, match:class ^(foot)$"
-            "workspace 10, match:class ^(emacs)$"
-
-            # Emacs PGTK prevent popups and context menus to steal the focus
-            "stay_focused 1, match:class ^(emacs)$, match:title ^$"
-
-            # Floating rules (strict typing requires the '1')
-            "float 1, match:class ^(org.pulseaudio.pavucontrol)$"
-            "float 1, match:class ^(nm-connection-editor)$"
-            "float 1, match:class ^(.blueman-manager-wrapped)$"
-          ];
-
-          exec-once = [
-            "[workspace 2 silent] librewolf"
-            "[workspace 9 silent] ${terminal}"
-            "[workspace 5 silent] discord"
-            "[workspace 10 silent] emacsclient -cn ~/dev/"
-          ];
-
-          bind =
-            let
-              toggleMic = pkgs.writeShellScript "toggle-mic" ''
-                ${pkgs.wireplumber}/bin/wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle
-
-                STATUS=$(${pkgs.wireplumber}/bin/wpctl get-volume @DEFAULT_AUDIO_SOURCE@)
-
-                if [[ "$STATUS" == *"[MUTED]"* ]]; then
-                  echo 1 | sudo tee /sys/class/leds/platform::micmute/brightness
-                else
-                  echo 0 | sudo tee /sys/class/leds/platform::micmute/brightness
-                fi
-              '';
-            in
-            [
-              "$mod, F, fullscreen,"
-              "$mod SHIFT, B, exec, uwsm app -- librewolf"
-              "$mod SHIFT, N, exec, uwsm app -- nautilus"
-              "$mod SHIFT, P, exec, uwsm app -- hyprpicker | wl-copy"
-              "$mod, RETURN, exec, ${terminal} && exit"
-              "$mod, Y, exec, foot -e yazi"
-              "$mod, P, exec, uwsm app -- fuzzel"
-              "$mod SHIFT, Q, killactive,"
-              "$mod SHIFT, R, exec, uwsm app -- hyprlock"
-              "$mod SHIFT, X, exit,"
-
-              ", Print, exec, uwsm app -- grimblast copy area"
-              "SHIFT, Print, exec, uwsm app -- bash -c 'AREA=$(slurp) && sleep 2 && grim -g \"$AREA\" - | wl-copy'"
-              "$mod SHIFT, Y, exec, uwsm app -- grimblast save area - | tesseract stdin stdout | wl-copy"
-
-              ", XF86AudioRaiseVolume, exec, wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.1+"
-              "$mod SHIFT, O, exec, wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.1+"
-
-              ", XF86AudioLowerVolume, exec, wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.1-"
-              "$mod SHIFT, I, exec, wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.1-"
-
-              ", XF86AudioMute, exec, wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"
-              "$mod SHIFT, M, exec, wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"
-
-              ", XF86MonBrightnessUp, exec, brightnessctl s +5%"
-              ", XF86MonBrightnessDown, exec, brightnessctl s 5%-"
-              ", XF86AudioMicMute, exec, ${toggleMic}"
-
-              "$mod, w, workspace, previous"
-              "$mod SHIFT, w, movetoworkspace, previous"
-
-              "$mod, 1, workspace, 1"
-              "$mod, 2, workspace, 2"
-              "$mod, 3, workspace, 3"
-              "$mod, 4, workspace, 4"
-              "$mod, 5, workspace, 5"
-              "$mod, 6, workspace, 6"
-              "$mod, 7, workspace, 7"
-              "$mod, 8, workspace, 8"
-              "$mod, 9, workspace, 9"
-              "$mod, 0, workspace, 10"
-
-              "$mod SHIFT, 1, movetoworkspace, 1"
-              "$mod SHIFT, 2, movetoworkspace, 2"
-              "$mod SHIFT, 3, movetoworkspace, 3"
-              "$mod SHIFT, 4, movetoworkspace, 4"
-              "$mod SHIFT, 5, movetoworkspace, 5"
-              "$mod SHIFT, 6, movetoworkspace, 6"
-              "$mod SHIFT, 7, movetoworkspace, 7"
-              "$mod SHIFT, 8, movetoworkspace, 8"
-              "$mod SHIFT, 9, movetoworkspace, 9"
-              "$mod SHIFT, 0, movetoworkspace, 10"
-
-              "$mod, S, togglespecialworkspace, magic"
-              "$mod SHIFT, S, movetoworkspace, special:magic"
-
-              "$mod, h, movefocus, l"
-              "$mod, l, movefocus, r"
-              "$mod, k, movefocus, u"
-              "$mod, j, movefocus, d"
-
-              "$mod SHIFT, h, movewindow, l"
-              "$mod SHIFT, l, movewindow, r"
-              "$mod SHIFT, k, movewindow, u"
-              "$mod SHIFT, j, movewindow, d"
-
-            ];
         };
+
+        device = [
+          {
+            name = "kanata-internal";
+            kb_layout = "br";
+            kb_variant = "thinkpad";
+          }
+          {
+            name = "kanata-external";
+            kb_layout = "us";
+            kb_variant = "intl";
+          }
+        ];
+
+        monitor = [
+          {
+            output = "";
+            mode = "preferred";
+            position = "auto-left";
+            scale = 1;
+          }
+          {
+            output = "DP-1";
+            mode = "1920x1080@180";
+            position = "0x0";
+            scale = 1;
+          }
+        ];
+
+        window_rule = [
+          (toWorkspace "2" "^(librewolf)$")
+          (toWorkspace "3" "^(brave-browser)$")
+          (toWorkspace "5 silent" "^(discord)$")
+          (toWorkspace "6" "^(gimp)")
+          (toWorkspace "8 silent" "^(workpuls-agent)$")
+          (toWorkspace "9" "^(alacritty)$")
+          (toWorkspace "9" "^(foot)$")
+          (toWorkspace "10" "^(emacs)$")
+
+          # Emacs PGTK prevent popups and context menus to steal the focus
+          {
+            match = {
+              class = "^(emacs)$";
+              title = "^$";
+            };
+            stay_focused = true;
+          }
+
+          {
+            match.class = "^(org.pulseaudio.pavucontrol)$";
+            float = true;
+          }
+          {
+            match.class = "^(nm-connection-editor)$";
+            float = true;
+          }
+          {
+            match.class = "^(.blueman-manager-wrapped)$";
+            float = true;
+          }
+        ];
+      };
+
+      extraConfig = ''
+        local mod = "SUPER"
+        local terminal = "${terminal}"
+
+        local function exec(cmd)
+          return hl.dsp.exec_cmd(cmd)
+        end
+
+        hl.on("hyprland.start", function()
+          hl.exec_cmd("librewolf", { workspace = "2 silent" })
+          hl.exec_cmd(terminal, { workspace = "9 silent" })
+          hl.exec_cmd("discord", { workspace = "5 silent" })
+          hl.exec_cmd("emacsclient -cn ~/dev/", { workspace = "10 silent" })
+        end)
+
+        hl.bind(mod .. " + F", hl.dsp.window.fullscreen())
+        hl.bind(mod .. " + SHIFT + B", exec("uwsm app -- librewolf"))
+        hl.bind(mod .. " + SHIFT + N", exec("uwsm app -- nautilus"))
+        hl.bind(mod .. " + SHIFT + P", exec("uwsm app -- hyprpicker | wl-copy"))
+        hl.bind(mod .. " + RETURN", exec(terminal .. " && exit"))
+        hl.bind(mod .. " + Y", exec("foot -e yazi"))
+        hl.bind(mod .. " + P", exec("uwsm app -- fuzzel"))
+        hl.bind(mod .. " + SHIFT + Q", hl.dsp.window.close())
+        hl.bind(mod .. " + SHIFT + R", exec("uwsm app -- hyprlock"))
+        hl.bind(mod .. " + SHIFT + X", hl.dsp.exit())
+
+        hl.bind("Print", exec("uwsm app -- grimblast copy area"))
+        hl.bind("SHIFT + Print", exec([[uwsm app -- bash -c 'AREA=$(slurp) && sleep 2 && grim -g "$AREA" - | wl-copy']]))
+        hl.bind(mod .. " + SHIFT + Y", exec("uwsm app -- grimblast save area - | tesseract stdin stdout | wl-copy"))
+
+        hl.bind("XF86AudioRaiseVolume", exec("wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.1+"))
+        hl.bind(mod .. " + SHIFT + O", exec("wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.1+"))
+        hl.bind("XF86AudioLowerVolume", exec("wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.1-"))
+        hl.bind(mod .. " + SHIFT + I", exec("wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.1-"))
+        hl.bind("XF86AudioMute", exec("wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"))
+        hl.bind(mod .. " + SHIFT + M", exec("wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"))
+
+        hl.bind("XF86MonBrightnessUp", exec("brightnessctl s +5%"))
+        hl.bind("XF86MonBrightnessDown", exec("brightnessctl s 5%-"))
+        hl.bind("XF86AudioMicMute", exec("${toggleMic}"))
+
+        hl.bind(mod .. " + W", hl.dsp.focus({ workspace = "previous" }))
+        hl.bind(mod .. " + SHIFT + W", hl.dsp.window.move({ workspace = "previous" }))
+
+        for i = 1, 10 do
+          local key = i % 10 -- 10 maps to key 0
+          hl.bind(mod .. " + " .. key, hl.dsp.focus({ workspace = i }))
+          hl.bind(mod .. " + SHIFT + " .. key, hl.dsp.window.move({ workspace = i }))
+        end
+
+        hl.bind(mod .. " + S", hl.dsp.workspace.toggle_special("magic"))
+        hl.bind(mod .. " + SHIFT + S", hl.dsp.window.move({ workspace = "special:magic" }))
+
+        for key, direction in pairs({ h = "left", l = "right", k = "up", j = "down" }) do
+          hl.bind(mod .. " + " .. key, hl.dsp.focus({ direction = direction }))
+          hl.bind(mod .. " + SHIFT + " .. key, hl.dsp.window.move({ direction = direction }))
+        end
+
+        -- private, unversioned config (macros etc.)
+        local priv = os.getenv("HOME") .. "/.config/hyprland/priv.lua"
+        if io.open(priv) then
+          dofile(priv)
+        end
+      '';
     };
   };
 }

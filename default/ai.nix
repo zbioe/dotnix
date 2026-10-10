@@ -13,17 +13,16 @@
     harbor-cli
 
     # AI agents
-    gemini-cli
     claude-code
 
     # AI editors
     zed-editor
     code-cursor
     aider-chat
-    antigravity
+    antigravity-ide
 
     # upscaling
-    waifu2x-converter-cpp
+    realesrgan-ncnn-vulkan
   ];
 
   # services

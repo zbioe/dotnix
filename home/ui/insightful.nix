@@ -1,6 +1,7 @@
 {
   config,
   pkgs,
+  unstable,
   lib,
   ...
 }:
@@ -52,11 +53,11 @@ in
     APPIMAGE="${appImagePath}"
     APPDIR="${appDir}"
     USERNAME="${username}"
-    DOCKER="${pkgs.docker}/bin/docker"
+    DOCKER="${unstable.docker}/bin/docker"
     DISTROBOX="${pkgs.distrobox}/bin/distrobox"
     CURL="${pkgs.curl}/bin/curl"
     # distrobox needs standard utils (awk, rev, sed, grep, etc.)
-    export PATH="${pkgs.docker}/bin:${pkgs.gawk}/bin:${pkgs.util-linux}/bin:${pkgs.gnused}/bin:${pkgs.gnugrep}/bin:${pkgs.coreutils}/bin:${pkgs.findutils}/bin:/run/current-system/sw/bin:''$PATH"
+    export PATH="${unstable.docker}/bin:${pkgs.gawk}/bin:${pkgs.util-linux}/bin:${pkgs.gnused}/bin:${pkgs.gnugrep}/bin:${pkgs.coreutils}/bin:${pkgs.findutils}/bin:/run/current-system/sw/bin:''$PATH"
 
     # 1. Create and initialize the distrobox container if it doesn't exist
     if ! ''$DOCKER ps -a --format '{{.Names}}' 2>/dev/null | grep -qx "''$CONTAINER"; then

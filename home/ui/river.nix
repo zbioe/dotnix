@@ -27,7 +27,7 @@ in
 
       # Use 'uwsm app --' para rodar processos em segundo plano.
       # Isso cria escopos systemd para cada app, permitindo logs e cleanup limpo.
-      riverctl spawn "uwsm app -- ${pkgs.swww}/bin/swww-daemon"
+      riverctl spawn "uwsm app -- ${pkgs.awww}/bin/awww-daemon"
       riverctl spawn "uwsm app -- ${pkgs.yambar}/bin/yambar"
       riverctl spawn "uwsm app -- ${pkgs.polkit_gnome}/libexec/polkit-gnome-authentication-agent-1"
       riverctl spawn "uwsm app -- ${pkgs.mako}/bin/mako"

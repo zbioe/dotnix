@@ -1,10 +1,12 @@
 {
   lib,
+  waybar,
   ...
 }:
 {
   programs.waybar = {
     enable = true;
+    package = waybar;
     systemd.enable = true;
     style = lib.mkAfter ''
       .modules-left #workspaces button.active {

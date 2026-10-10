@@ -141,6 +141,7 @@
     yazi = {
       enable = true;
       enableFishIntegration = true;
+      shellWrapperName = "yy";
     };
     brave = {
       package = unstable.brave;

@@ -122,6 +122,7 @@
   # Docker defaults
   virtualisation.docker = {
     enable = true;
+    package = unstable.docker;
     daemon.settings = {
       dns = [
         "1.1.1.1"

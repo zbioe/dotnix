@@ -17,6 +17,7 @@ _:
       set -g allow-passthrough on
 
       set -g default-terminal "alacritty"
+      set-environment -gu TERMINFO
       set-option -ga terminal-overrides ",alacritty:Tc"
 
       # Color
