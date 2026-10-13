@@ -110,9 +110,9 @@ in
 
             (defalias
               cap (tap-hold-press 200 200 esc lctl)
-              alt_layer (layer-while-held acentos_pt)
+              alt_layer (layer-while-held accents_pt)
 
-              ;; --- O SEU DICIONÁRIO DE ACENTOS ---
+              ;; --- ACCENT MACROS ---
               m_til (macro S-grv spc) ;; ~ (AltGr + q)
               m_ati (macro S-grv a)   ;; ã (AltGr + w)
               m_eac (macro ' e)       ;; é (AltGr + e)
@@ -142,7 +142,7 @@ in
               / @alt_layer
             )
 
-            (deflayer acentos_pt
+            (deflayer accents_pt
               _
               @m_til @m_ati @m_eac @m_eci @m_uac @m_iac @m_oac @m_oti
               @m_aac @m_aci @m_utr @m_oci

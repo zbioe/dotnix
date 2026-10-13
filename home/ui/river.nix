@@ -23,10 +23,10 @@ in
 
     extraConfig = ''
       # --- UWSM & Autostart ---
-      # NÃO rodamos mais "systemctl import-environment" aqui, o UWSM já fez isso antes do River iniciar.
+      # no "systemctl import-environment" here: UWSM already did it before River started.
 
-      # Use 'uwsm app --' para rodar processos em segundo plano.
-      # Isso cria escopos systemd para cada app, permitindo logs e cleanup limpo.
+      # 'uwsm app --' runs background processes
+      # in their own systemd scopes, with logs and a clean cleanup.
       riverctl spawn "uwsm app -- ${pkgs.awww}/bin/awww-daemon"
       riverctl spawn "uwsm app -- ${pkgs.yambar}/bin/yambar"
       riverctl spawn "uwsm app -- ${pkgs.polkit_gnome}/libexec/polkit-gnome-authentication-agent-1"
@@ -45,9 +45,9 @@ in
       riverctl input "pointer-*" accel-profile flat
       riverctl input "pointer-*" pointer-accel 0
 
-      # --- Mapeamento (Também pode usar 'uwsm app --' aqui se quiser) ---
+      # --- Bindings ('uwsm app --' works here too) ---
       riverctl map normal Super+Shift Q close
-      # 'uwsm stop' é a maneira correta de sair da sessão agora
+      # 'uwsm stop' is the way out of the session
       riverctl map normal Super+Shift X spawn "uwsm stop" 
 
       riverctl map normal Super Return spawn "uwsm app -- ${pkgs.foot}/bin/foot"
@@ -58,7 +58,7 @@ in
       # Yazi
       riverctl map normal Super Y spawn "uwsm app -- ${pkgs.foot}/bin/foot -e yazi"
 
-      # Foco/Movimento
+      # Focus/movement
       riverctl map normal Super J focus-view next
       riverctl map normal Super K focus-view previous
       riverctl map normal Super+Shift J swap next
@@ -70,7 +70,7 @@ in
       # Tags
       sh ${tag-setup}
 
-      # Multimídia
+      # Media keys
       riverctl map normal None XF86AudioRaiseVolume spawn "wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.1+"
       riverctl map normal None XF86AudioLowerVolume spawn "wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.1-"
       riverctl map normal None XF86AudioMute spawn "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"
@@ -80,9 +80,9 @@ in
       # Printscreen
       riverctl map normal None Print spawn "${pkgs.grimblast}/bin/grimblast copy area"
 
-      # --- FINALIZAÇÃO UWSM ---
-      # Importante: Isso avisa ao systemd que o compositor está pronto.
-      # Deve ser o último comando.
+      # --- UWSM FINALIZE ---
+      # tells systemd the compositor is ready:
+      # must be the last command.
       exec uwsm finalize
     '';
   };

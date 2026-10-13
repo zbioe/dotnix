@@ -1,0 +1,17 @@
+{
+  "manifest_version": 3,
+  "name": "nix-theme",
+  "description": "Follows the active dotnix theme in Dark Reader and while pages load.",
+  "version": "1.0",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEApayp/b0wtOVbn7j4dqNvVOT6Uz2Qm62iq6weSB7Tuupr5pnX6P609tj/qRZqOxnoMJLHZD5HM0XGr5Ce2mmr9kWlT7YHoraGzpKSuZAhaDaFYvWfEhg9wR82GSyAvin54bHUSikPEgZtY0mGt8npOHZp1bRiES4XzZrGpzADfuIF4dEBUluB9lHwNOkxezM6Qix4aj/SFzQlL4SSC2IAZtHHv1y4g1RYHpgm6G1ypQUwMF9vMXCGoDPkrWzumCOBhW59YD9hYKqPg3iZVeFtG0zGOkP79HTezITL845QgqIa7Nx2KQnn3BUyUSdda6ESvuC6EXtaCnkcXMtGqnjaUwIDAQAB",
+  "permissions": [
+    "nativeMessaging",
+    "scripting"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "host_permissions": [
+    "<all_urls>"
+  ]
+}

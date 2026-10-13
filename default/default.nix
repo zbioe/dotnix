@@ -12,6 +12,7 @@
     ./tmux.nix
     ./config.nix
     ./packages.nix
+    ./librewolf.nix
     ./webcam.nix
     # ./web3.nix
     ./libvirt.nix
@@ -44,16 +45,33 @@
       auto-optimise-store = true;
       builders-use-substitutes = true;
     };
-    gc = {
-      automatic = true;
-      dates = "daily";
-      options = "--delete-older-than 10d";
-    };
     extraOptions = ''
       keep-outputs = true
       keep-derivations = true
       tarball-ttl = 900
     '';
+  };
+
+  # `nh os switch` / `nh home switch`: rebuild with a package diff (nvd);
+  # its clean replaces nix.gc and also drops old home-manager generations
+  programs.nh = {
+    enable = true;
+    flake = "/home/zbioe/dotnix";
+    clean = {
+      enable = true;
+      dates = "weekly";
+      extraArgs = "--keep-since 10d --keep 5";
+    };
+  };
+  # /boot is 1G and each initrd carries every plymouth theme (~75M)
+  boot.loader.grub.configurationLimit = 5;
+
+  # compressed swap in RAM first (the disk swap stays as overflow), and
+  # kill the biggest offender before the desktop freezes
+  zramSwap.enable = true;
+  services.earlyoom = {
+    enable = true;
+    enableNotifications = true;
   };
 
   networking.resolvconf.extraOptions = [
@@ -192,7 +210,7 @@
           weight = 1;
         }
 
-        # Motores de Dev Nativos e Estáveis
+        # built-in, stable dev engines
         {
           name = "github";
           engine = "github";

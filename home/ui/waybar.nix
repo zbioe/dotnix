@@ -1,19 +1,47 @@
 {
+  config,
   lib,
+  pkgs,
   waybar,
   ...
 }:
+let
+  # quick pickers on fuzzel (themed by stylix); right click keeps the full GUI
+  wifiMenu = "${pkgs.networkmanager_dmenu}/bin/networkmanager_dmenu";
+  bluetoothMenu = "${pkgs.bzmenu}/bin/bzmenu --launcher fuzzel --interactive";
+  audioMenu = "${pkgs.pwmenu}/bin/pwmenu --launcher fuzzel --interactive";
+  theme = lib.getExe config.theme.package;
+in
 {
+  xdg.configFile."networkmanager-dmenu/config.ini".text = lib.generators.toINI { } {
+    dmenu = {
+      dmenu_command = "fuzzel --dmenu";
+      compact = true;
+      wifi_chars = "▂▄▆█";
+    };
+  };
+
   programs.waybar = {
     enable = true;
     package = waybar;
     systemd.enable = true;
-    style = lib.mkAfter ''
-      .modules-left #workspaces button.active {
-        background: @base01;
-        border-bottom: 0px solid @base05;
-      }
-    '';
+    style = lib.mkMerge [
+      (lib.mkBefore ''
+        @import url("file://${config.xdg.stateHome}/theme/current/waybar.css");
+
+        * {
+            font-family: "${config.stylix.fonts.monospace.name}";
+            font-size: ${toString config.stylix.fonts.sizes.desktop}pt;
+        }
+      '')
+      (builtins.readFile ./waybar.css)
+      (lib.mkAfter ''
+        .modules-left #workspaces button.active {
+          background: @base01;
+          border-bottom: 0px solid @base05;
+        }
+      '')
+    ];
     settings = {
       mainBar = {
         layer = "top";
@@ -34,6 +62,8 @@
           "custom/separator"
           "pulseaudio"
           "network"
+          "custom/theme"
+          "tray"
           "clock"
           "battery"
         ];
@@ -84,8 +114,16 @@
           ];
           tooltip = true;
           tooltip-format = "{volume}%";
-          on-click = "pavucontrol";
+          on-click = audioMenu;
+          on-click-right = "pavucontrol";
           on-click-middle = "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle";
+        };
+        "custom/theme" = {
+          exec = "${theme} icon";
+          interval = "once";
+          tooltip = false;
+          on-click = "${theme} toggle";
+          on-click-right = "${theme} menu";
         };
         "custom/separator" = {
           format = " | ";
@@ -115,7 +153,8 @@
           tooltip-format = "{device_alias}";
           format-connected-battery = "  {device_battery_percentage}% ";
           tooltip-format-enumerate-connected = "{device_alias}";
-          on-click = "blueman-manager";
+          on-click = bluetoothMenu;
+          on-click-right = "blueman-manager";
         };
 
         network = {
@@ -124,7 +163,8 @@
           format-wifi = "󰖩 ";
           format-ethernet = "󰈀 ";
           tooltip-format = "{essid}  {signalStrength} | {ipaddr}/{cidr}  {bandwidthUpBytes} 󰁅 {bandwidthDownBytes}";
-          on-click = "nm-connection-editor";
+          on-click = wifiMenu;
+          on-click-right = "nm-connection-editor";
         };
 
         memory = {

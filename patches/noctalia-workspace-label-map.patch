@@ -1,0 +1,66 @@
+diff -ru a/src/shell/bar/widgets/workspaces_widget.cpp b/src/shell/bar/widgets/workspaces_widget.cpp
+--- a/src/shell/bar/widgets/workspaces_widget.cpp
++++ b/src/shell/bar/widgets/workspaces_widget.cpp
+@@ -72,7 +72,7 @@
+     CompositorPlatform& platform, ConfigService& config, wl_output* output, Options options
+ )
+     : m_platform(platform), m_configService(config), m_output(output), m_labelSource(options.labelSource),
+-      m_showLabels(options.showLabels), m_maxLabelChars(options.maxLabelChars),
++      m_showLabels(options.showLabels), m_maxLabelChars(options.maxLabelChars), m_labelMap(options.labelMap),
+       m_labelsOnlyWhenOccupied(options.labelsOnlyWhenOccupied), m_showIcons(options.showIcons),
+       m_hideWhenEmpty(options.hideWhenEmpty), m_showAllOutputs(options.showAllOutputs), m_pillScale(options.pillScale),
+       m_activePillSize(std::clamp(options.activePillSize, 0.25F, 8.0F)),
+@@ -1431,6 +1431,16 @@
+     label = !workspace.name.empty() ? workspace.name : workspace.id;
+   }
+ 
++  // label_map: "1=a,2=b" replaces whole labels and is never truncated
++  for (std::size_t start = 0; start < m_labelMap.size();) {
++    const std::size_t end = std::min(m_labelMap.find(',', start), m_labelMap.size());
++    const std::string_view entry = std::string_view(m_labelMap).substr(start, end - start);
++    if (const std::size_t eq = entry.find('='); eq != std::string_view::npos && entry.substr(0, eq) == label) {
++      return std::string(entry.substr(eq + 1));
++    }
++    start = end + 1;
++  }
++
+   // Only truncate non-numeric labels (words like "VESKTOP" → "VE").
+   // Numeric labels (workspace IDs like "10", "11") stay as-is.
+   if (!isNumericLabel(label) && m_maxLabelChars > 0) {
+diff -ru a/src/shell/bar/widgets/workspaces_widget_definition.cpp b/src/shell/bar/widgets/workspaces_widget_definition.cpp
+--- a/src/shell/bar/widgets/workspaces_widget_definition.cpp
++++ b/src/shell/bar/widgets/workspaces_widget_definition.cpp
+@@ -96,6 +96,13 @@
+                           .visibleWhen = occupiedFilterApplies(),
+                       },
+               }),
++              field<&Options::labelMap>({
++                  .key = "label_map",
++                  .presentation =
++                      settings::WidgetSettingPresentation{
++                          .group = "workspaces.list",
++                      },
++              }),
+               field<&Options::maxLabelChars>({
+                   .key = "max_label_chars",
+                   .minValue = 1.0,
+diff -ru a/src/shell/bar/widgets/workspaces_widget.h b/src/shell/bar/widgets/workspaces_widget.h
+--- a/src/shell/bar/widgets/workspaces_widget.h
++++ b/src/shell/bar/widgets/workspaces_widget.h
+@@ -45,6 +45,8 @@
+     ColorSpec urgentColor = colorSpecFromRole(ColorRole::Error);
+     bool changeColorOnHover = true;
+     std::size_t maxLabelChars = 1;
++    // "1=a,2=b": replaces the label of the listed workspaces (e.g. icons)
++    std::string labelMap;
+     bool labelsOnlyWhenOccupied = false;
+     bool hideWhenEmpty = false;
+     bool showAllOutputs = false;
+@@ -170,6 +172,7 @@
+   WorkspacesLabelSource m_labelSource = WorkspacesLabelSource::Id;
+   bool m_showLabels = true;
+   std::size_t m_maxLabelChars = 1;
++  std::string m_labelMap;
+   bool m_labelsOnlyWhenOccupied = false;
+   bool m_showIcons = true;
+   bool m_hideWhenEmpty = false;

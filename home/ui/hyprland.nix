@@ -6,19 +6,7 @@
 }:
 
 let
-  terminal = "uwsm app -- foot -e sh -c 'if [ -f ~/bin/start-tmux.sh ]; then bash ~/bin/start-tmux.sh; else tmux new-session -A -D -s main; fi'";
-
-  toggleMic = pkgs.writeShellScript "toggle-mic" ''
-    ${pkgs.wireplumber}/bin/wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle
-
-    STATUS=$(${pkgs.wireplumber}/bin/wpctl get-volume @DEFAULT_AUDIO_SOURCE@)
-
-    if [[ "$STATUS" == *"[MUTED]"* ]]; then
-      echo 1 | sudo tee /sys/class/leds/platform::micmute/brightness
-    else
-      echo 0 | sudo tee /sys/class/leds/platform::micmute/brightness
-    fi
-  '';
+  inherit (import ./session.nix { inherit pkgs; }) terminal toggleMic annotate;
 
   # window_rule helper
   toWorkspace = workspace: class: {
@@ -41,6 +29,9 @@ in
     hyprland = {
       enable = true;
       package = hyprland;
+      # portals come from NixOS (default/ui.nix), which also has gtk/wlr; a
+      # home-manager portal dir would hide those backends (no Settings portal)
+      portalPackage = null;
       configType = "lua";
       systemd.enable = false; # DISABLE this integration to UWSM can handle it
       xwayland.enable = true;
@@ -137,7 +128,7 @@ in
 
         window_rule = [
           (toWorkspace "2" "^(librewolf)$")
-          (toWorkspace "3" "^(brave-browser)$")
+          (toWorkspace "3" "^brave-browser$")
           (toWorkspace "5 silent" "^(discord)$")
           (toWorkspace "6" "^(gimp)")
           (toWorkspace "8 silent" "^(workpuls-agent)$")
@@ -198,6 +189,8 @@ in
         hl.bind("Print", exec("uwsm app -- grimblast copy area"))
         hl.bind("SHIFT + Print", exec([[uwsm app -- bash -c 'AREA=$(slurp) && sleep 2 && grim -g "$AREA" - | wl-copy']]))
         hl.bind(mod .. " + SHIFT + Y", exec("uwsm app -- grimblast save area - | tesseract stdin stdout | wl-copy"))
+        hl.bind(mod .. " + Print", exec([[uwsm app -- ${annotate}]]))
+        hl.bind(mod .. " + V", exec([[uwsm app -- sh -c 'cliphist list | fuzzel --dmenu | cliphist decode | wl-copy']]))
 
         hl.bind("XF86AudioRaiseVolume", exec("wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.1+"))
         hl.bind(mod .. " + SHIFT + O", exec("wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.1+"))

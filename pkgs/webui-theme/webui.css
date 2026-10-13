@@ -1,0 +1,176 @@
+/* dotnix: the browser's own pages in the GTK palette. The window, text and
+   link colors of chrome://theme/colors.css are the GTK theme's own (live);
+   Canvas/CanvasText stand in on pages without them. */
+html:not(#z) {
+  --nx-bg: var(--color-primary-background, Canvas);
+  --nx-fg: var(--color-primary-foreground, CanvasText);
+  --nx-accent: var(--color-link-foreground, LinkText);
+  --nx-1: color-mix(in oklab, var(--nx-bg), var(--nx-fg) 4%);
+  --nx-2: color-mix(in oklab, var(--nx-bg), var(--nx-fg) 8%);
+  --nx-3: color-mix(in oklab, var(--nx-bg), var(--nx-fg) 14%);
+  --nx-dim: color-mix(in oklab, var(--nx-fg), var(--nx-bg) 30%);
+  --nx-line: color-mix(in oklab, var(--nx-bg), var(--nx-fg) 18%);
+  /* the focused address bar (patch-pak.py, below): no line around the
+     field, nor its shadow while unfocused; a thin one in the palette around
+     the whole dropdown instead */
+  --nx-omnibox-ring: color-mix(in oklab, var(--nx-bg), var(--nx-fg) 35%);
+  --nx-omnibox-field-ring: transparent;
+  --cr-searchbox-shadow: none !important;
+  /* Chromium */
+  --md-background-color: var(--nx-1) !important;
+  --color-webui-page-background: var(--nx-1) !important;
+  --color-settings-webui-page-background: var(--nx-1) !important;
+  --color-webui-card-background: var(--nx-bg) !important;
+  --color-webui-dialog-background: var(--nx-bg) !important;
+  --color-webui-dialog-container-background: var(--nx-1) !important;
+  --color-settings-info-card-background: var(--nx-2) !important;
+  --color-sys-base: var(--nx-bg) !important;
+  --color-sys-base-container: var(--nx-2) !important;
+  --color-sys-base-container-elevated: var(--nx-bg) !important;
+  --color-sys-base-container-on-surface: var(--nx-2) !important;
+  --color-sys-surface: var(--nx-bg) !important;
+  --color-sys-surface-section: var(--nx-bg) !important;
+  --color-sys-surface1: var(--nx-1) !important;
+  --color-sys-surface2: var(--nx-1) !important;
+  --color-sys-surface3: var(--nx-2) !important;
+  --color-sys-surface4: var(--nx-2) !important;
+  --color-sys-surface5: var(--nx-3) !important;
+  --color-sys-surface-variant: var(--nx-3) !important;
+  --color-sys-header: var(--nx-1) !important;
+  --color-sys-on-surface: var(--nx-fg) !important;
+  --color-sys-on-surface-subtle: var(--nx-dim) !important;
+  --cr-card-background-color: var(--nx-bg) !important;
+  --cr-primary-text-color: var(--nx-fg) !important;
+  --cr-secondary-text-color: var(--nx-dim) !important;
+  --cr-toolbar-search-field-background: var(--nx-2) !important;
+  --color-toolbar-search-field-background: var(--nx-2) !important;
+  --color-toolbar-search-field-background-hover: var(--nx-3) !important;
+  --color-toolbar-search-field-foreground: var(--nx-fg) !important;
+  --color-toolbar-search-field-foreground-placeholder: var(--nx-dim) !important;
+  --color-toolbar-search-field-icon: var(--nx-dim) !important;
+  --cr-drawer-background-color: var(--nx-bg) !important;
+  --cr-dialog-background-color: var(--nx-bg) !important;
+  --cr-menu-background-color: var(--nx-bg) !important;
+  --cr-nav-menu-item-background-color-selected: color-mix(in oklab, var(--nx-bg), var(--nx-accent) 16%) !important;
+  --cr-nav-menu-item-color-selected: var(--nx-accent) !important;
+  --cr-nav-menu-item-icon-color-selected: var(--nx-accent) !important;
+  --cr-toggle-checked-bar-color: var(--nx-accent) !important;
+  --cr-toggle-checked-button-color: var(--nx-bg) !important;
+  --cr-toggle-unchecked-bar-color: var(--nx-3) !important;
+  --cr-toggle-unchecked-button-color: var(--nx-bg) !important;
+  --cr-link-color: var(--nx-accent) !important;
+  /* the remaining white surfaces of Chromium's color table */
+  --color-combobox-background: var(--nx-bg) !important;
+  --color-history-clusters-side-panel-dialog-background: var(--nx-bg) !important;
+  --color-live-caption-dialog-background: var(--nx-bg) !important;
+  --color-chrome-signin-bubble-background: var(--nx-bg) !important;
+  --color-batch-upload-background: var(--nx-bg) !important;
+  --color-compose-dialog-background: var(--nx-bg) !important;
+  --color-extension-dialog-background: var(--nx-bg) !important;
+  --color-history-embeddings-background: var(--nx-bg) !important;
+  --color-isolated-tab-page-background: var(--nx-bg) !important;
+  --color-new-tab-page-background-override: var(--nx-bg) !important;
+  --color-new-tab-page-module-item-background: var(--nx-bg) !important;
+  --color-new-tab-page-overlay-background: var(--nx-bg) !important;
+  --color-new-tab-page-promo-background: var(--nx-bg) !important;
+  --color-new-tab-page-first-run-background: var(--nx-bg) !important;
+  --color-composebox-background: var(--nx-bg) !important;
+  --color-profile-menu-background: var(--nx-bg) !important;
+  --color-read-anything-background: var(--nx-bg) !important;
+  --color-read-anything-dropdown-background: var(--nx-bg) !important;
+  --color-side-panel-search-field-background: var(--nx-bg) !important;
+  --color-side-panel-card-background: var(--nx-bg) !important;
+  --color-side-panel-dialog-background: var(--nx-bg) !important;
+  --color-tab-search-background: var(--nx-bg) !important;
+  --color-task-manager-background: var(--nx-bg) !important;
+  --color-new-tab-page-button-background: var(--nx-2) !important;
+  --color-new-tab-page-button-background-hovered: var(--nx-3) !important;
+  --color-new-tab-page-button-foreground: var(--nx-accent) !important;
+  --color-new-tab-page-action-chip-background: var(--nx-2) !important;
+  --color-new-tab-page-action-chip-background-hover: var(--nx-3) !important;
+  /* the new tab page's search box (composebox, AI mode) */
+  --cr-composebox-background-color: var(--nx-bg) !important;
+  --color-sds-comp-input-aim-container: var(--nx-bg) !important;
+  --search-background-color: var(--nx-1) !important;
+  --color-composebox-scrim-background: var(--nx-1) !important;
+  --color-composebox-file-chip-background: var(--nx-2) !important;
+  --color-composebox-submit-button-background: var(--nx-accent) !important;
+  --color-new-tab-page-composebox-submit-button-background: var(--nx-accent) !important;
+  /* focus rings */
+  --cr-focus-outline-color: var(--nx-accent) !important;
+  --color-omnibox-results-focus-indicator: var(--nx-accent) !important;
+  --color-searchbox-results-icon-focused-outline: var(--nx-accent) !important;
+  /* address bar suggestions (a WebUI popup over the focused omnibox) */
+  --color-omnibox-results-background: var(--nx-bg) !important;
+  --color-omnibox-results-background-hovered: var(--nx-2) !important;
+  --color-omnibox-results-background-selected: var(--nx-2) !important;
+  --color-omnibox-results-background-iph: var(--nx-2) !important;
+  --color-omnibox-results-chip-background: var(--nx-2) !important;
+  --color-omnibox-results-icon-g-m3-background: var(--nx-2) !important;
+  --color-omnibox-intent-chip-background: var(--nx-bg) !important;
+  --color-omnibox-composebox-chip-background: var(--nx-bg) !important;
+  --color-omnibox-composebox-favicon-background: var(--nx-bg) !important;
+  --color-omnibox-composebox-submit-button-background: var(--nx-accent) !important;
+  --color-searchbox-background: var(--nx-bg) !important;
+  --color-searchbox-background-hovered: var(--nx-bg) !important;
+  --color-searchbox-results-background: var(--nx-bg) !important;
+  --color-sys-primary: var(--nx-accent) !important;
+  --color-sys-on-primary: var(--nx-bg) !important;
+  --color-sys-tonal-container: color-mix(in oklab, var(--nx-bg), var(--nx-accent) 20%) !important;
+  --color-sys-on-tonal-container: var(--nx-fg) !important;
+  /* Brave (Leo) */
+  --leo-color-page-background: var(--nx-1) !important;
+  --leo-color-container-background: var(--nx-bg) !important;
+  --leo-color-container-highlight: var(--nx-2) !important;
+  --leo-color-container-interactive: var(--nx-2) !important;
+  --leo-color-neutral-10: var(--nx-2) !important;
+  --leo-color-neutral-20: var(--nx-3) !important;
+  --leo-color-text-primary: var(--nx-fg) !important;
+  --leo-color-text-secondary: var(--nx-dim) !important;
+  --leo-color-text-tertiary: var(--nx-dim) !important;
+  --leo-color-icon-default: var(--nx-dim) !important;
+  --leo-color-divider-subtle: var(--nx-line) !important;
+  --leo-color-divider-strong: var(--nx-line) !important;
+  --leo-color-button-background: var(--nx-accent) !important;
+  --leo-color-icon-interactive: var(--nx-accent) !important;
+  --leo-color-text-interactive: var(--nx-accent) !important;
+  --leo-color-primary-5: color-mix(in oklab, var(--nx-bg), var(--nx-accent) 4%) !important;
+  --leo-color-primary-10: color-mix(in oklab, var(--nx-bg), var(--nx-accent) 8%) !important;
+  --leo-color-primary-20: color-mix(in oklab, var(--nx-bg), var(--nx-accent) 16%) !important;
+  --leo-color-primary-30: color-mix(in oklab, var(--nx-accent), var(--nx-bg) 35%) !important;
+  --leo-color-primary-40: color-mix(in oklab, var(--nx-accent), var(--nx-bg) 15%) !important;
+  --leo-color-primary-50: var(--nx-accent) !important;
+  --leo-color-primary-60: color-mix(in oklab, var(--nx-accent), var(--nx-fg) 40%) !important;
+  --leo-color-primary-70: color-mix(in oklab, var(--nx-accent), var(--nx-fg) 70%) !important;
+  --leo-color-schemes-primary: var(--nx-accent) !important;
+  --leo-color-schemes-on-primary: var(--nx-bg) !important;
+  --leo-color-schemes-outline-variant: var(--nx-line) !important;
+  --leo-toggle-checked-color: var(--nx-accent) !important;
+  --leo-toggle-unchecked-color: var(--nx-3) !important;
+  --leo-toggle-thumb-color: var(--nx-bg) !important;
+}
+/* thin scrollbars in the palette */
+html:not(#z) {
+  scrollbar-color: color-mix(in oklab, var(--nx-fg), var(--nx-bg) 55%) transparent;
+  scrollbar-width: thin;
+}
+/* the address bar's dropdown: its corners show the window behind */
+html:not(#z):has(omnibox-full-app, omnibox-popup-app) { background: var(--nx-bg); }
+html:not(#z) body {
+  background-color: var(--nx-1);
+  color: var(--nx-fg);
+}
+/* ... its body only wraps the field: no box of its own around it */
+html:not(#z):has(omnibox-full-app, omnibox-popup-app) body { background-color: transparent; }
+/* ... its outline, following its 16px rounded clip */
+html:not(#z):has(omnibox-full-app) body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  border: 1px solid var(--nx-omnibox-ring);
+  border-radius: 16px;
+  pointer-events: none;
+  z-index: 2147483647;
+}
+html:not(#z) a:link,
+html:not(#z) a:visited { color: var(--nx-accent); }

@@ -71,6 +71,9 @@ in
         "intremap=on"
         "boot.shell_on_fail"
         "rd.systemd.show_status=false"
+        "systemd.show_status=false"
+        # no blinking cursor between splash, display manager and shutdown
+        "vt.global_cursor_default=0"
         "rd.udev.log_level=3"
         "udev.log_priority=3"
         # "mem_sleep_default=deep"

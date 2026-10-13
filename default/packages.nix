@@ -34,9 +34,7 @@
       fwupd # bios update
 
       # browser
-      unstable.librewolf # firefox like
       # brave # chromium like
-      unstable.chromium # if I need more permission
       unstable.tor-browser # firefox like using tor network
       alacritty # alternative terminal
       slack # slack chat
@@ -111,7 +109,8 @@
       # desktop apps
       github-desktop
       telegram-desktop
-      discord
+      # Vencord: themes (the active dotnix theme, see home/theme)
+      (discord.override { withVencord = true; })
 
       # utilities
       wget # send a get request
@@ -179,7 +178,6 @@
       openssl # cripto lib
       pass # pass manager
       gnupg # GNU Privacy Guard - gpg
-      pinentry-all # GnuPG’s interface to passphrase input
 
       # icon theme
       adwaita-icon-theme

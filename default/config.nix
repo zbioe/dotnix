@@ -23,6 +23,7 @@
         "bluetooth"
         "docker"
         "adbusers"
+        "i2c" # monitor brightness over DDC/CI (ddcutil)
         "libvirtd"
         "kvm"
       ];

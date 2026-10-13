@@ -1,13 +1,28 @@
 {
+  config,
   lib,
   pkgs,
   unstable,
   ...
 }:
+let
+  darkreader = pkgs.callPackage ../../pkgs/darkreader { };
+  nixTheme = pkgs.callPackage ../../pkgs/nix-theme {
+    themeSet = config.theme.themes;
+    inherit (config.stylix.base16) mkSchemeAttrs;
+  };
+  webuiTheme = pkgs.callPackage ../../pkgs/webui-theme { };
+  braveTheme = pkgs.callPackage ../../pkgs/brave-theme { brave = unstable.brave; };
+in
 {
   imports = [
     ../../modules/stylix.nix
+    ../theme
     ./hyprland.nix
+    ./mango.nix
+    ./noctalia.nix
+    ./rebuild.nix
+    ./wifi-prefer.nix
     ./waybar.nix
     ./insightful.nix
     # ./river.nix
@@ -24,8 +39,41 @@
     cursor = {
       package = pkgs.bibata-cursors;
       name = "Bibata-Modern-Ice";
-      size = 3;
+      size = 16; # smallest Bibata size (3 fell back to it anyway)
     };
+  };
+
+  # Papirus has no icon of its own for these apps: point their icon names at
+  # the closest Papirus one (user hicolor wins over the apps' own), so the
+  # launcher and bars keep one look. Brand icons Papirus lacks stay as they are.
+  xdg.dataFile =
+    lib.mapAttrs'
+      (name: target: {
+        name = "icons/hicolor/scalable/apps/${name}.svg";
+        value.source = "${pkgs.papirus-icon-theme}/share/icons/Papirus/64x64/apps/${target}.svg";
+      })
+      {
+        zap = "zaproxy";
+        scrcpy = "guiscrcpy";
+        "com.jaoushingan.WaydroidHelper" = "waydroid";
+        "network.cycles.wdisplays" = "preferences-desktop-display";
+        bottom-system-monitor = "utilities-system-monitor";
+        oxker = "docker-desktop";
+        yazi = "system-file-manager";
+        tectonic = "texstudio";
+        noctalia = "preferences-desktop";
+        input-keyboard = "preferences-desktop-keyboard";
+        blueman-device = "blueman";
+        freelens = "kontena-lens";
+        mtkclient = "android-file-transfer";
+      };
+  # its desktop file comes with no icon at all
+  xdg.desktopEntries.mtkclient = {
+    name = "MTKClient";
+    comment = "MediaTek flash and repair tool";
+    exec = "mtk_gui";
+    icon = "mtkclient";
+    categories = [ "Development" ];
   };
 
   modules.stylix = {
@@ -35,11 +83,44 @@
     polarity = "dark";
   };
 
-  dconf.settings = {
-    "org/gnome/desktop/interface" = {
-      color-scheme = "prefer-dark";
-    };
-  };
+  # bar, wallpaper and notifications of the Hyprland session; in mango noctalia does them
+  xdg.configFile =
+    lib.genAttrs
+      [
+        "systemd/user/waybar.service.d/session.conf"
+        "systemd/user/hyprpaper.service.d/session.conf"
+        # D-Bus activated: in mango it would take notifications from noctalia
+        "systemd/user/mako.service.d/session.conf"
+        # noctalia has its own clipboard history
+        "systemd/user/cliphist.service.d/session.conf"
+        "systemd/user/cliphist-images.service.d/session.conf"
+      ]
+      (_: {
+        text = ''
+          [Unit]
+          ConditionEnvironment=XDG_CURRENT_DESKTOP=Hyprland
+        '';
+      })
+    // lib.genAttrs
+      [
+        # Dark Reader bridge of Brave (programs.brave below)
+        "BraveSoftware/Brave-Browser/NativeMessagingHosts/nix_theme.json"
+      ]
+      (_: {
+        source = "${nixTheme}/etc/chromium/native-messaging-hosts/nix_theme.json";
+      });
+
+  # Brave opens links; mimeapps.list stays user-managed, only these entries
+  home.activation.defaultBrowser = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
+    run ${pkgs.xdg-utils}/bin/xdg-mime default brave-browser.desktop \
+      x-scheme-handler/http x-scheme-handler/https text/html application/xhtml+xml
+  '';
+
+  # color-scheme, gtk-theme and icon-theme are set live by `theme`
+  dconf.settings."org/gnome/desktop/interface".font-name =
+    with config.stylix.fonts;
+    "${sansSerif.name} ${toString sizes.applications}";
+  services.cliphist.enable = true;
   services.mako = {
     enable = true;
     settings = {
@@ -143,12 +224,24 @@
       enableFishIntegration = true;
       shellWrapperName = "yy";
     };
+    # Dark Reader and its own pages following `theme`, as Chromium
+    # (default/librewolf.nix); the browser itself on a theme extension of the
+    # palette (pkgs/brave-theme), set up by the launcher. Only the last
+    # --enable/--disable-features counts, so the package's own lists are
+    # repeated here.
     brave = {
-      package = unstable.brave;
       enable = true;
-      commandLineArgs = [
-        "--enable-wayland-ime"
-      ];
+      package = webuiTheme.brave { inherit (braveTheme) prelaunch; } (
+        unstable.brave.override {
+          commandLineArgs = lib.concatStringsSep " " [
+            "--enable-wayland-ime"
+            "--load-extension=${darkreader}/chromium,${nixTheme}/chromium"
+            # + the address bar dropdown as a themable page, as in Chromium
+            "--enable-features=AcceleratedVideoDecodeLinuxGL,AcceleratedVideoEncoder,WaylandWindowDecorations,WebUIOmniboxPopup,WebUIOmniboxFullPopup"
+            "--disable-features=OutdatedBuildDetector,UseChromeOSDirectVideoDecoder,DisableLoadExtensionCommandLineSwitch"
+          ];
+        }
+      );
     };
   };
   gtk = {

@@ -1,107 +1,114 @@
 # Dotnix
 
-Dotfiles for [NixOS](nixos.org).
+My NixOS setup: system and home-manager in one flake, for my desktop (`bx`)
+and laptop (`te`).
 
-It has [LVM](https://sourceware.org/lvm2/) with
-[luks](https://gitlab.com/cryptsetup/cryptsetup/blob/master/README.md)
-encryption and formatted in
-[btrfs](https://www.kernel.org/doc/html/v6.17-rc1/filesystems/btrfs.html).\
-Uses USB key to decrypt, and can keep the USB usable to other thinks (like a Honeypot).\
-Simple UI with [Hyprland](https://github.com/hyprwm/Hyprland) as compositor and
-[waybar](https://github.com/Alexays/Waybar) as bar.\
-[Stylix](https://github.com/nix-community/stylix) used as Theming framework
+The disk is LUKS with btrfs on top. It unlocks from a key hidden inside an
+ordinary USB stick, and falls back to the password after 10 seconds.
 
-### Gruvbox Dark
-![screen](./assets/gruvbox-dark.png)
+The desktop is [mango](https://github.com/DreamMaoMao/mangowc) with
+[noctalia](https://github.com/noctalia-dev/noctalia-shell) as the bar,
+launcher, notifications and lock screen. Hyprland is still there as a
+second session.
 
-### Gruvbox Light
-![screen](./assets/gruvbox-light.png)
+![overview](./assets/overview.png)
 
-## Setup ISO
+## Themes
+
+There are 30 themes, each with a light and a dark variant (or `auto`, which
+follows the sun). Everything is built ahead of time, so switching is instant:
+the bar, terminals, GTK apps, Chromium/Brave, Emacs, the wallpaper and the
+boot splash all change together. Pick one from the palette icon in the bar,
+or from the terminal:
+
+```sh
+theme set gruvbox dark
+theme toggle        # light <-> dark
+theme list
+```
+
+![themes](./assets/themes.png)
+
+## Shortcuts
+
+`Super+/` opens a list of every key binding. The list is generated from the
+same file that defines the binds (`home/ui/mango.nix`), so it never goes out
+of date.
+
+![shortcuts](./assets/shortcuts.png)
+
+The ones I use most:
+
+| Key | Does |
+|---|---|
+| `Super+Enter` | terminal |
+| `Super+P` | launcher |
+| `Super+1..0` | go to tag |
+| `Super+Shift+1..0` | move window to tag |
+| `Super+H/J/K/L` | move focus |
+| `Super+Shift+Q` | close window |
+| `Super+V` | clipboard history |
+| `Super+Shift+U` | rebuild system and home |
+
+## Install
+
+Build the installer ISO and write it to a USB stick:
 
 ```sh
 nix build .#nixosConfigurations.minimal-iso.config.system.build.isoImage
-ls result/
+dd if=result/iso/nixos-minimal-<version>.iso of=/dev/sdX
 ```
 
-Write in usb
-
-```sh
-dd if=result/iso/nixos-minimal-<date-version>.iso of=/dev/sdX
-```
-
-## Setup partitions
-
-```sh
-iso/scripts/setup.sh -p "<luks password>"
-```
-
-## Install
+Boot from it, then partition, encrypt and install a minimal system:
 
 ```sh
 iso/scripts/setup.sh -p "<luks password>"
 iso/scripts/update-hardware.sh <hardware file>
 cp iso/minimal-configuration.nix .
-vim iso/minimal-configuration.nix <edit user, pass and hostname>
+vim minimal-configuration.nix   # user, password, hostname
 systemctl reboot -i
 ```
 
-It will give you minimal installation to reboot and boot in HD
-
-## Apply System configuration
-
-first edit `flake.nix` to ensure change user to yours, `default/config.nix` and
-`default/key.nix`.\
-Also add `hosts/<your host>/default.nix` and `hosts/<your host>/hardware.nix`.
+Once it boots from the disk, set your user in `flake.nix`, edit
+`default/config.nix` and `default/key.nix`, and add
+`hosts/<host>/default.nix` and `hosts/<host>/hardware.nix`. Then:
 
 ```sh
-sudo nixos-rebuild switch --flake .#<hostname>
+sudo nixos-rebuild switch --flake .#<host>
+home-manager switch --flake .#<host>
 ```
 
-## Apply Home Manager
+After that, `rebuild` (or `Super+Shift+U`) does both.
 
-```sh
-home-manager switch --flake .#<hostname>
-```
+## USB key
 
-## Add Key in USB
+The LUKS key sits in the gap before the stick's first partition, so the
+stick still works as a normal drive. Put some files on it and nobody will
+guess it is a key. See also the [wiki](https://nixos.wiki/wiki/Full_Disk_Encryption).
 
-[Wiki](https://nixos.wiki/wiki/Full_Disk_Encryption)
-
-### Generate and add key in LUKS
+Create the key and add it to LUKS:
 
 ```sh
 dd if=/dev/random of=hdd.key bs=4096 count=1
-cryptsetup luksAddKey /dev/disk/by-id/<usb id> ./hdd.key
+cryptsetup luksAddKey /dev/disk/by-uuid/<luks uuid> ./hdd.key
 ```
 
-### Setup your Key in usb wih a honeypot
-
-first format your usb with `fdisk` and skip at least `6144` bytes before first
-partition.\
-after it format the partition to vfat and you will can use it like any other pen
-drive.\
-For finish it, you will put the key after `2048` bytes.
+Partition the stick with `fdisk`, leaving at least 6144 bytes before the
+first partition, and format that partition as vfat. Then write the key 2048
+bytes in:
 
 ```sh
 dd if=hdd.key of=/dev/disk/by-id/<usb id> bs=1 seek=2048
 ```
 
-### Configure it in your hardware.nix
+And point the host's `hardware.nix` at it:
 
 ```nix
-boot.initrd = {
-  luks.devices = {
-    enc = {
-      device = "/dev/disk/by-uuid/<device uuid>"; #luks device
-      keyFileSize = 4096;
-      keyFileOffset = 2048;
-      keyFileTimeout = 10; # put it to fallback to password after 10s
-      keyFile = "/dev/disk/by-id/<usb id>";
-    };
-  };
+boot.initrd.luks.devices.enc = {
+  device = "/dev/disk/by-uuid/<luks uuid>";
+  keyFile = "/dev/disk/by-id/<usb id>";
+  keyFileSize = 4096;
+  keyFileOffset = 2048;
+  keyFileTimeout = 10; # then ask for the password
 };
 ```
-
-After it you will have a pen drive working as media, and workings as USB key.\
-Put some honeypot on it, and if someone find it, will not know it is a LUKs key.

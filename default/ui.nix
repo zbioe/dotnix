@@ -9,26 +9,12 @@
   ...
 }:
 
-let
-  sddm_theme = pkgs.where-is-my-sddm-theme.override {
-    themeConfig.General = with config.lib.stylix.colors.withHashtag; {
-      hideCursor = true;
-      backgroundFill = "${base00}";
-      basicTextColor = "${base05}";
-      passwordCursorColor = "${base0B}";
-      passwordCharacter = "•";
-      passwordInputWidth = "1";
-      passwordFontSize = 62;
-    };
-  };
-in
 {
   environment.sessionVariables = {
     # https://nixos.wiki/wiki/Wayland#Applications
     NIXOS_OZONE_WL = "1";
-    XDG_CURRENT_DESKTOP = "Hyprland";
-    XDG_SESSION_TYPE = "wayland";
-    XDG_SESSION_DESKTOP = "Hyprland";
+    # XDG_CURRENT_DESKTOP/XDG_SESSION_* come from the session (uwsm), so
+    # Hyprland and mango each get their own
 
     # Emacs to use wayland in the right way
     GDK_BACKEND = "wayland";
@@ -53,7 +39,7 @@ in
 
   # Display Manager
   services.displayManager = {
-    defaultSession = "hyprland-uwsm";
+    defaultSession = "mango-uwsm"; # Hyprland stays available as "Hyprland (UWSM)"
     autoLogin = {
       enable = true;
       user = username;
@@ -83,6 +69,47 @@ in
     xwayland.enable = true;
   };
 
+  # location from nearby Wi-Fi (like browsers do), for noctalia's weather and
+  # sunrise/sunset (home/ui/noctalia.nix asks it through where-am-i)
+  services.geoclue2 = {
+    enable = true;
+    appConfig.geoclue-where-am-i = {
+      isAllowed = true;
+      isSystem = false;
+    };
+  };
+
+  # brightness of external monitors (DDC/CI), used by noctalia
+  hardware.i2c.enable = true;
+
+  # Secret Service (noctalia calendar accounts, browsers); unlocked at login
+  services.gnome.gnome-keyring.enable = true;
+  security.pam.services.sddm.enableGnomeKeyring = true;
+
+  # mango: second session, also run through uwsm so systemd user units see
+  # XDG_CURRENT_DESKTOP=mango (Hyprland-only units skip it, see home/ui)
+  programs.mango = {
+    enable = true;
+    addLoginEntry = false;
+  };
+  # (programs.uwsm.waylandCompositors' entry, plus -g -1: uwsm would wait for
+  # the system's graphical.target, which waits for docker and network-online,
+  # several seconds of an empty screen after login)
+  services.displayManager.sessionPackages = [
+    (pkgs.writeTextFile {
+      name = "mango-uwsm";
+      text = ''
+        [Desktop Entry]
+        Name=Mango (UWSM)
+        Comment=Mango compositor managed by UWSM
+        Exec=${lib.getExe config.programs.uwsm.package} start -g -1 -F -- /run/current-system/sw/bin/mango
+        Type=Application
+      '';
+      destination = "/share/wayland-sessions/mango-uwsm.desktop";
+      derivationArgs.passthru.providedSessions = [ "mango-uwsm" ];
+    })
+  ];
+
   xdg.portal = {
     enable = true;
     extraPortals = [
@@ -109,6 +136,7 @@ in
 
   # Packages
   environment.systemPackages = with pkgs; [
+    ddcutil # monitor brightness over DDC/CI
     # notification
     libnotify
 
@@ -136,8 +164,6 @@ in
     # Diagrama
     mermaid-cli
 
-    # sddm theme
-    sddm_theme
   ];
 
   fonts.fontconfig.enable = true;
@@ -191,4 +217,12 @@ in
     ];
   };
   hardware.graphics.enable32Bit = true;
+
+  # GTK4 reloads ~/.config/gtk-4.0/gtk.css when it changes, so libadwaita apps
+  # follow `theme` switches live (home/theme). Swapped into the closure without
+  # rebuilding the apps.
+  system.replaceDependencies.replacements = import ../patches/gtk4-live.nix [
+    pkgs.gtk4
+    unstable.gtk4
+  ];
 }

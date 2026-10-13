@@ -61,7 +61,9 @@
     "uhci_hcd"
     "xhci_pci"
   ];
-  boot.initrd.kernelModules = [ ];
+  # GPU driver in the initrd: plymouth starts on amdgpu instead of handing
+  # over from the firmware framebuffer mid-splash (text flashed there)
+  boot.initrd.kernelModules = [ "amdgpu" ];
   boot.initrd.secrets = {
     "/var/lib/bluetooth" = "/var/lib/bluetooth";
   };

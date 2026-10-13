@@ -1,0 +1,57 @@
+--- a/gtk/gtksettings.c
++++ b/gtk/gtksettings.c
+@@ -1106,6 +1106,33 @@
+   return new_cascade;
+ }
+ 
++/* Reload $XDG_CONFIG_HOME/gtk-4.0/gtk.css whenever it changes (edited in
++ * place or replaced, e.g. an atomically swapped symlink), so apps follow
++ * theme changes without a restart. Always reload the watched path: for a
++ * rename, the event's file is the old name. */
++static char *user_css_path = NULL;
++
++static void
++user_css_changed (GFileMonitor      *monitor,
++                  GFile             *file,
++                  GFile             *other_file,
++                  GFileMonitorEvent  event,
++                  gpointer           user_data)
++{
++  GtkCssProvider *provider = user_data;
++
++  if (event == G_FILE_MONITOR_EVENT_ATTRIBUTE_CHANGED ||
++      event == G_FILE_MONITOR_EVENT_CHANGED ||
++      event == G_FILE_MONITOR_EVENT_PRE_UNMOUNT ||
++      event == G_FILE_MONITOR_EVENT_UNMOUNTED)
++    return;
++
++  if (g_file_test (user_css_path, G_FILE_TEST_IS_REGULAR))
++    gtk_css_provider_load_from_path (provider, user_css_path);
++  else
++    gtk_css_provider_load_from_string (provider, "");
++}
++
+ static void
+ settings_init_style (GtkSettings *settings)
+ {
+@@ -1153,6 +1180,20 @@
+                        G_FILE_TEST_IS_REGULAR))
+         gtk_css_provider_load_from_path (css_provider, css_path);
+ 
++      {
++        GFile *css_file = g_file_new_for_path (css_path);
++
++        user_css_path = g_strdup (css_path);
++        GFileMonitor *css_monitor = g_file_monitor_file (css_file,
++                                                         G_FILE_MONITOR_WATCH_MOVES,
++                                                         NULL, NULL);
++        if (css_monitor)
++          g_signal_connect (css_monitor, "changed",
++                            G_CALLBACK (user_css_changed), css_provider);
++        /* css_monitor intentionally lives as long as css_provider (forever) */
++        g_object_unref (css_file);
++      }
++
+       g_free (css_path);
+     }
+ 

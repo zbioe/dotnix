@@ -14,6 +14,7 @@ in
     ./nvidia.nix
     ./boot.nix
     ./stylix.nix
+    ./theme-boot.nix
     ./bluetooth.nix
     ./protonvpn.nix
     ./keyboard.nix

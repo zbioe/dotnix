@@ -1,0 +1,9 @@
+
+/* dotnix: Brave runs a theme extension, not GTK mode (pkgs/brave-theme):
+   its pages take the palette from the theme's colors, exact and live,
+   instead of the window colors a seed color derives. */
+html:not(#z) {
+  --nx-bg: var(--color-toolbar, Canvas);
+  --nx-fg: var(--color-toolbar-text, CanvasText);
+  --nx-accent: var(--color-new-tab-page-link, LinkText);
+}

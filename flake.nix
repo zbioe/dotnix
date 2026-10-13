@@ -10,6 +10,8 @@
       hardware,
       hyprland,
       waybar,
+      mango,
+      noctalia,
       programsdb,
       impermanence,
       emacs-overlay,
@@ -36,6 +38,7 @@
         ./modules
         ./default
         programsdb.nixosModules.programs-sqlite
+        mango.nixosModules.mango
         home.nixosModules.home-manager
         stylix.nixosModules.stylix
         impermanence.nixosModules.impermanence
@@ -75,22 +78,39 @@
         let
           makeConfiguration =
             stateVersion:
-            home.lib.homeManagerConfiguration {
-              extraSpecialArgs = {
-                inherit stateVersion;
-                inherit username;
-                inherit (hyprland.packages.${system}) hyprland;
-                inherit (waybar.packages.${system}) waybar;
-                inherit unstable;
-              };
+            let
               pkgs = import nixpkgs {
                 inherit system;
                 overlays = [ emacs-overlay.overlays.default ];
               };
-              modules = [
-                stylix.homeModules.stylix
-                ./home
-              ];
+              hm = home.lib.homeManagerConfiguration {
+                inherit pkgs;
+                extraSpecialArgs = {
+                  inherit stateVersion;
+                  inherit username;
+                  inherit (hyprland.packages.${system}) hyprland;
+                  inherit (waybar.packages.${system}) waybar;
+                  noctalia = noctalia.packages.${system}.default;
+                  inherit unstable;
+                };
+                modules = [
+                  stylix.homeModules.stylix
+                  mango.hmModules.mango
+                  noctalia.homeModules.default
+                  ./home
+                ];
+              };
+            in
+            # same live-reloading GTK4 as the system (default/ui.nix)
+            hm
+            // {
+              activationPackage = pkgs.replaceDependencies {
+                drv = hm.activationPackage;
+                replacements = import ./patches/gtk4-live.nix [
+                  pkgs.gtk4
+                  unstable.gtk4
+                ];
+              };
             };
         in
         {
@@ -137,6 +157,23 @@
         nixpkgs.follows = "nixpkgs-unstable";
         flake-compat.follows = "compat";
       };
+    };
+    # dwl-based compositor; second session next to Hyprland (default/ui.nix)
+    mango = {
+      url = "github:DreamMaoMao/mangowc";
+      inputs = {
+        nixpkgs.follows = "nixpkgs-unstable";
+        flake-parts.follows = "parts";
+        scenefx.inputs = {
+          systems.follows = "systems";
+          flake-utils.inputs.systems.follows = "systems";
+        };
+      };
+    };
+    # shell (bar, panels, notifications, lock) for the mango session
+    noctalia = {
+      url = "github:noctalia-dev/noctalia-shell";
+      inputs.nixpkgs.follows = "nixpkgs-unstable";
     };
     emacs-overlay = {
       url = "github:nix-community/emacs-overlay";

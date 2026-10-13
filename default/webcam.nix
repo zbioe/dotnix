@@ -22,8 +22,8 @@
       {
         name = "libpipewire-module-filter-chain";
         args = {
-          "node.description" = "Microfone sem ruído";
-          "media.name" = "Microfone sem ruído";
+          "node.description" = "Noise-suppressed microphone";
+          "media.name" = "Noise-suppressed microphone";
           "filter.graph" = {
             nodes = [
               {

@@ -10,6 +10,7 @@
   programs.gnupg.agent = {
     enable = true;
     enableSSHSupport = true;
-    pinentryPackage = pkgs.pinentry-all;
+    # GTK prompt from gcr (themed like the rest; curses on a tty)
+    pinentryPackage = pkgs.pinentry-gnome3;
   };
 }

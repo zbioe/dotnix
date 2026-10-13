@@ -1,0 +1,41 @@
+/* Page scrollbars in the palette (one copy per theme, colors filled in by
+   pkgs/nix-theme): a rounded thumb floating clear of the edges on an
+   invisible track, no arrows; it widens and darkens under the pointer and
+   takes the accent while dragged. Chromium only draws ::-webkit-scrollbar
+   where scrollbar-color/-width are unset, so the page's own are reset. */
+html, html * {
+  scrollbar-color: auto !important;
+  scrollbar-width: auto !important;
+}
+::-webkit-scrollbar {
+  width: 12px !important;
+  height: 12px !important;
+  background: transparent !important;
+}
+::-webkit-scrollbar-track,
+::-webkit-scrollbar-track-piece,
+::-webkit-scrollbar-corner {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+::-webkit-scrollbar-button {
+  display: none !important;
+}
+::-webkit-scrollbar-thumb {
+  background-color: @thumb@ !important;
+  border: 3px solid transparent !important;
+  border-radius: 999px !important;
+  background-clip: padding-box !important;
+  box-shadow: none !important;
+  min-height: 40px !important;
+  min-width: 40px !important;
+}
+::-webkit-scrollbar-thumb:hover {
+  background-color: @hover@ !important;
+  border-width: 2px !important;
+}
+::-webkit-scrollbar-thumb:active {
+  background-color: @accent@ !important;
+  border-width: 2px !important;
+}

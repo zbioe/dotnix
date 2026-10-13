@@ -36,7 +36,7 @@ let
       exit 0
     fi
 
-    # Verifica se está ligado (Powered: yes)
+    # Powered on? (Powered: yes)
     POWER=$(bluetoothctl show | grep "Powered: yes")
 
     if [ -z "$POWER" ]; then
@@ -53,7 +53,7 @@ let
   '';
 
   disk-script = pkgs.writeShellScript "yambar-disk" ''
-    # Pega a porcentagem de uso do /
+    # usage percentage of /
     USE=$(df -h / --output=pcent | sed 1d | tr -d ' %')
     echo "used|int|$USE"
     echo ""
@@ -120,7 +120,7 @@ in
           }
         ];
 
-        # --- CENTRO: TÍTULO DA JANELA ---
+        # --- CENTER: WINDOW TITLE ---
         center = [
           {
             foreign-toplevel = {
@@ -163,14 +163,14 @@ in
                       string = {
                         text = "󰂯 | ";
                         foreground = "${colors.base05}ff";
-                        on-click = "notify-send 'Bluetooth' 'Ligado (Sem dispositivos)'";
+                        on-click = "notify-send 'Bluetooth' 'On (no devices)'";
                       };
                     };
                     "status == off" = {
                       string = {
                         text = "󰂲 | ";
                         foreground = "${colors.base03}ff";
-                        on-click = "notify-send 'Bluetooth' 'Desligado'";
+                        on-click = "notify-send 'Bluetooth' 'Off'";
                       };
                     };
                   };
@@ -182,7 +182,7 @@ in
           {
             script = {
               path = "${disk-script}";
-              poll-interval = 60000; # Verifica a cada 1 min
+              poll-interval = 60000; # every minute
               content = {
                 string = {
                   text = " {used}% | ";

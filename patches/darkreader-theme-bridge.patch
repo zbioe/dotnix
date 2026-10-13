@@ -1,0 +1,66 @@
+diff --git a/src/background/messenger.ts b/src/background/messenger.ts
+index 66006bb..100ae25 100644
+--- a/src/background/messenger.ts
++++ b/src/background/messenger.ts
+@@ -32,6 +32,7 @@ export default class Messenger {
+     static init(adapter: ExtensionAdapter): void {
+         Messenger.adapter = adapter;
+         Messenger.changeListenerCount = 0;
++        Messenger.initThemeBridge();
+ 
+         chrome.runtime.onMessage.addListener(Messenger.messageListener);
+ 
+@@ -41,6 +42,29 @@ export default class Messenger {
+         }
+     }
+ 
++    // dotnix: theme updates pushed by the nix-theme extension (and only by it:
++    // its Firefox id and its fixed Chromium id, pkgs/nix-theme)
++    static readonly THEME_BRIDGE_IDS = ['nix-theme@dotnix', 'fafnnenadbigcbhmihefjbaiggflgefj'];
++
++    static initThemeBridge(): void {
++        chrome.runtime.onConnectExternal.addListener((port) => {
++            if (!Messenger.THEME_BRIDGE_IDS.includes(port.sender?.id ?? '')) {
++                port.disconnect();
++                return;
++            }
++            port.onMessage.addListener(({type, data}: {type: string; data: any}) => {
++                switch (type) {
++                    case 'setTheme':
++                        Messenger.adapter.setTheme(data);
++                        break;
++                    case 'changeSettings':
++                        Messenger.adapter.changeSettings(data);
++                        break;
++                }
++            });
++        });
++    }
++
+     private static messageListener(message: MessageUItoBG | MessageCStoBG, sender: chrome.runtime.MessageSender, sendResponse: (response: {data?: ExtensionData | DevToolsData | TabInfo; error?: string} | 'unsupportedSender') => void) {
+         if (isFirefox && makeFirefoxHappy(message, sender, sendResponse)) {
+             return;
+--- a/src/background/index.ts
++++ b/src/background/index.ts
+@@ -1,6 +1,6 @@
+ import {canInjectScript, keepListeningToEvents} from '../background/utils/extension-api';
+ import type {ColorScheme, DebugMessageBGtoCS, DebugMessageBGtoUI, DebugMessageCStoBG, ExtensionData, News, UserSettings} from '../definitions';
+-import {getHelpURL, UNINSTALL_URL} from '../utils/links';
++import {UNINSTALL_URL} from '../utils/links';
+ import {emulateColorScheme, isSystemDarkModeEnabled} from '../utils/media-query';
+ import {DebugMessageTypeBGtoCS, DebugMessageTypeBGtoUI, DebugMessageTypeCStoBG} from '../utils/message';
+ import {isFirefox} from '../utils/platform';
+@@ -127,11 +127,8 @@
+ 
+     listen();
+ } else if (!__DEBUG__ && !__TEST__) {
+-    chrome.runtime.onInstalled.addListener(({reason}) => {
+-        if (reason === 'install') {
+-            chrome.tabs.create({url: getHelpURL()});
+-        }
+-    });
++    // dotnix: installed by Nix and reinstalled with every browser start
++    // (--load-extension), so no help page on install
+ 
+     chrome.runtime.setUninstallURL(UNINSTALL_URL);
+ }

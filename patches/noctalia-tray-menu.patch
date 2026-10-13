@@ -1,0 +1,76 @@
+diff -ru a/src/app/application_ipc.cpp b/src/app/application_ipc.cpp
+--- a/src/app/application_ipc.cpp	2026-10-11 15:02:06.229365911 -0300
++++ b/src/app/application_ipc.cpp	2026-10-11 15:02:06.359338024 -0300
+@@ -34,6 +34,7 @@
+ #include "dbus/system_bus.h"
+ #include "dbus/system_bus_poll_source.h"
+ #include "dbus/tray/tray_service.h"
++#include "shell/tray/tray_identifier.h"
+ #include "dbus/upower/upower_service.h"
+ #include "debug/debug_service.h"
+ #include "i18n/i18n.h"
+@@ -140,6 +141,28 @@
+       IpcService::HandlerOptions{.actionEditorVisibility = IpcService::ActionEditorVisibility::Hidden}
+   );
+ 
++  // the menu of a tray item from anywhere (e.g. a widget's right click),
++  // anchored at the pointer like a click on the tray icon itself
++  m_ipcService.bind(noctalia::cli::msg::trayMenu, [this](const std::string& args) -> std::string {
++    const auto parts = noctalia::ipc::splitWords(args);
++    if (parts.size() != 1) {
++      return "error: tray-menu requires <item>\n";
++    }
++    if (m_trayService == nullptr) {
++      return "error: tray unavailable\n";
++    }
++    for (const auto& item : m_trayService->items()) {
++      if (item.id == parts[0] || tray::tokenMatchesItem(parts[0], item)) {
++        if (!m_trayService->itemUsesDBusMenu(item.id)) {
++          return "error: tray item has no menu\n";
++        }
++        m_trayService->requestMenuToggle(item.id, 1.0F);
++        return "ok\n";
++      }
++    }
++    return "error: no tray item '" + parts[0] + "'\n";
++  });
++
+   m_ipcService.bind(
+       noctalia::cli::msg::logLevelSet,
+       [](const std::string& args) -> std::string {
+diff -ru a/src/cli/schema_msg.h b/src/cli/schema_msg.h
+--- a/src/cli/schema_msg.h	2026-10-11 15:02:06.231413322 -0300
++++ b/src/cli/schema_msg.h	2026-10-11 15:02:06.358663759 -0300
+@@ -171,6 +171,9 @@
+       Positional{"id", {}, {}, true, false, false},
+       Positional{"context", {}, {}, false, false, false},
+   };
++  inline constexpr std::array kMsgTrayMenuPositionals{
++      Positional{"item", {}, {}, true, false, false},
++  };
+   inline constexpr std::array kMsgPanelTogglePositionals{
+       Positional{"id", {}, {}, true, false, false},
+       Positional{"context", {}, {}, false, false, false},
+@@ -716,6 +719,14 @@
+     inline constexpr Command themeModeToggle{
+         "theme-mode-toggle", "Toggle theme mode between dark and light", {}, {}, {}, {}, {}, false
+     };
++    inline constexpr Command trayMenu{"tray-menu",
++                                      "Open a tray item's menu at the pointer (by id, e.g. nm-applet)",
++                                      {},
++                                      {},
++                                      {},
++                                      kMsgTrayMenuPositionals,
++                                      {},
++                                      false};
+     inline constexpr Command volumeDown{
+         "volume-down", "Decrease speaker volume", {}, {}, {}, kMsgVolumeDownPositionals, {}, false
+     };
+@@ -923,6 +934,7 @@
+       msg::themeModeGet,
+       msg::themeModeSet,
+       msg::themeModeToggle,
++      msg::trayMenu,
+       msg::volumeDown,
+       msg::volumeMute,
+       msg::volumeOsd,

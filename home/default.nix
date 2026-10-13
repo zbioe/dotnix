@@ -56,11 +56,11 @@
   programs.fish.interactiveShellInit = ''
     if test -f "$HOME/.env"
       while read -l line
-        # Ignora comentários (#) e linhas vazias
+        # skip comments (#) and empty lines
         if not string match -q -r '^\s*#|^\s*$' "$line"
-          # Separa no primeiro '='
+          # split at the first '='
           set -l kv (string split -m 1 "=" "$line")
-          # Exporta limpando aspas caso você tenha colocado no .env
+          # export, without the quotes the .env value may have
           set -gx $kv[1] (string trim -c '"\''' $kv[2])
         end
       end < "$HOME/.env"
