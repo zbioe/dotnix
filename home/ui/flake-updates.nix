@@ -127,6 +127,8 @@ let
 
         # built and offered already
         if cmp -s "$stage/flake.lock" "$state/ready.lock" 2>/dev/null && [ -e "$state/ready" ]; then
+          echo ready > "$state/result"
+          echo "ready: flake-updates apply"
           return 0
         fi
 
@@ -201,6 +203,8 @@ let
         local last=0 result=none phase=idle
         [ -f "$state/last-check" ] && last=$(cat "$state/last-check")
         [ -f "$state/result" ] && result=$(cat "$state/result")
+        # a built update waiting is "ready", whatever the last check said
+        if [ -e "$state/ready" ] && [ "$result" != applying ]; then result=ready; fi
         [ -f "$state/phase" ] && phase=$(cat "$state/phase")
         jq -n --arg enabled "$enabled" --arg notify "$notify" --arg mode "$mode" \
           --arg interval "$interval" --arg hold "$hold" --arg result "$result" \
