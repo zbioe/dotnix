@@ -9,44 +9,107 @@ let
   inherit (import ./session.nix { inherit pkgs; }) terminal toggleMic annotate;
   stateDir = "${config.xdg.stateHome}/theme";
 
+  # Super+W, back to the previous tag. mango's own `view,-1` counts the
+  # special (scratch) tag as a tag and lands on it; this remembers the
+  # previous normal one instead (the IPC never reports the special tag
+  # active, so it never gets in), and the special tag stays Super+S only
+  prevTag = "$XDG_RUNTIME_DIR/mango-prev-tag";
+  tagHistory = pkgs.writeShellScript "mango-tag-history" ''
+    # mango's IPC answers a moment after the session starts
+    until mon=$(${mmsg} get all-monitors 2>/dev/null |
+      ${pkgs.jq}/bin/jq -er '[.monitors[] | select(.active)][0].name'); do
+      sleep 1
+    done
+    cur=""
+    ${mmsg} watch tags "$mon" |
+      ${pkgs.jq}/bin/jq --unbuffered -r '[.tags[] | select(.is_active) | .index] | map(tostring) | join("|")' |
+      while read -r tags; do
+        if [ -n "$tags" ] && [ "$tags" != "$cur" ]; then
+          [ -n "$cur" ] && echo "$cur" > "${prevTag}"
+          cur=$tags
+        fi
+      done
+  '';
+  tagBack = pkgs.writeShellScript "mango-tag-back" ''
+    prev=$(cat "${prevTag}" 2>/dev/null) || prev=1
+    exec ${mmsg} dispatch "view,$prev"
+  '';
+  mmsg = "${config.wayland.windowManager.mango.package}/bin/mmsg";
+
   # every bind with what it does: mango's binds and the noctalia "Shortcuts"
   # panel (Super+/, home/ui/noctalia.nix) both come from this list
   keys =
     let
-      k = group: key: action: desc: { inherit group key action desc; };
+      k = group: key: action: desc: {
+        inherit
+          group
+          key
+          action
+          desc
+          ;
+      };
     in
     [
       (k "Apps" "SUPER,Return" "spawn_shell,${terminal}" "Terminal (foot + tmux)")
       (k "Apps" "SUPER,p" "spawn,noctalia msg panel-toggle launcher" "App launcher (noctalia)")
       (k "Apps" "SUPER+SHIFT,b" "spawn,uwsm app -- librewolf" "Browser (LibreWolf)")
-      (k "Apps" "SUPER+SHIFT,n" "spawn,uwsm app -- nautilus" "Files (Nautilus)")
+      (k "Apps" "SUPER+ALT,n" "spawn,uwsm app -- nautilus" "Files (Nautilus)")
       (k "Apps" "SUPER,y" "spawn,foot -e yazi" "Files in the terminal (yazi)")
-      (k "Apps" "SUPER+SHIFT,p" "spawn_shell,hyprpicker | wl-copy" "Color picker: copy a color from the screen")
+      (k "Apps" "SUPER+SHIFT,p" "spawn_shell,hyprpicker | wl-copy"
+        "Color picker: copy a color from the screen"
+      )
 
       (k "System" "SUPER,slash" "spawn,noctalia msg panel-toggle dotnix/keys:list" "This shortcut list")
       (k "System" "SUPER,v" "spawn,noctalia msg panel-toggle clipboard" "Clipboard history")
-      (k "System" "SUPER,n" "spawn,noctalia msg notification-clear-active" "Dismiss the notifications on screen")
+      (k "System" "SUPER,n" "spawn,noctalia msg notification-clear-active"
+        "Dismiss the notifications on screen"
+      )
       # no IPC for it: opening the history marks it seen
-      (k "System" "SUPER+ALT,n" "spawn_shell,noctalia msg panel-open control-center notifications && noctalia msg panel-close" "Mark notifications as read (clears the bell's dot)")
+      (k "System" "SUPER+SHIFT,n"
+        "spawn_shell,noctalia msg panel-open control-center notifications && noctalia msg panel-close"
+        "Mark notifications as read (clears the bell's dot)"
+      )
       (k "System" "SUPER+CTRL,n" "spawn,noctalia msg notification-dnd-toggle" "Toggle do not disturb")
       (k "System" "SUPER+SHIFT,r" "spawn,noctalia msg session lock" "Lock the screen")
       (k "System" "SUPER+SHIFT,u" "spawn,rebuild" "Update the system (rebuild)")
       (k "System" "SUPER+SHIFT,x" "quit" "Quit the session (mango)")
 
       (k "Screenshot" "NONE,Print" "spawn_shell,grim -g \"$(slurp)\" - | wl-copy" "Area to the clipboard")
-      (k "Screenshot" "SHIFT,Print" "spawn_shell,AREA=$(slurp) && sleep 2 && grim -g \"$AREA\" - | wl-copy" "Area to the clipboard after 2 s")
+      (k "Screenshot" "SHIFT,Print"
+        "spawn_shell,AREA=$(slurp) && sleep 2 && grim -g \"$AREA\" - | wl-copy"
+        "Area to the clipboard after 2 s"
+      )
       (k "Screenshot" "SUPER,Print" "spawn_shell,${annotate}" "Area to annotate (satty)")
-      (k "Screenshot" "SUPER+SHIFT,y" "spawn_shell,grim -g \"$(slurp)\" - | tesseract stdin stdout | wl-copy" "Copy the text in an area (OCR)")
+      (k "Screenshot" "SUPER+SHIFT,y"
+        "spawn_shell,grim -g \"$(slurp)\" - | tesseract stdin stdout | wl-copy"
+        "Copy the text in an area (OCR)"
+      )
 
-      (k "Audio and brightness" "SUPER+SHIFT,o" "spawn,wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.1+" "Volume up")
-      (k "Audio and brightness" "SUPER+SHIFT,i" "spawn,wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.1-" "Volume down")
-      (k "Audio and brightness" "SUPER+SHIFT,m" "spawn,wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle" "Toggle mute")
-      (k "Audio and brightness" "NONE,XF86AudioRaiseVolume" "spawn,wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.1+" "Volume up")
-      (k "Audio and brightness" "NONE,XF86AudioLowerVolume" "spawn,wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.1-" "Volume down")
-      (k "Audio and brightness" "NONE,XF86AudioMute" "spawn,wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle" "Toggle mute")
+      (k "Audio and brightness" "SUPER+SHIFT,o" "spawn,wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.1+"
+        "Volume up"
+      )
+      (k "Audio and brightness" "SUPER+SHIFT,i" "spawn,wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.1-"
+        "Volume down"
+      )
+      (k "Audio and brightness" "SUPER+SHIFT,m" "spawn,wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"
+        "Toggle mute"
+      )
+      (k "Audio and brightness" "NONE,XF86AudioRaiseVolume"
+        "spawn,wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.1+"
+        "Volume up"
+      )
+      (k "Audio and brightness" "NONE,XF86AudioLowerVolume"
+        "spawn,wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.1-"
+        "Volume down"
+      )
+      (k "Audio and brightness" "NONE,XF86AudioMute" "spawn,wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"
+        "Toggle mute"
+      )
       (k "Audio and brightness" "NONE,XF86AudioMicMute" "spawn,${toggleMic}" "Toggle microphone mute")
       (k "Audio and brightness" "NONE,XF86MonBrightnessUp" "spawn,brightnessctl s +5%" "Brightness up")
-      (k "Audio and brightness" "NONE,XF86MonBrightnessDown" "spawn,brightnessctl s 5%-" "Brightness down")
+      (k "Audio and brightness" "NONE,XF86MonBrightnessDown" "spawn,brightnessctl s 5%-"
+        "Brightness down"
+      )
 
       (k "Windows" "SUPER,h" "focusdir,left" "Focus the window on the left")
       (k "Windows" "SUPER,l" "focusdir,right" "Focus the window on the right")
@@ -61,7 +124,7 @@ let
       (k "Windows" "SUPER,minus" "minimized" "Minimize (hide) the window")
       (k "Windows" "SUPER+SHIFT,minus" "restore_minimized" "Bring back a minimized window, one per press")
 
-      (k "Tags" "SUPER,w" "view,-1" "Back to the previous tag")
+      (k "Tags" "SUPER,w" "spawn,${tagBack}" "Back to the previous tag (never the special one)")
       (k "Tags" "SUPER,s" "toggle_special_tag" "Show/hide the special (scratch) tag")
       (k "Tags" "SUPER+SHIFT,s" "tag_special_tag" "Move the window to the special tag")
     ]
@@ -173,4 +236,20 @@ in
       }
     ]
   );
+
+  # the tag history of Super+W, for the whole session (restarted if mango's
+  # IPC drops, e.g. after a config reload)
+  systemd.user.services.mango-tag-history = {
+    Unit = {
+      Description = "Previous normal tag for Super+W (mango)";
+      PartOf = [ "graphical-session.target" ];
+      After = [ "graphical-session.target" ];
+    };
+    Service = {
+      ExecStart = "${tagHistory}";
+      Restart = "always";
+      RestartSec = 2;
+    };
+    Install.WantedBy = [ "graphical-session.target" ];
+  };
 }

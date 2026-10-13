@@ -252,6 +252,27 @@ in
       # fresh home: the live ISO, a new install)
       shell.setup_wizard_enabled = false;
 
+      # Emacs keys too (C-n C-p C-f C-b), like GTK here: lists, the launcher,
+      # tabs and menus of every noctalia surface
+      keybinds = {
+        up = [
+          "up"
+          "ctrl+p"
+        ];
+        down = [
+          "down"
+          "ctrl+n"
+        ];
+        left = [
+          "left"
+          "ctrl+b"
+        ];
+        right = [
+          "right"
+          "ctrl+f"
+        ];
+      };
+
       # session menu (the power button of the control center): the defaults,
       # plus the system + home switch in a floating terminal (home/ui/rebuild.nix)
       shell.session.actions = [
