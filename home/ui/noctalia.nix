@@ -271,6 +271,14 @@ in
           "right"
           "ctrl+f"
         ];
+        enter = [
+          "enter"
+          "ctrl+m"
+        ];
+        backspace = [
+          "backspace"
+          "ctrl+h"
+        ];
       };
 
       # session menu (the power button of the control center): the defaults,
