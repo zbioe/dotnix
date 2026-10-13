@@ -764,11 +764,28 @@ let
       libnotify
       gawk
       systemd
+      util-linux # flock, logger
     ];
     text = ''
       index=${index}
       state=${stateDir}
       mkdir -p "$state"
+      cmd="theme $*"
+
+      # one change at a time: a second `theme` waits for the first, so the
+      # state (and the boot splash synced from it) ends at the last choice
+      case "''${1:-status}" in
+        list | status | icon | entries) ;;
+        *)
+          exec 8>"$state/.lock"
+          if [ "''${1:-}" = noctalia-mode ]; then
+            # busy means it is our own `theme-mode-set` echoing back
+            flock -n 8 || exit 0
+          else
+            flock 8
+          fi
+          ;;
+      esac
 
       name=$(cat "$state/name" 2>/dev/null || echo ${cfg.default.name})
       mode=$(cat "$state/mode" 2>/dev/null || echo ${cfg.default.mode})
@@ -821,6 +838,8 @@ let
         fi
         echo "$name" > "$state/name"
         echo "$mode" > "$state/mode"
+        # who changed it, for when the theme is not the expected one
+        logger -t theme "$name-$mode ($cmd, from $(ps -o args= -p "$PPID" 2>/dev/null | cut -c1-100))" || true
         swap "$v" "$state/current"
 
         # GTK4/libadwaita (patched gtk reloads it live)
@@ -915,8 +934,18 @@ let
           mode=''${3:-$mode}
           apply
           ;;
+        # noctalia's theme_mode_changed hook (home/ui/noctalia.nix): its own
+        # Light/Dark switch; a stale event (noctalia already moved on) is
+        # dropped, so it can never undo a newer choice
+        noctalia-mode)
+          [ "''${2:?$(usage)}" = "$mode" ] && exit 0
+          [ "$(noctalia msg theme-mode-get 2>/dev/null)" = "$2" ] || exit 0
+          echo off > "$state/auto"
+          mode=$2
+          apply
+          ;;
         mode)
-          [ "''${2:?$(usage)}" = "$mode" ] && exit 0 # already there (noctalia hook)
+          [ "''${2:?$(usage)}" = "$mode" ] && exit 0
           echo off > "$state/auto" # a manual choice ends the day/night schedule
           mode=$2
           apply

@@ -414,7 +414,7 @@ in
       ];
 
       # the bar/settings toggle switches the whole system theme
-      hooks.theme_mode_changed = "${lib.getExe config.theme.package} mode $NOCTALIA_THEME_MODE";
+      hooks.theme_mode_changed = "${lib.getExe config.theme.package} noctalia-mode $NOCTALIA_THEME_MODE";
     };
   };
 }

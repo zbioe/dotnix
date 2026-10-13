@@ -330,7 +330,10 @@ in
       export nix_vt_blu
     '';
   };
-  boot.kernelParams = [
+  # after the plain "splash": plymouth checks for it with strstr() and gives
+  # up at the first hit, so a "plymouth.splash=" before it means no splash
+  # at all (boot messages as text instead)
+  boot.kernelParams = lib.mkAfter [
     "plymouth.splash=nix-\${nix_theme}"
     "vt.default_red=\${nix_vt_red}"
     "vt.default_grn=\${nix_vt_grn}"
