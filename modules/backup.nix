@@ -301,7 +301,12 @@ in
       };
     };
 
-    systemd.tmpfiles.rules = [ "d ${cfg.cacheDir} 0700 root root -" ];
+    # readable: `backup status` (the user) reads the timestamps; the restic
+    # cache inside stays root's
+    systemd.tmpfiles.rules = [
+      "d ${cfg.cacheDir} 0755 root root -"
+      "d ${cfg.cacheDir}/restic 0700 root root -"
+    ];
 
     # `backup now` without sudo
     security.polkit.extraConfig = ''
