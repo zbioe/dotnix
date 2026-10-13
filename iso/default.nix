@@ -19,7 +19,6 @@
   services.openssh.enable = true;
   networking.firewall.enable = false;
 
-  networking.wireless.enable = false;
   networking.networkmanager = {
     enable = true;
     wifi.powersave = false;
