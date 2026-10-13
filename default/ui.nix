@@ -2,10 +2,8 @@
   config,
   lib,
   pkgs,
-  hyprland,
   username,
   unstable,
-  xdg-desktop-portal-hyprland,
   ...
 }:
 
@@ -13,8 +11,7 @@
   environment.sessionVariables = {
     # https://nixos.wiki/wiki/Wayland#Applications
     NIXOS_OZONE_WL = "1";
-    # XDG_CURRENT_DESKTOP/XDG_SESSION_* come from the session (uwsm), so
-    # Hyprland and mango each get their own
+    # XDG_CURRENT_DESKTOP/XDG_SESSION_* come from the session (uwsm)
 
     # Emacs to use wayland in the right way
     GDK_BACKEND = "wayland";
@@ -39,7 +36,7 @@
 
   # Display Manager
   services.displayManager = {
-    defaultSession = "mango-uwsm"; # Hyprland stays available as "Hyprland (UWSM)"
+    defaultSession = "mango-uwsm";
     autoLogin = {
       enable = true;
       user = username;
@@ -60,14 +57,12 @@
 
   programs.fish.enable = true;
 
-  # hyprland
-  programs.hyprland = {
-    enable = true;
-    withUWSM = true;
-    package = hyprland;
-    portalPackage = xdg-desktop-portal-hyprland;
-    xwayland.enable = true;
-  };
+  # the session runs under uwsm (systemd units for the compositor and apps);
+  # X11 apps through Xwayland (Workpuls among them, home/ui/insightful.nix)
+  programs.uwsm.enable = true;
+  programs.xwayland.enable = true;
+  # GTK settings backend (`theme` writes the color scheme there)
+  programs.dconf.enable = true;
 
   # location from nearby Wi-Fi (like browsers do), for noctalia's weather and
   # sunrise/sunset (home/ui/noctalia.nix asks it through where-am-i)
@@ -86,8 +81,8 @@
   services.gnome.gnome-keyring.enable = true;
   security.pam.services.sddm.enableGnomeKeyring = true;
 
-  # mango: second session, also run through uwsm so systemd user units see
-  # XDG_CURRENT_DESKTOP=mango (Hyprland-only units skip it, see home/ui)
+  # mango, run through uwsm so systemd user units see XDG_CURRENT_DESKTOP=mango;
+  # its portals: wlr for screen sharing and screenshots, gtk for the rest
   programs.mango = {
     enable = true;
     addLoginEntry = false;
@@ -115,17 +110,7 @@
     extraPortals = [
       pkgs.xdg-desktop-portal-gtk
     ];
-    config = {
-      hyprland = {
-        default = [
-          "hyprland"
-          "gtk"
-        ];
-      };
-      common = {
-        default = [ "gtk" ];
-      };
-    };
+    config.common.default = [ "gtk" ];
   };
 
   # Hardware
@@ -140,9 +125,6 @@
     # notification
     libnotify
 
-    # wallpaper
-    awww
-
     # player manager
     playerctl
 
@@ -152,10 +134,9 @@
     # printscreen with selection
     # grim -l 0 -g "$(slurp)" - | wl-copy
     wl-clipboard # cli interface to clipboard (xclip anternative)
-    wtype # write with hyprland
+    wtype # type text from scripts (xdotool for wayland)
     slurp # select utility
     grim # screenshot utility
-    grimblast # screenshot
     tesseract # image to text
 
     # image manager

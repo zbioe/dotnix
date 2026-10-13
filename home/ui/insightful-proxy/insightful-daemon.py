@@ -3,9 +3,9 @@
 insightful-daemon.py - runs on HOST (outside Distrobox)
 
 Monitors:
-  1. Hyprland active window (title + class) via hyprctl
-  2. Mouse movement via hyprctl cursorpos polling (100ms)
-  3. Hyprland socket events (window/workspace switches)
+  1. Focused window (title + app id) via mango's `mmsg`
+  2. Mouse movement via `mmsg get cursorpos` polling
+  3. Focus changes via `mmsg watch focusing-client`
   4. Creates a uinput virtual input device so tracker.node
      can read real kernel-level input events (needed for APM)
 
@@ -19,7 +19,10 @@ SHM layout (must match insightful-proxy.c):
   char    window_class[256]
 Total: 528 bytes
 """
-import fcntl, json, os, signal, struct, subprocess, sys, socket, threading, time
+import fcntl, json, os, signal, struct, subprocess, sys, threading, time
+
+# mango's IPC client (store path from home/ui/insightful.nix)
+MMSG = os.environ.get("MMSG", "mmsg")
 
 # ----------------------------------------------------------------
 # Shared memory
@@ -40,14 +43,14 @@ def get_last_activity():
     with _activity_lock:
         return _last_activity
 
-def get_hyprland_window():
+def get_focused_window():
     try:
-        r = subprocess.run(["hyprctl", "activewindow", "-j"],
+        r = subprocess.run([MMSG, "get", "focusing-client"],
                            capture_output=True, text=True, timeout=2)
         if r.returncode == 0 and r.stdout.strip():
             d = json.loads(r.stdout)
             if d and d.get("title"):
-                return d.get("title","Desktop")[:200], d.get("class","Desktop")[:200]
+                return d.get("title","Desktop")[:200], (d.get("appid") or "Desktop")[:200]
     except Exception:
         pass
     return "Desktop", "Desktop"
@@ -225,7 +228,7 @@ def evdev_monitor():
         except: pass
 
 def cursor_monitor():
-    """Poll hyprctl cursorpos every 100ms. Update activity on change.
+    """Poll `mmsg get cursorpos` every 500ms. Update activity on change.
     This is a FALLBACK for when evdev can't detect certain mouse movements
     (e.g. touchpad gestures routed through Wayland only)."""
     last_pos = None
@@ -233,7 +236,7 @@ def cursor_monitor():
     print("[cursor] Starting...", file=sys.stderr)
     while running:
         try:
-            r = subprocess.run(["hyprctl","cursorpos"],
+            r = subprocess.run([MMSG, "get", "cursorpos"],
                                capture_output=True, text=True, timeout=1)
             if r.returncode == 0:
                 pos = r.stdout.strip()
@@ -295,42 +298,31 @@ def activity_injector():
         except Exception:
             time.sleep(1)
 
-def hyprland_events():
-    """Listen for Hyprland compositor events (window switch, etc)."""
-    sig = os.environ.get("HYPRLAND_INSTANCE_SIGNATURE","")
-    if not sig:
-        try:
-            sig = os.listdir("/run/user/1000/hypr")[0]
-        except Exception:
-            print("[hypr] cannot find instance", file=sys.stderr)
-            return
-    sock_path = f"/run/user/1000/hypr/{sig}/.socket2.sock"
-    if not os.path.exists(sock_path):
-        print(f"[hypr] socket not found: {sock_path}", file=sys.stderr)
-        return
-    print(f"[hypr] listening on {sock_path}", file=sys.stderr)
+def focus_events():
+    """Count focus changes (window switch, tag switch) as activity."""
+    print("[mango] watching the focused client", file=sys.stderr)
     while running:
         try:
-            with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as s:
-                s.connect(sock_path)
-                s.settimeout(5.0)
-                while running:
-                    try:
-                        raw = s.recv(4096)
-                        if raw:
-                            for ev in raw.decode("utf-8","ignore").split("\n"):
-                                if any(k in ev for k in
-                                       ("activewindow","fullscreen","workspace","focusedmon")):
-                                    update_activity()
-                                    uinput_inject()
-                    except socket.timeout:
-                        continue
-                    except Exception:
+            with subprocess.Popen([MMSG, "watch", "focusing-client"],
+                                  stdout=subprocess.PIPE, text=True) as p:
+                last = None
+                for line in p.stdout:
+                    if not running:
+                        p.terminate()
                         break
+                    try:
+                        d = json.loads(line)
+                        key = (d.get("id"), d.get("title"), tuple(d.get("tags") or ()))
+                    except Exception:
+                        continue
+                    if last is not None and key != last:
+                        update_activity()
+                        uinput_inject()
+                    last = key
         except Exception as e:
             if running:
-                print(f"[hypr] error: {e}", file=sys.stderr)
-            time.sleep(5)
+                print(f"[mango] error: {e}", file=sys.stderr)
+        time.sleep(5)  # mango restarting / not up yet
 
 # ----------------------------------------------------------------
 # Main
@@ -341,7 +333,7 @@ def run_daemon():
 
     uinput_open()
 
-    for target in (evdev_monitor, cursor_monitor, hyprland_events,
+    for target in (evdev_monitor, cursor_monitor, focus_events,
                   swayidle_monitor, activity_injector):
         threading.Thread(target=target, daemon=True).start()
 
@@ -374,7 +366,7 @@ def run_daemon():
 
     while running:
         try:
-            title, cls = get_hyprland_window()
+            title, cls = get_focused_window()
             # Use the "effective" timestamp: if within ACTIVE_TIMEOUT
             # of last real activity, report current time (user active).
             # Otherwise report the actual last_activity (user idle).

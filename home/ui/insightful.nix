@@ -46,70 +46,77 @@ in
 
   home.activation.insightfulContainer = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
     # Bootstrap the Insightful distrobox container and app.
-    # Idempotent: each step checks before acting.
+    # Idempotent: each step checks before acting. Not when the system
+    # activates the home at boot (modules/home-activation.nix: live ISO,
+    # first boot of an install): minutes of downloads before the login
+    # screen; the next `nh home switch` does it.
+    if [ -n "''${DOTNIX_BOOT_ACTIVATION:-}" ]; then
+      echo "[Insightful] skipped at boot, set up by the next nh home switch"
+    else
 
-    CONTAINER="${containerName}"
-    IMAGE="${containerImage}"
-    APPIMAGE="${appImagePath}"
-    APPDIR="${appDir}"
-    USERNAME="${username}"
-    DOCKER="${unstable.docker}/bin/docker"
-    DISTROBOX="${pkgs.distrobox}/bin/distrobox"
-    CURL="${pkgs.curl}/bin/curl"
-    # distrobox needs standard utils (awk, rev, sed, grep, etc.)
-    export PATH="${unstable.docker}/bin:${pkgs.gawk}/bin:${pkgs.util-linux}/bin:${pkgs.gnused}/bin:${pkgs.gnugrep}/bin:${pkgs.coreutils}/bin:${pkgs.findutils}/bin:/run/current-system/sw/bin:''$PATH"
+      CONTAINER="${containerName}"
+      IMAGE="${containerImage}"
+      APPIMAGE="${appImagePath}"
+      APPDIR="${appDir}"
+      USERNAME="${username}"
+      DOCKER="${unstable.docker}/bin/docker"
+      DISTROBOX="${pkgs.distrobox}/bin/distrobox"
+      CURL="${pkgs.curl}/bin/curl"
+      # distrobox needs standard utils (awk, rev, sed, grep, etc.)
+      export PATH="${unstable.docker}/bin:${pkgs.gawk}/bin:${pkgs.util-linux}/bin:${pkgs.gnused}/bin:${pkgs.gnugrep}/bin:${pkgs.coreutils}/bin:${pkgs.findutils}/bin:/run/current-system/sw/bin:''$PATH"
 
-    # 1. Create and initialize the distrobox container if it doesn't exist
-    if ! ''$DOCKER ps -a --format '{{.Names}}' 2>/dev/null | grep -qx "''$CONTAINER"; then
-      echo "[Insightful] Creating distrobox container ''$CONTAINER..."
-      ''$DISTROBOX create --yes --image "''$IMAGE" --name "''$CONTAINER" \
-        --additional-packages "gcc libx11-dev libxss-dev libxext-dev libnss3 libatk-bridge2.0-0 libgtk-3-0 libasound2 libxcomposite1 libxdamage1 libxrandr2 libxfixes3 libpango-1.0-0 libcairo2"
-      # First enter initializes user mapping, mounts, and installs additional-packages
-      echo "[Insightful] Initializing container (first enter)..."
-      ''$DISTROBOX enter "''$CONTAINER" -- true
-      echo "[Insightful] Container ''$CONTAINER ready."
-    fi
-
-    # 2-3. Install build deps and input group (only if container is running)
-    if ''$DOCKER ps --format '{{.Names}}' 2>/dev/null | grep -qx "''$CONTAINER"; then
-      if ! ''$DOCKER exec "''$CONTAINER" dpkg -l gcc libnss3 2>/dev/null | grep -cq '^ii' | grep -q 2; then
-        echo "[Insightful] Installing dependencies in ''$CONTAINER..."
-        ''$DOCKER exec --user root "''$CONTAINER" \
-          bash -c 'apt-get update -qq && apt-get install -y -qq gcc libx11-dev libxss-dev libxext-dev libnss3 libatk-bridge2.0-0 libgtk-3-0 libasound2 libxcomposite1 libxdamage1 libxrandr2 libxfixes3 libpango-1.0-0 libcairo2' \
-          2>/dev/null || true
+      # 1. Create and initialize the distrobox container if it doesn't exist
+      if ! ''$DOCKER ps -a --format '{{.Names}}' 2>/dev/null | grep -qx "''$CONTAINER"; then
+        echo "[Insightful] Creating distrobox container ''$CONTAINER..."
+        ''$DISTROBOX create --yes --image "''$IMAGE" --name "''$CONTAINER" \
+          --additional-packages "gcc libx11-dev libxss-dev libxext-dev libnss3 libatk-bridge2.0-0 libgtk-3-0 libasound2 libxcomposite1 libxdamage1 libxrandr2 libxfixes3 libpango-1.0-0 libcairo2"
+        # First enter initializes user mapping, mounts, and installs additional-packages
+        echo "[Insightful] Initializing container (first enter)..."
+        ''$DISTROBOX enter "''$CONTAINER" -- true
+        echo "[Insightful] Container ''$CONTAINER ready."
       fi
-      if ! ''$DOCKER exec "''$CONTAINER" bash -c "getent group 174 2>/dev/null | grep -q ''$USERNAME" 2>/dev/null; then
-        echo "[Insightful] Configuring input group in ''$CONTAINER..."
-        ''$DOCKER exec --user root "''$CONTAINER" bash -c "
-          groupadd -g 174 input 2>/dev/null || true
-          usermod -aG input ''$USERNAME 2>/dev/null || true
-        " 2>/dev/null || true
+
+      # 2-3. Install build deps and input group (only if container is running)
+      if ''$DOCKER ps --format '{{.Names}}' 2>/dev/null | grep -qx "''$CONTAINER"; then
+        if ! ''$DOCKER exec "''$CONTAINER" dpkg -l gcc libnss3 2>/dev/null | grep -cq '^ii' | grep -q 2; then
+          echo "[Insightful] Installing dependencies in ''$CONTAINER..."
+          ''$DOCKER exec --user root "''$CONTAINER" \
+            bash -c 'apt-get update -qq && apt-get install -y -qq gcc libx11-dev libxss-dev libxext-dev libnss3 libatk-bridge2.0-0 libgtk-3-0 libasound2 libxcomposite1 libxdamage1 libxrandr2 libxfixes3 libpango-1.0-0 libcairo2' \
+            2>/dev/null || true
+        fi
+        if ! ''$DOCKER exec "''$CONTAINER" bash -c "getent group 174 2>/dev/null | grep -q ''$USERNAME" 2>/dev/null; then
+          echo "[Insightful] Configuring input group in ''$CONTAINER..."
+          ''$DOCKER exec --user root "''$CONTAINER" bash -c "
+            groupadd -g 174 input 2>/dev/null || true
+            usermod -aG input ''$USERNAME 2>/dev/null || true
+          " 2>/dev/null || true
+        fi
       fi
-    fi
 
-    # 4. Download AppImage if neither the AppImage nor the extracted app exist
-    if [ ! -f "''$APPIMAGE" ] && [ ! -x "''$APPDIR/Workpuls" ]; then
-      echo "[Insightful] Downloading Workpuls AppImage..."
-      mkdir -p "$(dirname "''$APPIMAGE")"
-      ''$CURL -L --progress-bar \
-        "https://insightful-updates.io/linux/agent/latest/Workpuls.AppImage" \
-        -o "''$APPIMAGE"
-      chmod +x "''$APPIMAGE"
-      echo "[Insightful] AppImage downloaded."
-    fi
+      # 4. Download AppImage if neither the AppImage nor the extracted app exist
+      if [ ! -f "''$APPIMAGE" ] && [ ! -x "''$APPDIR/Workpuls" ]; then
+        echo "[Insightful] Downloading Workpuls AppImage..."
+        mkdir -p "$(dirname "''$APPIMAGE")"
+        ''$CURL -L --progress-bar \
+          "https://insightful-updates.io/linux/agent/latest/Workpuls.AppImage" \
+          -o "''$APPIMAGE"
+        chmod +x "''$APPIMAGE"
+        echo "[Insightful] AppImage downloaded."
+      fi
 
-    # 5. Extract AppImage if not already extracted
-    if [ ! -x "''$APPDIR/Workpuls" ] && [ -f "''$APPIMAGE" ]; then
-      echo "[Insightful] Extracting AppImage to ''$APPDIR..."
-      APPIMAGE_DIR="$(dirname "''$APPIMAGE")"
-      cd "''$APPIMAGE_DIR"
-      chmod +x "''$APPIMAGE"
-      "''$APPIMAGE" --appimage-extract >/dev/null 2>&1 || true
-      if [ -d "''$APPIMAGE_DIR/squashfs-root" ]; then
-        mv "''$APPIMAGE_DIR/squashfs-root" "''$APPDIR"
-        echo "[Insightful] AppImage extracted to ''$APPDIR."
-      else
-        echo "[Insightful] WARNING: AppImage extraction failed."
+      # 5. Extract AppImage if not already extracted
+      if [ ! -x "''$APPDIR/Workpuls" ] && [ -f "''$APPIMAGE" ]; then
+        echo "[Insightful] Extracting AppImage to ''$APPDIR..."
+        APPIMAGE_DIR="$(dirname "''$APPIMAGE")"
+        cd "''$APPIMAGE_DIR"
+        chmod +x "''$APPIMAGE"
+        "''$APPIMAGE" --appimage-extract >/dev/null 2>&1 || true
+        if [ -d "''$APPIMAGE_DIR/squashfs-root" ]; then
+          mv "''$APPIMAGE_DIR/squashfs-root" "''$APPDIR"
+          echo "[Insightful] AppImage extracted to ''$APPDIR."
+        else
+          echo "[Insightful] WARNING: AppImage extraction failed."
+        fi
       fi
     fi
   '';
@@ -167,7 +174,7 @@ in
 
   systemd.user.services.insightful-proxy-daemon = {
     Unit = {
-      Description = "Insightful Proxy - Hyprland window + activity bridge for Workpuls";
+      Description = "Insightful Proxy - mango window + activity bridge for Workpuls";
       PartOf = [ "graphical-session.target" ];
       After = [ "graphical-session.target" ];
     };
@@ -175,7 +182,10 @@ in
       ExecStart = "${proxyPython}/bin/python %h/.local/share/insightful-proxy/insightful-daemon.py";
       Restart = "always";
       RestartSec = 3;
-      Environment = [ "DISPLAY=:0" ];
+      Environment = [
+        "DISPLAY=:0"
+        "MMSG=${config.wayland.windowManager.mango.package}/bin/mmsg"
+      ];
     };
     Install = {
       WantedBy = [ "graphical-session.target" ];

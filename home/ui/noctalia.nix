@@ -1,7 +1,6 @@
 # Noctalia: shell for the mango session (started from home/ui/mango.nix).
-# The bar keeps the shape of the Hyprland waybar (home/ui/waybar.nix): a thin
-# strip on top, no shadow or rounding, tags in use only with the same icons,
-# the NixOS logo as the launcher. Colors come from `theme` (home/theme): one
+# The bar: a thin strip on top, no shadow or rounding, tags in use only
+# (one icon per tag), the NixOS logo as the launcher. Colors come from `theme` (home/theme): one
 # palette per theme, switched by `theme apply`; noctalia's own dark/light
 # toggle drives `theme` back.
 {
@@ -12,8 +11,19 @@
   ...
 }:
 let
-  # same icons as the waybar workspaces (home/ui/waybar.nix)
-  icons = config.programs.waybar.settings.mainBar."hyprland/workspaces".format-icons;
+  # one icon per tag (what usually lives there, see home/ui/mango.nix)
+  icons = {
+    "1" = "󱢢";
+    "2" = "";
+    "3" = "󱑴";
+    "4" = "󱪿";
+    "5" = "";
+    "6" = "󰇏";
+    "7" = "";
+    "8" = "󱂏";
+    "9" = "";
+    "10" = "";
+  };
   workspaceIcons = lib.concatMapStringsSep "," (n: "${toString n}=${icons.${toString n}}") (
     lib.range 1 10
   );
@@ -49,7 +59,8 @@ let
   };
 
   # local plugins (noctalia-plugins/): "dotnix/theme", the theme panel and
-  # control center tile; "dotnix/wifi", the Wi-Fi priority panel
+  # control center tile; "dotnix/wifi", the Wi-Fi priority panel;
+  # "dotnix/updates", the flake-updates panel
   dotnixPlugins =
     let
       swatchesOf =
@@ -91,6 +102,29 @@ let
             entry = "priority.luau";
             width = 380;
             height = 460;
+            placement = "attached";
+            position = "auto";
+          }
+        ];
+      };
+      updatesJson = (pkgs.formats.json { }).generate "updates.json" {
+        command = "${config.home.profileDirectory}/bin/flake-updates";
+      };
+      updatesManifest = (pkgs.formats.toml { }).generate "plugin.toml" {
+        id = "dotnix/updates";
+        name = "Updates";
+        version = "1.0.0";
+        plugin_api = 26;
+        author = "dotnix";
+        license = "MIT";
+        icon = "package";
+        description = "Settings and state of the dotnix `flake-updates` command.";
+        panel = [
+          {
+            id = "panel";
+            entry = "panel.luau";
+            width = 440;
+            height = 680;
             placement = "attached";
             position = "auto";
           }
@@ -144,13 +178,16 @@ let
       };
     in
     pkgs.runCommandLocal "noctalia-plugins" { } ''
-      mkdir -p $out/theme $out/wifi $out/keys
+      mkdir -p $out/theme $out/wifi $out/keys $out/updates
       cp ${./noctalia-plugins/theme}/*.luau $out/theme/
       cp ${manifest} $out/theme/plugin.toml
       cp ${themesJson} $out/theme/themes.json
       cp ${./noctalia-plugins/wifi}/*.luau $out/wifi/
       cp ${wifiManifest} $out/wifi/plugin.toml
       cp ${wifiJson} $out/wifi/wifi.json
+      cp ${./noctalia-plugins/updates}/*.luau $out/updates/
+      cp ${updatesManifest} $out/updates/plugin.toml
+      cp ${updatesJson} $out/updates/updates.json
       cp ${./noctalia-plugins/keys}/*.luau $out/keys/
       cp ${keysManifest} $out/keys/plugin.toml
       cp ${config.xdg.configFile."mango/keys.json".source} $out/keys/keys.json
@@ -211,6 +248,10 @@ in
       # tray icon included); the launcher keeps the full-color Papirus set
       shell.app_icon_colorize = true;
 
+      # everything here is declared: no first-run wizard (it shows on every
+      # fresh home: the live ISO, a new install)
+      shell.setup_wizard_enabled = false;
+
       # session menu (the power button of the control center): the defaults,
       # plus the system + home switch in a floating terminal (home/ui/rebuild.nix)
       shell.session.actions = [
@@ -241,6 +282,14 @@ in
           label = "System Update";
           glyph = "package";
           shortcut = "6";
+        }
+        # flake updates: state, settings, apply (home/ui/flake-updates.nix)
+        {
+          action = "command";
+          command = "noctalia msg panel-open dotnix/updates:panel";
+          label = "Updates";
+          glyph = "refresh";
+          shortcut = "7";
         }
       ];
 
@@ -318,7 +367,7 @@ in
           stat = "disk_used_pct";
           visualization = "none";
         };
-        # icons only, like the waybar (details on hover / in the panels)
+        # icons only (details on hover / in the panels)
         network = {
           show_label = false;
           # nm-applet's menu (VPN, ethernet, ...), hidden from the tray below
@@ -385,6 +434,7 @@ in
           "dotnix/theme"
           "dotnix/wifi"
           "dotnix/keys"
+          "dotnix/updates"
         ];
         auto_update = "none";
         source = [

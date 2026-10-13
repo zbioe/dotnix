@@ -3,13 +3,12 @@
 
   outputs =
     {
+      self,
       bwt,
       home,
       stylix,
       nixpkgs,
       hardware,
-      hyprland,
-      waybar,
       mango,
       noctalia,
       programsdb,
@@ -29,11 +28,23 @@
       specialArgs = {
         inherit nixpkgs username;
         inherit (home.packages.${system}) home-manager;
-        inherit (hyprland.packages.${system}) hyprland xdg-desktop-portal-hyprland;
         inherit bwt;
         inherit unstable;
         home-module = home.nixosModules.home-manager;
       };
+      # hosts made by dotnix-install (iso/tools.nix): any other folder in hosts/
+      installedHosts = builtins.attrNames (
+        nixpkgs.lib.filterAttrs (
+          name: type:
+          type == "directory"
+          && !(builtins.elem name [
+            "bx"
+            "te"
+          ])
+        ) (builtins.readDir ./hosts)
+      );
+      # the home generation every host shares (homeConfigurations below)
+      homeActivation = self.homeConfigurations.bx.activationPackage;
       defaultModules = [
         ./modules
         ./default
@@ -47,12 +58,23 @@
     {
       # system
       nixosConfigurations = {
+        # recovery: a console, the disk tools and dotnix-install/-mount
         minimal-iso = nixpkgs.lib.nixosSystem {
           inherit system specialArgs;
           modules = [
             "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
             ./iso
+            ./iso/tools.nix
           ];
+        };
+        # this whole setup, live from USB and installable (iso/full.nix)
+        full-iso = nixpkgs.lib.nixosSystem {
+          inherit system;
+          specialArgs = specialArgs // {
+            inherit homeActivation;
+            dotnix = self;
+          };
+          modules = defaultModules ++ [ ./iso/full.nix ];
         };
         te = nixpkgs.lib.nixosSystem {
           inherit system specialArgs;
@@ -72,7 +94,23 @@
             ./hosts/bx
           ];
         };
-      };
+      }
+      // nixpkgs.lib.genAttrs installedHosts (
+        host:
+        nixpkgs.lib.nixosSystem {
+          inherit system specialArgs;
+          modules = defaultModules ++ [
+            ./hosts/${host}
+            # its home, the first time (then `nh home switch -c <host>`)
+            {
+              modules.homeActivation = {
+                enable = true;
+                package = homeActivation;
+              };
+            }
+          ];
+        }
+      );
       # home-manager
       homeConfigurations =
         let
@@ -88,8 +126,6 @@
                 extraSpecialArgs = {
                   inherit stateVersion;
                   inherit username;
-                  inherit (hyprland.packages.${system}) hyprland;
-                  inherit (waybar.packages.${system}) waybar;
                   noctalia = noctalia.packages.${system}.default;
                   inherit unstable;
                 };
@@ -116,7 +152,9 @@
         {
           te = makeConfiguration "25.11";
           bx = makeConfiguration "25.11";
-        };
+        }
+        # the same generation as bx, so an install needs nothing new
+        // nixpkgs.lib.genAttrs installedHosts (_: makeConfiguration "25.11");
     };
 
   inputs = {
@@ -142,23 +180,7 @@
         flake-parts.follows = "parts";
       };
     };
-    hyprland = {
-      url = "github:hyprwm/Hyprland";
-      inputs = {
-        nixpkgs.follows = "nixpkgs-unstable";
-        systems.follows = "systems";
-        pre-commit-hooks.inputs.flake-compat.follows = "compat";
-        xdph.inputs.hyprgraphics.follows = "hyprland/hyprgraphics";
-      };
-    };
-    waybar = {
-      url = "github:Alexays/Waybar";
-      inputs = {
-        nixpkgs.follows = "nixpkgs-unstable";
-        flake-compat.follows = "compat";
-      };
-    };
-    # dwl-based compositor; second session next to Hyprland (default/ui.nix)
+    # dwl-based compositor of the session (default/ui.nix, home/ui/mango.nix)
     mango = {
       url = "github:DreamMaoMao/mangowc";
       inputs = {
@@ -181,10 +203,6 @@
         nixpkgs.follows = "nixpkgs";
         nixpkgs-stable.follows = "nixpkgs";
       };
-    };
-    compat = {
-      url = "git+https://git.lix.systems/lix-project/flake-compat.git";
-      flake = false;
     };
     parts = {
       url = "github:hercules-ci/flake-parts";

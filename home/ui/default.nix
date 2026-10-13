@@ -18,15 +18,12 @@ in
   imports = [
     ../../modules/stylix.nix
     ../theme
-    ./hyprland.nix
     ./mango.nix
     ./noctalia.nix
     ./rebuild.nix
     ./wifi-prefer.nix
-    ./waybar.nix
+    ./flake-updates.nix
     ./insightful.nix
-    # ./river.nix
-    # ./yambar.nix
   ];
 
   stylix = {
@@ -83,32 +80,19 @@ in
     polarity = "dark";
   };
 
-  # bar, wallpaper and notifications of the Hyprland session; in mango noctalia does them
-  xdg.configFile =
-    lib.genAttrs
-      [
-        "systemd/user/waybar.service.d/session.conf"
-        "systemd/user/hyprpaper.service.d/session.conf"
-        # D-Bus activated: in mango it would take notifications from noctalia
-        "systemd/user/mako.service.d/session.conf"
-        # noctalia has its own clipboard history
-        "systemd/user/cliphist.service.d/session.conf"
-        "systemd/user/cliphist-images.service.d/session.conf"
-      ]
-      (_: {
-        text = ''
-          [Unit]
-          ConditionEnvironment=XDG_CURRENT_DESKTOP=Hyprland
-        '';
-      })
-    // lib.genAttrs
-      [
-        # Dark Reader bridge of Brave (programs.brave below)
-        "BraveSoftware/Brave-Browser/NativeMessagingHosts/nix_theme.json"
-      ]
-      (_: {
-        source = "${nixTheme}/etc/chromium/native-messaging-hosts/nix_theme.json";
-      });
+  # Fcitx can't hand the keyboard layout to mango (it comes from the mango
+  # config anyway): no warning about it at every login
+  xdg.configFile."fcitx5/conf/notifications.conf" = {
+    force = true;
+    text = ''
+      [HiddenNotifications]
+      0=wayland-diagnose-other
+    '';
+  };
+
+  # Dark Reader bridge of Brave (programs.brave below)
+  xdg.configFile."BraveSoftware/Brave-Browser/NativeMessagingHosts/nix_theme.json".source =
+    "${nixTheme}/etc/chromium/native-messaging-hosts/nix_theme.json";
 
   # Brave opens links; mimeapps.list stays user-managed, only these entries
   home.activation.defaultBrowser = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
@@ -120,36 +104,6 @@ in
   dconf.settings."org/gnome/desktop/interface".font-name =
     with config.stylix.fonts;
     "${sansSerif.name} ${toString sizes.applications}";
-  services.cliphist.enable = true;
-  services.mako = {
-    enable = true;
-    settings = {
-      layer = "overlay";
-      default-timeout = 5000;
-      icons = true;
-      border-radius = 15;
-    };
-  };
-
-  programs.hyprlock = {
-    enable = true;
-    settings = {
-      general = {
-        disable_loading_bar = true;
-        immediate_render = true;
-        hide_cursor = true;
-      };
-      image = [
-        {
-          position = "-156.5, -470";
-          size = "50";
-          rounding = -1;
-          zindex = 3;
-        }
-      ];
-    };
-  };
-
   programs = {
     bat = {
       enable = true;
@@ -189,34 +143,6 @@ in
         window_padding_width = 0;
         window_margin_width = 0;
         font_size = 10.26;
-      };
-    };
-    fuzzel = {
-      enable = true;
-      settings = {
-        main = {
-          terminal = "foot";
-          layer = "overlay";
-        };
-        key-bindings = {
-          execute = "Return KP_Enter Control+m";
-          delete-prev = "BackSpace Control+h";
-          delete-prev-word = "Mod1+BackSpace Control+w";
-        };
-      };
-    };
-    tofi = {
-      enable = true;
-      settings = {
-        width = "100%";
-        height = "100%";
-        border-width = 0;
-        outline-width = 0;
-        padding-left = "35%";
-        padding-top = "35%";
-        result-spacing = 25;
-        num-results = 5;
-        background-color = lib.mkForce "#00000080";
       };
     };
     yazi = {
@@ -262,7 +188,6 @@ in
     wirelesstools
     brightnessctl
     wl-clipboard
-    grimblast
     hyprpicker
     nautilus
     gruvbox-gtk-theme

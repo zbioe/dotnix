@@ -13,6 +13,8 @@
     ./config.nix
     ./packages.nix
     ./librewolf.nix
+    ./brave.nix
+    ./updates.nix
     ./webcam.nix
     # ./web3.nix
     ./libvirt.nix

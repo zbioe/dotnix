@@ -18,6 +18,10 @@ in
     ./bluetooth.nix
     ./protonvpn.nix
     ./keyboard.nix
+    ./snapshots.nix
+    ./backup.nix
+    ./home-activation.nix
+    ./disk-layout.nix
   ];
   options.modules = with types; {
     user.name = mkOption {
@@ -145,7 +149,6 @@ in
           "https://cache.nixos.org/"
           "https://cachix.cachix.org"
           "https://cache.flox.dev"
-          "https://hyprland.cachix.org"
           "https://nix-community.cachix.org"
         ];
 
@@ -153,7 +156,6 @@ in
           "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
           "cachix.cachix.org-1:eWNHQldwUO7G2VkjpnjDbWwy4KQ/HNxht7H4SSoMckM="
           "flox-cache-public-1:7F4OyH7ZCnFhcze3fJdfyXYLQw/aV7GEed86nQ7IsOs="
-          "hyprland.cachix.org-1:a7pgxzMz7+chwVL3/pzj6jIBMioiJM7ypFP8PwtkuGc="
           "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
         ];
       };

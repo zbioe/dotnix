@@ -289,7 +289,7 @@ let
   # wait for them first (at most 5s)
   shutdownSplash = pkgs.writeShellScript "plymouth-shutdown" ''
     for _ in $(${pkgs.coreutils}/bin/seq 50); do
-      ${pkgs.procps}/bin/pgrep -x 'mango|Hyprland|\.Hyprland-wrapp|sway|sddm-greeter.*' >/dev/null || break
+      ${pkgs.procps}/bin/pgrep -x 'mango|sddm-greeter.*' >/dev/null || break
       ${pkgs.coreutils}/bin/sleep 0.1
     done
     id=$(${pkgs.coreutils}/bin/basename "$(${pkgs.coreutils}/bin/readlink /var/lib/theme/current)")

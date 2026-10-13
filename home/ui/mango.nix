@@ -1,6 +1,5 @@
-# Mango session (second login entry next to Hyprland, see default/ui.nix).
-# Same keys, tags and rules as home/ui/hyprland.nix; the shell (bar, panels,
-# notifications, lock, wallpaper) is noctalia (home/ui/noctalia.nix).
+# Mango session (the login session, see default/ui.nix). The shell (bar,
+# panels, notifications, lock, wallpaper) is noctalia (home/ui/noctalia.nix).
 {
   config,
   pkgs,
@@ -34,7 +33,6 @@ let
       (k "System" "SUPER+SHIFT,u" "spawn,rebuild" "Update the system (rebuild)")
       (k "System" "SUPER+SHIFT,x" "quit" "Quit the session (mango)")
 
-      # grimblast is Hyprland-only: plain grim + slurp
       (k "Screenshot" "NONE,Print" "spawn_shell,grim -g \"$(slurp)\" - | wl-copy" "Area to the clipboard")
       (k "Screenshot" "SHIFT,Print" "spawn_shell,AREA=$(slurp) && sleep 2 && grim -g \"$AREA\" - | wl-copy" "Area to the clipboard after 2 s")
       (k "Screenshot" "SUPER,Print" "spawn_shell,${annotate}" "Area to annotate (satty)")
@@ -94,9 +92,9 @@ in
       # active theme colors (borders etc.), see home/theme
       source = "${stateDir}/current/mango.conf";
 
-      tag_num = 10; # Super+0 is tag 10, like Hyprland's workspace 10
+      tag_num = 10; # Super+0 is tag 10
 
-      # look: same as the Hyprland session
+      # look: flat, no gaps, borders, rounding or effects
       animations = 0;
       border_px = 0;
       border_radius = 0;

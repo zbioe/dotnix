@@ -31,7 +31,7 @@ in
       settings = {
         General = {
           FastConnectable = true;
-          UserspaceHID = true; 
+          UserspaceHID = true;
         };
       };
     };

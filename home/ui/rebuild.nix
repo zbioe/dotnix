@@ -2,7 +2,8 @@
 # A notification says it is running (with a button to follow the output);
 # at the end it is replaced by the result: on failure the log comes to the
 # front in a window closed with a click, on success only if asked for
-# ("Show log"). The log is kept in ~/.local/state/rebuild.
+# ("Show log"). The log is kept in ~/.local/state/rebuild. A btrfs
+# snapshot of /home and /persist comes first (modules/snapshots.nix).
 # Started from the session menu (home/ui/noctalia.nix), Super+Shift+U
 # (home/ui/mango.nix), the launcher ("System Update") or `rebuild`;
 # `rebuild --here` runs it in the current terminal instead.
@@ -27,6 +28,16 @@ let
     exec /run/wrappers/bin/sudo -A "$@"
   '';
 
+  # a snapshot of /home and /persist before switching (modules/snapshots.nix);
+  # one that fails (snapper off on this host) does not stop the update
+  snapshot = pkgs.writeShellScript "rebuild-snapshot" ''
+    snapper=${lib.getExe pkgs.snapper}
+    [ -e /etc/snapper/configs/home ] || exit 0
+    echo "snapshot of /home and /persist before the switch"
+    $snapper -c home create -c number -d "before rebuild" || true
+    ${sudoAskpass}/bin/sudo $snapper -c persist create -c number -d "before rebuild" || true
+  '';
+
   rebuild = pkgs.writeShellApplication {
     name = "rebuild";
     runtimeInputs = with pkgs; [
@@ -49,7 +60,7 @@ let
       wait=15m
       flake=''${NH_FLAKE:-$HOME/dotnix}
       host=$(hostname -s)
-      steps="nh os switch -H $host && nh home switch -c $host"
+      steps="${snapshot} && nh os switch -H $host && nh home switch -c $host"
 
       # without terminal control sequences (colors; the palette `theme apply`
       # sends to every terminal, this one too), lines redrawn with \r or

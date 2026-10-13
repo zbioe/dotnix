@@ -1,4 +1,4 @@
-# Commands shared by the Hyprland and Mango sessions.
+# Commands used by the session's key binds (home/ui/mango.nix).
 { pkgs }:
 {
   terminal = "uwsm app -- foot -e sh -c 'if [ -f ~/bin/start-tmux.sh ]; then bash ~/bin/start-tmux.sh; else tmux new-session -A -D -s main; fi'";

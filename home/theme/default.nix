@@ -1,7 +1,7 @@
 # Live theme switching.
 #
 # Every theme/mode pair is rendered at build time into its own store path
-# (GTK 3/4 CSS, terminal colors, waybar, fuzzel, emacs). `theme` only moves
+# (GTK 3/4 CSS, terminal colors, Qt, browsers, emacs). `theme` only moves
 # symlinks and pokes the running apps, so switching is instant and nothing is
 # generated at runtime. GTK4/libadwaita apps follow the swap thanks to
 # patches/gtk4-reload-user-css.patch (applied system-wide in default/ui.nix).
@@ -229,19 +229,6 @@ let
         jump_label_decorate_focus_fg_color=0x${base00}ff
         jump_label_decorate_focus_bg_color=0x${base0D}ff
         jump_label_decorate_border_color=0x${base0D}ff
-      '';
-      tofiConf = with c; ''
-        background-color = ${base00}
-        outline-color = ${base04}
-        border-color = ${base05}
-        text-color = ${base05}
-        prompt-color = ${base0A}
-        prompt-background = ${base00}
-        placeholder-color = ${base03}
-        input-background = ${base00}
-        default-result-background = ${base00}
-        selection-color = ${base03}
-        selection-background = ${base00}
       '';
       # NixOS snowflake art in the theme colors (shared with the boot screens)
       inherit (import ./art.nix { inherit pkgs lib colors; }) wallpaper;
@@ -487,25 +474,6 @@ let
           ]
         );
 
-      makoConf = ''
-        background-color=${c.base00}
-        border-color=${c.base0D}
-        text-color=${c.base05}
-        progress-color=over ${c.base02}
-
-        [urgency=low]
-        background-color=${c.base00}
-        border-color=${c.base03}
-        text-color=${c.base05}
-
-        [urgency=critical]
-        background-color=${c.base00}
-        border-color=${c.base08}
-        text-color=${c.base05}
-      '';
-      # hyprlang variables: $base00 = rgb(...)
-      hyprlockConf = lib.concatMapStrings (b: "$" + b + " = rgb(${colors.${b}})\n") bases;
-
       # Qt (qt5ct/qt6ct, Fusion style): palette roles in QPalette::ColorRole order
       qtRoles = with c; [
         base05 # WindowText
@@ -591,25 +559,6 @@ let
       # GTK4/libadwaita: swapped into ~/.config/gtk-4.0/gtk.css
       cp ${gtkCss} $out/gtk4.css
 
-      cat > $out/waybar.css <<'EOF'
-      ${lib.concatMapStringsSep "\n" (b: "@define-color ${b} ${c.${b}};") bases}
-      EOF
-
-      cat > $out/fuzzel.ini <<'EOF'
-      [colors]
-      background=${colors.base00}ff
-      text=${colors.base05}ff
-      placeholder=${colors.base03}ff
-      prompt=${colors.base05}ff
-      input=${colors.base05}ff
-      match=${colors.base0A}ff
-      selection=${colors.base02}ff
-      selection-text=${colors.base05}ff
-      selection-match=${colors.base0A}ff
-      counter=${colors.base06}ff
-      border=${colors.base0D}ff
-      EOF
-
       cat > $out/foot.ini <<'EOF'
       [colors-dark]
       ${footColors}
@@ -641,9 +590,6 @@ let
       cat > $out/mango.conf <<'EOF'
       ${mangoConf}
       EOF
-      cat > $out/tofi.conf <<'EOF'
-      ${tofiConf}
-      EOF
       cat > $out/fish.fish <<'EOF'
       ${fishColors}
       EOF
@@ -656,12 +602,6 @@ let
       cp ${alacrittyToml} $out/alacritty.toml
       cat > $out/discord.css <<'EOF'
       ${discordCss}
-      EOF
-      cat > $out/mako.conf <<'EOF'
-      ${makoConf}
-      EOF
-      cat > $out/hyprlock.conf <<'EOF'
-      ${hyprlockConf}
       EOF
       cat > $out/qt5ct-colors.conf <<'EOF'
       ${qtColors 21}
@@ -760,8 +700,7 @@ let
       coreutils
       glib
       procps
-      fuzzel
-      libnotify
+      dconf
       gawk
       systemd
       util-linux # flock, logger
@@ -791,7 +730,7 @@ let
       mode=$(cat "$state/mode" 2>/dev/null || echo ${cfg.default.mode})
 
       usage() {
-        echo "usage: theme [list | status | set NAME [dark|light] | mode dark|light | toggle | auto [on|off|toggle] | menu | entries | pick LINE | apply]"
+        echo "usage: theme [list | status | set NAME [dark|light] | mode dark|light | toggle | auto [on|off|toggle] | entries | pick LINE | apply]"
       }
 
       # today's sunrise and sunset ("HH:MM HH:MM", local time) at the position
@@ -888,11 +827,6 @@ let
         pkill -USR1 -f '^/nix/store/[^ ]*/bin/\.?kitty(-wrapped)?( |$)' || true
         pkill -USR2 -f '^/nix/store/[^ ]*/bin/\.?ghostty(-wrapped)?( |$)' || true
 
-        makoctl reload 2>/dev/null || true
-
-        # wallpaper: store path of this variant (unique, so nothing is cached)
-        hyprctl hyprpaper wallpaper ",$v/wallpaper.png" >/dev/null 2>&1 || true
-
         # mango session: border colors; noctalia: palette and mode
         mmsg dispatch reload_config >/dev/null 2>&1 || true
         if command -v noctalia >/dev/null && noctalia msg theme-mode-get >/dev/null 2>&1; then
@@ -902,11 +836,9 @@ let
             noctalia msg theme-mode-set "$mode" >/dev/null 2>&1 || true
         fi
 
-        systemctl --user reload waybar.service 2>/dev/null || pkill -USR2 -f "bin/\.?waybar" || true
-
         # Brave (pkgs/brave-theme): the palette's theme pack into the folder
         # its theme extension is installed from; running, it rereads it when
-        # the reload service (default/librewolf.nix) toggles its theme policy
+        # the reload service (default/brave.nix) toggles its theme policy
         if [ -d "$v/brave-theme" ]; then
           mkdir -p "$state/brave-theme"
           for f in manifest.json "Cached Theme.pak"; do
@@ -1006,12 +938,6 @@ let
               ;;
           esac
           ;;
-        menu)
-          picked=$("$0" list | fuzzel --dmenu --prompt "theme ($mode) > ") || exit 0
-          name=$picked
-          apply
-          notify-send -a theme "Theme" "$name ($mode)"
-          ;;
         apply)
           apply
           ;;
@@ -1106,8 +1032,6 @@ in
       gtk.enable = false;
       vencord.enable = false;
       foot.enable = false;
-      fuzzel.enable = false;
-      waybar.enable = false;
       emacs.enable = false;
       fish.enable = false;
       # terminal programs: plain ANSI colors follow the live terminal palette
@@ -1117,13 +1041,9 @@ in
       starship.enable = false;
       gdu.enable = false;
       opencode.enable = false;
-      tofi.enable = false;
       kitty.enable = false;
       ghostty.enable = false;
       alacritty.enable = false;
-      mako.enable = false;
-      hyprlock.enable = false;
-      hyprland.hyprpaper.enable = false; # it would force the stylix image
     };
 
     # gtk-theme is set live through dconf (by `theme`), never in settings.ini
@@ -1146,43 +1066,12 @@ in
     }/lib/mozilla/native-messaging-hosts/nix_theme.json";
 
     programs.foot.settings.main.include = "${stateDir}/current/foot.ini";
-    programs.fuzzel.settings.main.include = "${stateDir}/current/fuzzel.ini";
     programs.fzf.defaultOptions = [ "--color=16" ];
     programs.bat.config.theme = "base16";
     programs.opencode.tui.theme = "system";
-    programs.tofi.settings.include = "${stateDir}/current/tofi.conf";
     programs.kitty.extraConfig = "include ${stateDir}/current/kitty.conf";
     programs.ghostty.settings.config-file = "?${stateDir}/current/ghostty";
     programs.alacritty.settings.general.import = [ "${stateDir}/current/alacritty.toml" ];
-    services.mako.settings = {
-      include = "${stateDir}/current/mako.conf";
-      font = with config.stylix.fonts; "${sansSerif.name} ${toString sizes.popups}";
-    };
-    services.hyprpaper.enable = true;
-    services.hyprpaper.settings = {
-      splash = false;
-      wallpaper = [
-        {
-          monitor = "";
-          path = "${stateDir}/current/wallpaper.png";
-        }
-      ];
-    };
-    programs.hyprlock.settings = {
-      source = "${stateDir}/current/hyprlock.conf";
-      background = {
-        path = "${stateDir}/current/wallpaper.png";
-        color = "$base00";
-      };
-      input-field = {
-        outer_color = "$base03";
-        inner_color = "$base00";
-        font_color = "$base05";
-        fail_color = "$base08";
-        check_color = "$base0A";
-      };
-    };
-
     # fish: colors of the active theme, reloaded live through `set -U __nix_theme`
     # (see `theme apply`); new shells also re-send the terminal palette
     programs.fish.interactiveShellInit = ''

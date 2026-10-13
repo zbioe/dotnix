@@ -13,6 +13,26 @@
       model = "";
       variant = "intl";
     };
+    snapshots = {
+      enable = true;
+      exclude = [
+        {
+          path = ".cache";
+          keep = false;
+        }
+        { path = "Downloads"; }
+      ];
+    };
+    # Proton Drive (`backup setup` once), see modules/backup.nix
+    backup = {
+      enable = true;
+      exclude = [
+        "Mail" # already on the mail server
+        "bkp"
+      ];
+      # persisted and outside the snapshots (/ is wiped at boot)
+      cacheDir = "/var/lib/nodatacow/backup";
+    };
   };
 
   # force deep sleep
