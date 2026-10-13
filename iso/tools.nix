@@ -192,7 +192,6 @@ let
         system.stateVersion = "${lib.trivial.release}";
       }
       EOF
-      sed -i 's/^      //' "$flake/hosts/$host/default.nix"
       chown -R 1000:100 /mnt/home/zbioe
 
       # everything is already in this ISO's store: no download needed
