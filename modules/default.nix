@@ -22,6 +22,7 @@ in
     ./backup.nix
     ./home-activation.nix
     ./disk-layout.nix
+    ./kdeconnect.nix
   ];
   options.modules = with types; {
     user.name = mkOption {

@@ -24,6 +24,7 @@ in
     ./wifi-prefer.nix
     ./flake-updates.nix
     ./insightful.nix
+    ./kdeconnect.nix
   ];
 
   stylix = {
@@ -89,6 +90,11 @@ in
       0=wayland-diagnose-other
     '';
   };
+
+  xdg.configFile."kdeglobals".text = ''
+    [UiSettings]
+    ColorScheme=qt6ct
+  '';
 
   # Dark Reader bridge of Brave (programs.brave below)
   xdg.configFile."BraveSoftware/Brave-Browser/NativeMessagingHosts/nix_theme.json".source =

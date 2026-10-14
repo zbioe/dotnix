@@ -255,4 +255,6 @@
   # fix brave policy block
   programs.chromium.extraOpts = lib.mkForce { };
 
+  programs.localsend.enable = true;
+
 }

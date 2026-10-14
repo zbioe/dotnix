@@ -24,6 +24,7 @@
 
     XLOCALEDIR = "${pkgs.libx11}/share/X11/locale";
     XCOMPOSEFILE = "${pkgs.libx11}/share/X11/locale/pt_BR.UTF-8/Compose";
+
   };
   i18n.inputMethod = {
     enable = true;

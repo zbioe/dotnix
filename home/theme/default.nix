@@ -331,38 +331,101 @@ let
           beyond =
             if mode == "dark" then
               [
-                [ 78 "color-mix(in oklab, ${c.base00}, #000 35%)" ]
-                [ 100 "color-mix(in oklab, ${c.base00}, #000 70%)" ]
+                [
+                  78
+                  "color-mix(in oklab, ${c.base00}, #000 35%)"
+                ]
+                [
+                  100
+                  "color-mix(in oklab, ${c.base00}, #000 70%)"
+                ]
               ]
             else
               [
-                [ 78 c.base01 ]
-                [ 100 c.base02 ]
+                [
+                  78
+                  c.base01
+                ]
+                [
+                  100
+                  c.base02
+                ]
               ];
           # neutral index -> color, along Discord's use of the scale.
           # Discord dark: text 1-27, popouts 60-62, chat 64, sidebars 66-78
           onDark = [
-            [ 0 c.base07 ]
-            [ 1 c.base06 ]
-            [ 4 c.base05 ]
-            [ 16 c.base04 ]
-            [ 27 c.base03 ]
-            [ 45 c.base02 ]
-            [ 60 c.base01 ]
-            [ 64 c.base00 ]
+            [
+              0
+              c.base07
+            ]
+            [
+              1
+              c.base06
+            ]
+            [
+              4
+              c.base05
+            ]
+            [
+              16
+              c.base04
+            ]
+            [
+              27
+              c.base03
+            ]
+            [
+              45
+              c.base02
+            ]
+            [
+              60
+              c.base01
+            ]
+            [
+              64
+              c.base00
+            ]
           ]
           ++ beyond;
           # Discord light: chat 1, sidebars 2-7, muted text 41-47, text 72-76
           onLight = [
-            [ 0 c.base00 ]
-            [ 1 c.base00 ]
-            [ 7 c.base01 ]
-            [ 25 c.base02 ]
-            [ 33 c.base03 ]
-            [ 45 c.base04 ]
-            [ 72 c.base05 ]
-            [ 76 c.base06 ]
-            [ 100 c.base07 ]
+            [
+              0
+              c.base00
+            ]
+            [
+              1
+              c.base00
+            ]
+            [
+              7
+              c.base01
+            ]
+            [
+              25
+              c.base02
+            ]
+            [
+              33
+              c.base03
+            ]
+            [
+              45
+              c.base04
+            ]
+            [
+              72
+              c.base05
+            ]
+            [
+              76
+              c.base06
+            ]
+            [
+              100
+              c.base07
+            ]
           ];
           # color at index n: mixed between the anchors around it
           at =
@@ -528,7 +591,7 @@ let
         color_scheme_path=${placeholder "out"}/${qt}-colors.conf
         custom_palette=true
         icon_theme=${if mode == "dark" then cfg.icons.dark else cfg.icons.light}
-        standard_dialogs=default
+        standard_dialogs=xdgdesktopportal
         style=Fusion
 
         [Fonts]

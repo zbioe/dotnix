@@ -29,6 +29,7 @@
     EDITOR = "nvim";
     GOPATH = "${config.home.homeDirectory}/go";
     GOBIN = "${config.home.homeDirectory}/go/bin";
+
   };
 
   # Let Home Manager install and manage itself.
