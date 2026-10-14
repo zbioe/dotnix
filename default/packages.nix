@@ -42,6 +42,9 @@
       # disk utilities
       gnome-disk-utility # to see partitions visually
       ntfs3g # support to ntfs
+      parted # disk partitioning
+      e2fsprogs # ext2/3/4 filesystem utilities
+      (grub2.override { efiSupport = true; }) # grub utilities
 
       # display utilities
       wdisplays # arandr like to wayland
