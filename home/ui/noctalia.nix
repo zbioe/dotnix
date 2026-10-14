@@ -234,6 +234,7 @@ in
       patches = (old.patches or [ ]) ++ [
         ../../patches/noctalia-workspace-label-map.patch
         ../../patches/noctalia-tray-menu.patch
+        ../../patches/noctalia-ctrl-h-backspace.patch
       ];
     });
     customPalettes = config.theme.noctaliaPalettes;
@@ -251,6 +252,9 @@ in
       # everything here is declared: no first-run wizard (it shows on every
       # fresh home: the live ISO, a new install)
       shell.setup_wizard_enabled = false;
+
+      # Activate emacs shortcuts
+      shell.readline_shortcuts = true;
 
       # Emacs keys too (C-n C-p C-f C-b), like GTK here: lists, the launcher,
       # tabs and menus of every noctalia surface
@@ -271,13 +275,11 @@ in
           "right"
           "ctrl+f"
         ];
-        enter = [
+        validate = [
+          "return"
           "enter"
+          "kp_enter"
           "ctrl+m"
-        ];
-        backspace = [
-          "backspace"
-          "ctrl+h"
         ];
       };
 

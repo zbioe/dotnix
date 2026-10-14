@@ -1,0 +1,24 @@
+--- a/src/ui/controls/input.cpp
++++ b/src/ui/controls/input.cpp
+@@ -1300,18 +1300,19 @@ void Input::handleKey(std::uint32_t sym, std::uint32_t utf32, std::uint32_t modi
+         m_selectionAnchor = m_cursorPos;
+         changed = true;
+       }
+     }
+-  } else if (KeySymbol::isBackspace(sym)) {
++  } else if (KeySymbol::isBackspace(sym) || utf32 == 0x08) {
++    const bool forceChar = (utf32 == 0x08);
+     if (hasSelection()) {
+       pushUndoSnapshot(EditCoalesceKind::Discrete);
+       deleteSelection();
+       changed = true;
+     } else if (m_cursorPos > 0) {
+       pushUndoSnapshot(EditCoalesceKind::Discrete);
+-      const std::size_t prev = ctrl ? previousWordStartForByteOffset(m_cursorPos) : prevCharPos(m_value, m_cursorPos);
++      const std::size_t prev = (ctrl && !forceChar) ? previousWordStartForByteOffset(m_cursorPos) : prevCharPos(m_value, m_cursorPos);
+       m_value.erase(prev, m_cursorPos - prev);
+       m_cursorPos = prev;
+       m_selectionAnchor = prev;
+       changed = true;
+     }
+   } else if (KeySymbol::isDelete(sym)) {
