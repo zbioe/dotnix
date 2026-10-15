@@ -72,6 +72,7 @@ in
     [
       qt6Packages.qt6ct
       kdePackages.qqc2-desktop-style
+      xdotool
     ]
     ++ [ kdeconnect-browse ];
 
