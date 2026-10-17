@@ -20,6 +20,14 @@ let
 
   stateDir = "${config.xdg.stateHome}/theme";
 
+  # the settings.ini home-manager would write (cursor, key theme...); `theme`
+  # writes them itself with the active theme, icons and dark preference
+  gtkSettings = pkgs.runCommandLocal "gtk-settings" { } ''
+    mkdir $out
+    cp ${pkgs.writeText "gtk3" config.xdg.configFile."gtk-3.0/settings.ini".text} $out/gtk-3.0.ini
+    cp ${pkgs.writeText "gtk4" config.xdg.configFile."gtk-4.0/settings.ini".text} $out/gtk-4.0.ini
+  '';
+
   brave = config.programs.brave.enable;
   braveTheme = pkgs.callPackage ../../pkgs/brave-theme { brave = unstable.brave; };
 
@@ -840,6 +848,10 @@ let
         fi
         echo "$name" > "$state/name"
         echo "$mode" > "$state/mode"
+        # the pair in one file, last: what the boot screens follow
+        # (modules/theme-boot.nix), never half of a change
+        echo "$name-$mode" > "$state/boot.tmp"
+        mv -f "$state/boot.tmp" "$state/boot"
         # who changed it, for when the theme is not the expected one
         logger -t theme "$name-$mode ($cmd, from $(ps -o args= -p "$PPID" 2>/dev/null | cut -c1-100))" || true
         swap "$v" "$state/current"
@@ -847,6 +859,28 @@ let
         # GTK4/libadwaita (patched gtk reloads it live)
         mkdir -p "$HOME/.config/gtk-4.0"
         swap "$v/gtk4.css" "$HOME/.config/gtk-4.0/gtk.css"
+
+        # settings.ini: what GTK reads without dconf (Electron, Chromium,
+        # XWayland and unwrapped apps), with this theme instead of a fixed one
+        for g in 3 4; do
+          f=$HOME/.config/gtk-$g.0/settings.ini
+          mkdir -p "''${f%/*}"
+          {
+            grep -v '^gtk-theme-name=\|^gtk-icon-theme-name=\|^gtk-application-prefer-dark-theme=' \
+              "${gtkSettings}/gtk-$g.0.ini"
+            echo "gtk-theme-name=nix-$name-$mode"
+            if [ "$mode" = dark ]; then
+              echo "gtk-icon-theme-name=${cfg.icons.dark}"
+            else
+              echo "gtk-icon-theme-name=${cfg.icons.light}"
+            fi
+            # GTK4 has no dark variants of a named theme (libadwaita warns)
+            if [ "$g" = 3 ]; then
+              echo "gtk-application-prefer-dark-theme=$([ "$mode" = dark ] && echo 1 || echo 0)"
+            fi
+          } > "$f.tmp.$$"
+          mv -f "$f.tmp.$$" "$f"
+        done
 
         # GTK3, plain GTK4, icons, and the dark/light preference (portal, browsers)
         dconf write /org/gnome/desktop/interface/color-scheme "'prefer-$mode'"
@@ -1111,6 +1145,10 @@ in
 
     # gtk-theme is set live through dconf (by `theme`), never in settings.ini
     gtk.gtk4.theme = null;
+    # written by `theme` (see gtkSettings): a fixed file pinned every app
+    # without dconf to one theme and to dark
+    xdg.configFile."gtk-3.0/settings.ini".enable = lib.mkForce false;
+    xdg.configFile."gtk-4.0/settings.ini".enable = lib.mkForce false;
 
     home.packages = [ cfg.package ];
 

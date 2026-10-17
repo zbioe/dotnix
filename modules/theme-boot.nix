@@ -257,28 +257,48 @@ let
       kbd
     ];
     text = ''
-      id=$(cat ${stateDir}/name 2>/dev/null)-$(cat ${stateDir}/mode 2>/dev/null) || true
-      # only names Nix built; anything else keeps the current choice
-      case "$id" in
-        ${lib.concatStringsSep "|" ids}) ;;
-        *)
-          echo "theme-boot: unknown theme '$id', keeping the current one"
-          id=$(readlink /var/lib/theme/current 2>/dev/null | xargs -r basename)
-          [ -n "$id" ] || id=${default}
-          ;;
-      esac
+      # `theme` writes the pair to boot in one go (name/mode: before it did)
+      read_id() {
+        if [ -s ${stateDir}/boot ]; then
+          cat ${stateDir}/boot
+        else
+          echo "$(cat ${stateDir}/name 2>/dev/null)-$(cat ${stateDir}/mode 2>/dev/null)"
+        fi
+      }
 
-      # shellcheck disable=SC2046 # one name=value per line
-      grub-editenv /boot/grub/grubenv set $(cat ${index}/"$id"/grubenv)
+      apply() {
+        local id=$1
+        # only names Nix built; anything else keeps the current choice
+        case "$id" in
+          ${lib.concatStringsSep "|" ids}) ;;
+          *)
+            echo "theme-boot: unknown theme '$id', keeping the current one"
+            id=$(readlink /var/lib/theme/current 2>/dev/null | xargs -r basename)
+            [ -n "$id" ] || id=${default}
+            ;;
+        esac
 
-      mkdir -p /var/lib/theme
-      ln -sfn ${index}/"$id" /var/lib/theme/current.tmp
-      mv -Tf /var/lib/theme/current.tmp /var/lib/theme/current
-      ln -sfn /var/lib/theme/current/sddm /var/lib/theme/sddm/where_is_my_sddm_theme.tmp
-      mv -Tf /var/lib/theme/sddm/where_is_my_sddm_theme.tmp /var/lib/theme/sddm/where_is_my_sddm_theme
+        # shellcheck disable=SC2046 # one name=value per line
+        grub-editenv /boot/grub/grubenv set $(cat ${index}/"$id"/grubenv)
+        sync -f /boot/grub/grubenv
 
-      setvtrgb ${index}/"$id"/vtrgb || true
-      echo "theme-boot: $id"
+        mkdir -p /var/lib/theme
+        ln -sfn ${index}/"$id" /var/lib/theme/current.tmp
+        mv -Tf /var/lib/theme/current.tmp /var/lib/theme/current
+        ln -sfn /var/lib/theme/current/sddm /var/lib/theme/sddm/where_is_my_sddm_theme.tmp
+        mv -Tf /var/lib/theme/sddm/where_is_my_sddm_theme.tmp /var/lib/theme/sddm/where_is_my_sddm_theme
+
+        setvtrgb ${index}/"$id"/vtrgb || true
+        echo "theme-boot: $id"
+      }
+
+      # a change that lands while this runs doesn't start it again (the path
+      # unit drops it): go again until the state holds still
+      for _ in 1 2 3 4 5; do
+        id=$(read_id)
+        apply "$id"
+        [ "$(read_id)" = "$id" ] && break
+      done
     '';
   };
 
@@ -288,6 +308,8 @@ let
   # lets go of the screen plymouth can't draw and falls back to text, so
   # wait for them first (at most 5s)
   shutdownSplash = pkgs.writeShellScript "plymouth-shutdown" ''
+    # the state as it is now, even if a change never got synced
+    ${lib.getExe sync} || true
     for _ in $(${pkgs.coreutils}/bin/seq 50); do
       ${pkgs.procps}/bin/pgrep -x 'mango|sddm-greeter.*' >/dev/null || break
       ${pkgs.coreutils}/bin/sleep 0.1
@@ -295,6 +317,7 @@ let
     id=$(${pkgs.coreutils}/bin/basename "$(${pkgs.coreutils}/bin/readlink /var/lib/theme/current)")
     cmdline=$(${pkgs.gnused}/bin/sed 's/plymouth\.splash=[^ ]*//' /proc/cmdline)
     exec ${config.boot.plymouth.package}/sbin/plymouthd --mode=shutdown --attach-to-session \
+      --debug --debug-file=/var/log/plymouth-shutdown.log \
       --kernel-command-line="$cmdline plymouth.splash=nix-$id"
   '';
 in
@@ -314,6 +337,8 @@ in
     extraConfig = ''
       if [ -n "$nix_theme" -a -f "($drive1)//theme/variants/$nix_theme/theme.txt" ]; then
         set theme=($drive1)//theme/variants/$nix_theme/theme.txt
+        # the screen behind "Loading…" (NixOS set the default's splash)
+        background_image --mode stretch ($drive1)//theme/variants/$nix_theme/background.png
       else
         set nix_theme=${default}
         set nix_vt_red=${vtKernel defaultVariant "r"}
@@ -323,6 +348,9 @@ in
       fi
       # text area (e.g. "Loading kernel") uses the gfxterm background
       background_color "#$nix_bg"
+      # set again so gfxterm repaints: without it the screen behind
+      # "Loading…" stays white (or black) until plymouth starts
+      set color_normal=light-gray/black
       export theme
       export nix_theme
       export nix_vt_red
@@ -335,6 +363,8 @@ in
   # at all (boot messages as text instead)
   boot.kernelParams = lib.mkAfter [
     "plymouth.splash=nix-\${nix_theme}"
+    # which theme it loaded: /var/log/plymouth-debug.log
+    "plymouth.debug"
     "vt.default_red=\${nix_vt_red}"
     "vt.default_grn=\${nix_vt_grn}"
     "vt.default_blu=\${nix_vt_blu}"
@@ -392,6 +422,10 @@ in
       "local-fs.target"
       "systemd-tmpfiles-setup.service"
     ];
+    # browsing themes starts it many times in a row: systemd's default
+    # limit (5 in 10s) would fail it and stop the path unit for the rest of
+    # the session, so later changes never reached the boot screens
+    unitConfig.StartLimitIntervalSec = 0;
     serviceConfig = {
       Type = "oneshot";
       ExecStart = lib.getExe sync;
@@ -399,9 +433,9 @@ in
   };
   systemd.paths.theme-boot = {
     wantedBy = [ "paths.target" ];
+    unitConfig.StartLimitIntervalSec = 0;
     pathConfig.PathChanged = [
-      "${stateDir}/name"
-      "${stateDir}/mode"
+      "${stateDir}/boot"
     ];
   };
 

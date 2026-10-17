@@ -178,15 +178,9 @@ in
   };
   gtk = {
     enable = true;
-    gtk3.extraConfig = {
-      gtk-key-theme-name = "Emacs";
-      gtk-application-prefer-dark-theme = 1;
-    };
+    # theme, icons and dark preference: set by `theme` (home/theme)
+    gtk3.extraConfig.gtk-key-theme-name = "Emacs";
     gtk4.extraConfig.gtk-key-theme-name = "Emacs";
-    theme = lib.mkForce {
-      name = "Gruvbox-Material-Dark";
-      package = pkgs.gruvbox-material-gtk-theme;
-    };
   };
   home.packages = with pkgs; [
     libnotify
@@ -204,6 +198,7 @@ in
     kdash
     seabird
     kubetui
+    reco
   ];
 
 }

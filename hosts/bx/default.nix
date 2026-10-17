@@ -48,6 +48,8 @@
       CPU_DRIVER_OPMODE_ON_AC = "active";
       CPU_DRIVER_OPMODE_ON_BAT = "active";
 
+      USB_EXCLUDE_BTUSB = 1;
+
       # DEVICES_TO_DISABLE_ON_STARTUP = "bluetooth";
     };
   };

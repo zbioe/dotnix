@@ -17,6 +17,13 @@
     android-tools # adb
   ];
 
+  # the headset profile (mic) stays until changed by hand: the noise filter
+  # records "passively", which WirePlumber's auto-switch doesn't count, so it
+  # kept flipping the headset back to music (A2DP, no mic) under it
+  services.pipewire.wireplumber.extraConfig."51-no-bt-autoswitch"."wireplumber.settings" = {
+    "bluetooth.autoswitch-to-headset-profile" = false;
+  };
+
   services.pipewire.extraConfig.pipewire."99-rnnoise" = {
     "context.modules" = [
       {
@@ -32,7 +39,7 @@
                 plugin = "${pkgs.rnnoise-plugin}/lib/ladspa/librnnoise_ladspa.so";
                 label = "noise_suppressor_mono";
                 control = {
-                  "VAD Threshold (%)" = 50.0;
+                  "VAD Threshold (%)" = 0.0; # denoise only: never mute a quiet (Bluetooth) mic
                   "VAD Grace Period (ms)" = 200;
                   "Retroactive VAD Grace (ms)" = 0;
                 };
