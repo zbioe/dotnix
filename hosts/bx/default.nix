@@ -41,24 +41,9 @@
     };
   };
 
-  # force deep sleep
-  services.tlp = {
-    enable = true;
-    settings = {
-      CPU_SCALING_GOVERNOR_ON_AC = "performance";
-      CPU_SCALING_GOVERNOR_ON_BAT = "performance";
-
-      CPU_BOOST_ON_AC = 1;
-      CPU_BOOST_ON_BAT = 1;
-
-      CPU_DRIVER_OPMODE_ON_AC = "active";
-      CPU_DRIVER_OPMODE_ON_BAT = "active";
-
-      USB_EXCLUDE_BTUSB = 1;
-
-      # DEVICES_TO_DISABLE_ON_STARTUP = "bluetooth";
-    };
-  };
+  # a desktop (no battery): full speed always; amd-pstate is already active
+  # (nixos-hardware common-cpu-amd-pstate)
+  powerManagement.cpuFreqGovernor = "performance";
 
   services.xserver.videoDrivers = [ "amdgpu" ];
 

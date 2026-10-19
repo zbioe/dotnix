@@ -36,13 +36,6 @@ in
     };
   };
   config = mkIf cfg.enable {
-    assertions = [
-      {
-        assertion = cfg.enable || cfg.loader.grub.enable || cfg.loader.systemd-boot.enable;
-        message = "enable one bootloader or the system will not boot after disable this module.";
-      }
-    ];
-
     boot = {
       inherit (cfg) kernelPackages;
       consoleLogLevel = 0;
@@ -77,7 +70,6 @@ in
       kernelParams = [
         "quiet"
         "splash"
-        "intremap=on"
         "boot.shell_on_fail"
         "rd.systemd.show_status=false"
         "systemd.show_status=false"
@@ -113,7 +105,6 @@ in
           enable = true;
           device = "nodev";
           efiSupport = true;
-          enableCryptodisk = true;
           gfxmodeEfi = "1920x1200";
           efiInstallAsRemovable = true;
         };

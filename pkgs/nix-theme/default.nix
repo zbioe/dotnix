@@ -65,7 +65,11 @@ let
           text =
             builtins.replaceStrings
               [ "@thumb@" "@hover@" "@accent@" ]
-              [ (mix c.base05 c.base00 0.62) (mix c.base05 c.base00 0.38) c.base0D ]
+              [
+                (mix c.base05 c.base00 0.62)
+                (mix c.base05 c.base00 0.38)
+                c.base0D
+              ]
               (builtins.readFile ./chromium/scrollbar.css);
         }
       ) theme.schemes

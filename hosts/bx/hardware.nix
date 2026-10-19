@@ -59,7 +59,6 @@
     "hidp"
     "hid_generic"
     "uhci_hcd"
-    "xhci_pci"
   ];
   # GPU driver in the initrd: plymouth starts on amdgpu instead of handing
   # over from the firmware framebuffer mid-splash (text flashed there)

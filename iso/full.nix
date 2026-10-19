@@ -51,7 +51,9 @@
       sources =
         flake:
         [ flake.outPath ]
-        ++ lib.concatMap sources (lib.attrValues (lib.filterAttrs (_: i: i ? outPath) (flake.inputs or { })));
+        ++ lib.concatMap sources (
+          lib.attrValues (lib.filterAttrs (_: i: i ? outPath) (flake.inputs or { }))
+        );
     in
     lib.unique (sources dotnix);
 

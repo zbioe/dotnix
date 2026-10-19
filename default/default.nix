@@ -120,11 +120,6 @@
       '';
     };
 
-    #
-    dbus = {
-      enable = true;
-      packages = with pkgs; [ gnome2.GConf ];
-    };
     # auto mount/unmount a drive
     gvfs.enable = true;
     udisks2.enable = true;
@@ -156,17 +151,6 @@
   };
 
   # search engine
-  #
-  services.whoogle-search = {
-    enable = true;
-    port = 8821;
-    extraEnv = {
-      WHOOGLE_CONFIG_THEME = "dark";
-      WHOOGLE_CONFIG_LANGUAGE = "pt-br";
-      WHOOGLE_CONFIG_SEARCH_LANGUAGE = "pt-br";
-      WHOOGLE_CONFIG_COUNTRY = "BR";
-    };
-  };
   services.searx = {
     enable = true;
     package = pkgs.searxng;
@@ -231,7 +215,7 @@
         {
           name = "nixos wiki";
           engine = "mediawiki";
-          base_url = "https://nixos.wiki/";
+          base_url = "https://wiki.nixos.org/";
           shortcut = "nw";
         }
       ];

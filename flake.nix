@@ -111,6 +111,30 @@
           ];
         }
       );
+      # `nix fmt`
+      formatter.${system} = nixpkgs.legacyPackages.${system}.nixfmt-tree;
+      # `nix flake check`: every system and home evaluates (the derivation
+      # only, nothing is built) and the nix files are formatted
+      checks.${system} =
+        let
+          pkgs = nixpkgs.legacyPackages.${system};
+          evaluates =
+            name: drv: pkgs.writeText "evaluates-${name}" (builtins.unsafeDiscardStringContext drv.drvPath);
+        in
+        nixpkgs.lib.mapAttrs' (
+          name: host:
+          nixpkgs.lib.nameValuePair "system-${name}" (evaluates name host.config.system.build.toplevel)
+        ) self.nixosConfigurations
+        // nixpkgs.lib.mapAttrs' (
+          name: home: nixpkgs.lib.nameValuePair "home-${name}" (evaluates name home.activationPackage)
+        ) self.homeConfigurations
+        // {
+          format = pkgs.runCommand "nixfmt-check" { nativeBuildInputs = [ pkgs.nixfmt ]; } ''
+            cd ${self}
+            find . -name '*.nix' -exec nixfmt --check {} +
+            touch $out
+          '';
+        };
       # home-manager
       homeConfigurations =
         let
