@@ -1,8 +1,14 @@
-{ pkgs, ... }:
+{ lib, pkgs, ... }:
 {
   imports = [
     ./hardware.nix
   ];
+
+  # the login password as a hash in /persist, outside the (public) flake
+  users.users.zbioe = {
+    hashedPassword = lib.mkForce null;
+    hashedPasswordFile = "/persist/secrets/zbioe.passwd";
+  };
 
   modules = {
     host = {

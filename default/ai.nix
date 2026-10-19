@@ -28,7 +28,7 @@
   # services
   services.ollama = {
     enable = true;
-    host = "0.0.0.0";
+    host = "127.0.0.1"; # no auth: never reachable from the network
   };
   services.open-webui = {
     enable = true;

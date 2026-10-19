@@ -31,9 +31,13 @@ in
       settings = {
         General = {
           FastConnectable = true;
-          UserspaceHID = true;
         };
       };
+    };
+    # the MediaTek adapter doesn't fully support eSCO, so mSBC (wideband) calls
+    # keep dropping the voice link; CVSD (narrowband) holds up
+    services.pipewire.wireplumber.extraConfig."51-bt-no-msbc"."monitor.bluez.properties" = {
+      "bluez5.enable-msbc" = false;
     };
     # USB autosuspend drops the link on MediaTek adapters (headsets disconnect
     # mid-use, and bluetoothd 5.86 then crashes on the lost AVDTP session)

@@ -64,9 +64,6 @@
   # GPU driver in the initrd: plymouth starts on amdgpu instead of handing
   # over from the firmware framebuffer mid-splash (text flashed there)
   boot.initrd.kernelModules = [ "amdgpu" ];
-  boot.initrd.secrets = {
-    "/var/lib/bluetooth" = "/var/lib/bluetooth";
-  };
   boot.kernelModules = [
     "kvm-amd"
     "amdgpu"
@@ -154,8 +151,8 @@
     device = "/dev/disk/by-uuid/12CE-A600";
     fsType = "vfat";
     options = [
-      "fmask=0022"
-      "dmask=0022"
+      "fmask=0077"
+      "dmask=0077"
     ];
   };
 

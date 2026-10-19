@@ -144,6 +144,9 @@
     enable = true;
     package = unstable.docker;
     daemon.settings = {
+      # `-p 3000:3000` binds to localhost unless an address is given: docker's
+      # own iptables rules bypass the firewall, so 0.0.0.0 meant the whole LAN
+      ip = "127.0.0.1";
       dns = [
         "1.1.1.1"
         "8.8.8.8"
@@ -167,11 +170,13 @@
   services.searx = {
     enable = true;
     package = pkgs.searxng;
+    # SEARX_SECRET_KEY=..., root only, outside the (public) repo
+    environmentFile = "/persist/secrets/searx.env";
     settings = {
       server = {
         port = 8822;
         bind_address = "127.0.0.1";
-        secret_key = "ihae3ael8iequeiZaipahyahzeewohdo";
+        secret_key = "$SEARX_SECRET_KEY";
       };
 
       search = {
@@ -232,6 +237,25 @@
       ];
     };
   };
+  # its secret key is made on the first boot of each host (a fresh install,
+  # the live ISO), random and never in the flake
+  systemd.services.searx-secret = {
+    description = "Create the searx secret key";
+    wantedBy = [ "searx-init.service" ];
+    before = [ "searx-init.service" ];
+    unitConfig.ConditionPathExists = "!/persist/secrets/searx.env";
+    serviceConfig.Type = "oneshot";
+    path = [
+      pkgs.coreutils
+      pkgs.openssl
+    ];
+    script = ''
+      install -d -m 700 /persist/secrets
+      umask 077
+      printf 'SEARX_SECRET_KEY=%s\n' "$(openssl rand -hex 32)" > /persist/secrets/searx.env
+    '';
+  };
+
   systemd.tmpfiles.rules = [
     # grant permission to main user read the system logs
     "a+ /var/log/boot.log - - - - u:1000:r"
