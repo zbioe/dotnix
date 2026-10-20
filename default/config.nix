@@ -39,11 +39,5 @@
       enable = true;
       kernelPackages = pkgs.linuxPackages_zen;
     };
-    stylix = {
-      enable = true;
-      autoEnable = true;
-      theme = "gruvbox-dark-medium";
-      polarity = "dark";
-    };
   };
 }

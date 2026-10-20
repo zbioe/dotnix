@@ -15,21 +15,22 @@
   lib,
   pkgs,
   username,
+  base16,
   ...
 }:
 let
   default = "gruvbox-dark";
 
   themes = import ../home/theme/themes.nix { inherit pkgs; };
-  inherit (config.stylix) fonts;
-  stylixSrc = config.stylix.inputs.self;
+  fonts = import ../home/theme/fonts.nix { inherit pkgs; };
+  inherit (base16.lib { inherit pkgs lib; }) mkSchemeAttrs;
 
   variants = lib.concatLists (
     lib.mapAttrsToList (
       name: theme:
       lib.mapAttrsToList (mode: scheme: {
         id = "${name}-${mode}";
-        colors = config.stylix.base16.mkSchemeAttrs scheme;
+        colors = mkSchemeAttrs scheme;
       }) theme.schemes
     ) themes
   );
@@ -39,7 +40,7 @@ let
     color:
     pkgs.runCommandLocal "pixel.png" { } "${lib.getExe pkgs.imagemagick} xc:'${color}' png32:$out";
 
-  # GRUB wants PFF2 fonts (same as stylix)
+  # GRUB wants PFF2 fonts
   grubFont =
     font:
     pkgs.runCommand "${font.package.name}.pf2"
@@ -48,10 +49,10 @@ let
       }
       ''
         font=$(${lib.getExe' pkgs.fontconfig "fc-match"} ${lib.escapeShellArg font.name} --format "%{file}")
-        ${lib.getExe' pkgs.grub2 "grub-mkfont"} $font --output $out --size ${toString fonts.sizes.applications}
+        ${lib.getExe' pkgs.grub2 "grub-mkfont"} $font --output $out --size ${toString fonts.size}
       '';
 
-  # stylix's GRUB theme, one per variant
+  # GRUB theme, one per variant
   grubTheme =
     { id, colors }:
     let
@@ -127,20 +128,20 @@ let
     cp ${grubFont fonts.sansSerif} $out/sans_serif.pf2
   '';
 
-  # stylix's plymouth script with the theme's snowflake as the spinning logo
+  # plymouth script (home/theme/plymouth.nix) with the theme's snowflake as the spinning logo
   plymouthTheme =
     { id, colors }:
     let
       art = import ../home/theme/art.nix { inherit pkgs lib colors; };
-      script = import "${stylixSrc}/modules/plymouth/theme-script.nix" {
+      script = import ../home/theme/plymouth.nix {
         inherit lib colors;
-        cfg.logoAnimated = true;
+        logoAnimated = true;
       };
       dir = "$out/share/plymouth/themes/nix-${id}";
     in
     pkgs.runCommandLocal "plymouth-theme-nix-${id}" { } ''
       mkdir -p ${dir}
-      # transparent border so the rotating logo is not clipped (as stylix)
+      # transparent border so the rotating logo is not clipped
       ${lib.getExe pkgs.imagemagick} ${art.logo 256} -background transparent \
         -bordercolor transparent -border 42% ${dir}/logo.png
       cp ${script} ${dir}/nix-${id}.script
@@ -168,7 +169,7 @@ let
       };
     };
 
-  # console palette for setvtrgb: red, green, blue rows (stylix's mapping)
+  # console palette for setvtrgb: red, green, blue rows
   vtrgb =
     { id, colors }:
     let
@@ -321,16 +322,10 @@ let
   '';
 in
 {
-  stylix.targets = {
-    grub.enable = false;
-    plymouth.enable = false;
-    console.enable = false;
-  };
-
   boot.loader.grub = {
     theme = grubThemes;
-    splashImage = pixel config.lib.stylix.colors.withHashtag.base00;
-    backgroundColor = config.lib.stylix.colors.withHashtag.base00;
+    splashImage = pixel defaultVariant.colors.withHashtag.base00;
+    backgroundColor = defaultVariant.colors.withHashtag.base00;
     font = toString (grubFont fonts.monospace);
     # runs after NixOS sets the default theme; load_env is already at the top
     extraConfig = ''

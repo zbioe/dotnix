@@ -8,6 +8,7 @@
   lib,
   pkgs,
   noctalia,
+  base16,
   ...
 }:
 let
@@ -66,7 +67,7 @@ let
       swatchesOf =
         scheme:
         let
-          c = (config.stylix.base16.mkSchemeAttrs scheme).withHashtag;
+          c = ((base16.lib { inherit pkgs lib; }).mkSchemeAttrs scheme).withHashtag;
         in
         [
           c.base00

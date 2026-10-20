@@ -6,7 +6,9 @@
   unstable,
   ...
 }:
-
+let
+  fonts = import ../home/theme/fonts.nix { inherit pkgs; };
+in
 {
   environment.sessionVariables = {
     # https://nixos.wiki/wiki/Wayland#Applications
@@ -148,9 +150,27 @@
 
   ];
 
-  fonts.fontconfig.enable = true;
-  fonts.fontconfig.useEmbeddedBitmaps = true;
+  # Qt apps through qt5ct/qt6ct, whose palette and fonts `theme` writes (home/theme)
+  qt = {
+    enable = true;
+    platformTheme = "qt5ct";
+  };
+
+  fonts.fontconfig = {
+    enable = true;
+    useEmbeddedBitmaps = true;
+    defaultFonts = {
+      sansSerif = [ fonts.sansSerif.name ];
+      serif = [ fonts.serif.name ];
+      monospace = [ fonts.monospace.name ];
+      emoji = [ fonts.emoji.name ];
+    };
+  };
   fonts.packages = with pkgs; [
+    fonts.sansSerif.package
+    fonts.serif.package
+    fonts.monospace.package
+    fonts.emoji.package
     noto-fonts
     noto-fonts-cjk-sans
     noto-fonts-color-emoji

@@ -13,7 +13,6 @@ in
     ./audio.nix
     ./nvidia.nix
     ./boot.nix
-    ./stylix.nix
     ./theme-boot.nix
     ./bluetooth.nix
     ./protonvpn.nix

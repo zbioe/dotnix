@@ -174,8 +174,8 @@ in
       default_master_factor = 0.5;
 
       sloppy_focus = 0;
-      cursor_size = config.stylix.cursor.size;
-      cursor_theme = config.stylix.cursor.name;
+      cursor_size = config.home.pointerCursor.size;
+      cursor_theme = config.home.pointerCursor.name;
 
       xkb_rules_layout = "us";
       xkb_rules_variant = "intl";

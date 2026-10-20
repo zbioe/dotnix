@@ -6,7 +6,7 @@
       self,
       bwt,
       home,
-      stylix,
+      base16,
       nixpkgs,
       hardware,
       mango,
@@ -28,7 +28,7 @@
       specialArgs = {
         inherit nixpkgs username;
         inherit (home.packages.${system}) home-manager;
-        inherit bwt;
+        inherit bwt base16;
         inherit unstable;
         home-module = home.nixosModules.home-manager;
       };
@@ -51,7 +51,6 @@
         programsdb.nixosModules.programs-sqlite
         mango.nixosModules.mango
         home.nixosModules.home-manager
-        stylix.nixosModules.stylix
         impermanence.nixosModules.impermanence
       ];
     in
@@ -190,10 +189,9 @@
                   inherit stateVersion;
                   inherit username;
                   noctalia = noctalia.packages.${system}.default;
-                  inherit unstable;
+                  inherit unstable base16;
                 };
                 modules = [
-                  stylix.homeModules.stylix
                   mango.hmModules.mango
                   noctalia.homeModules.default
                   ./home
@@ -235,13 +233,10 @@
       url = "github:wamserma/flake-programs-sqlite";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    stylix = {
-      url = "github:nix-community/stylix/release-26.05";
-      inputs = {
-        nixpkgs.follows = "nixpkgs";
-        systems.follows = "systems";
-        flake-parts.follows = "parts";
-      };
+    # base16 scheme loader of the themes (home/theme)
+    base16 = {
+      url = "github:SenchoPens/base16.nix";
+      inputs.nixpkgs.follows = "nixpkgs";
     };
     # dwl-based compositor of the session (default/ui.nix, home/ui/mango.nix)
     mango = {

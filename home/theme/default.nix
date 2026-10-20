@@ -10,13 +10,15 @@
   lib,
   pkgs,
   unstable,
+  base16,
   ...
 }:
 let
   cfg = config.theme;
   inherit (lib) mkOption types;
 
-  base16 = config.stylix.base16;
+  inherit (base16.lib { inherit pkgs lib; }) mkSchemeAttrs;
+  fonts = import ./fonts.nix { inherit pkgs; };
 
   stateDir = "${config.xdg.stateHome}/theme";
 
@@ -48,7 +50,7 @@ let
       ...
     }:
     let
-      colors = base16.mkSchemeAttrs theme.schemes.${mode};
+      colors = mkSchemeAttrs theme.schemes.${mode};
       c = colors.withHashtag;
       bases = map (n: "base0${n}") [
         "0"
@@ -75,7 +77,7 @@ let
       };
       adwGtk3 = "${pkgs.adw-gtk3}/share/themes/adw-gtk3${lib.optionalString (mode == "dark") "-dark"}";
 
-      # terminal palette, same mapping as stylix's foot target
+      # terminal palette: base16's usual ANSI mapping
       ansi = with c; [
         base00
         base08
@@ -603,8 +605,8 @@ let
         style=Fusion
 
         [Fonts]
-        fixed="${config.stylix.fonts.monospace.name},${toString config.stylix.fonts.sizes.applications}"
-        general="${config.stylix.fonts.sansSerif.name},${toString config.stylix.fonts.sizes.applications}"
+        fixed="${fonts.monospace.name},${toString fonts.size}"
+        general="${fonts.sansSerif.name},${toString fonts.size}"
       '';
       emacsBase16 = ''
         (require 'base16-theme)
@@ -696,7 +698,7 @@ let
     lib.mapAttrs (
       _: scheme:
       let
-        c = (base16.mkSchemeAttrs scheme).withHashtag;
+        c = (mkSchemeAttrs scheme).withHashtag;
         ansi =
           names:
           lib.genAttrs [
@@ -1087,11 +1089,11 @@ in
     icons = {
       dark = mkOption {
         type = types.str;
-        default = config.stylix.icons.dark;
+        default = "Papirus-Dark";
       };
       light = mkOption {
         type = types.str;
-        default = config.stylix.icons.light;
+        default = "Papirus-Light";
       };
     };
     auto = {
@@ -1123,25 +1125,6 @@ in
 
   config = {
     theme.themes = import ./themes.nix { inherit pkgs; };
-
-    # these targets now come from the active theme instead of stylix
-    stylix.targets = {
-      gtk.enable = false;
-      vencord.enable = false;
-      foot.enable = false;
-      emacs.enable = false;
-      fish.enable = false;
-      # terminal programs: plain ANSI colors follow the live terminal palette
-      fzf.enable = false;
-      bat.enable = false;
-      yazi.enable = false;
-      starship.enable = false;
-      gdu.enable = false;
-      opencode.enable = false;
-      kitty.enable = false;
-      ghostty.enable = false;
-      alacritty.enable = false;
-    };
 
     # gtk-theme is set live through dconf (by `theme`), never in settings.ini
     gtk.gtk4.theme = null;

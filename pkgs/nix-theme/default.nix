@@ -11,7 +11,7 @@
   inotify-tools,
   jq,
   zip,
-  # themes as in home/theme/themes.nix and a base16 scheme loader (stylix's
+  # themes as in home/theme/themes.nix and a base16 scheme loader (base16.nix's
   # mkSchemeAttrs): every theme/mode gets a page fallback and the page
   # scrollbars for Chromium
   themeSet ? { },

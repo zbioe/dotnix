@@ -4,16 +4,17 @@
 # store, loaded by the wrapper; the UI itself follows GTK. Brave: see
 # default/brave.nix.
 {
-  config,
+  lib,
   pkgs,
   unstable,
+  base16,
   ...
 }:
 let
   darkreader = pkgs.callPackage ../pkgs/darkreader { };
   nixTheme = pkgs.callPackage ../pkgs/nix-theme {
     themeSet = import ../home/theme/themes.nix { inherit pkgs; };
-    inherit (config.stylix.base16) mkSchemeAttrs;
+    inherit (base16.lib { inherit pkgs lib; }) mkSchemeAttrs;
   };
 
   librewolf = unstable.librewolf.override {

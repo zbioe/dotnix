@@ -3,20 +3,21 @@
   lib,
   pkgs,
   unstable,
+  base16,
   ...
 }:
 let
   darkreader = pkgs.callPackage ../../pkgs/darkreader { };
   nixTheme = pkgs.callPackage ../../pkgs/nix-theme {
     themeSet = config.theme.themes;
-    inherit (config.stylix.base16) mkSchemeAttrs;
+    inherit (base16.lib { inherit pkgs lib; }) mkSchemeAttrs;
   };
+  fonts = import ../theme/fonts.nix { inherit pkgs; };
   webuiTheme = pkgs.callPackage ../../pkgs/webui-theme { };
   braveTheme = pkgs.callPackage ../../pkgs/brave-theme { brave = unstable.brave; };
 in
 {
   imports = [
-    ../../modules/stylix.nix
     ../theme
     ./mango.nix
     ./noctalia.nix
@@ -27,18 +28,13 @@ in
     ./kdeconnect.nix
   ];
 
-  stylix = {
-    icons = {
-      enable = true;
-      package = pkgs.papirus-icon-theme;
-      dark = "Papirus-Dark";
-      light = "Papirus-Light";
-    };
-    cursor = {
-      package = pkgs.bibata-cursors;
-      name = "Bibata-Modern-Ice";
-      size = 16; # smallest Bibata size (3 fell back to it anyway)
-    };
+  # icons: Papirus-Dark/-Light, picked by `theme` (home/theme)
+  home.pointerCursor = {
+    package = pkgs.bibata-cursors;
+    name = "Bibata-Modern-Ice";
+    size = 16; # smallest Bibata size (3 fell back to it anyway)
+    gtk.enable = true;
+    x11.enable = true;
   };
 
   # Papirus has no icon of its own for these apps: point their icon names at
@@ -74,13 +70,6 @@ in
     categories = [ "Development" ];
   };
 
-  modules.stylix = {
-    enable = true;
-    autoEnable = true;
-    theme = "gruvbox-dark-medium";
-    polarity = "dark";
-  };
-
   # Fcitx can't hand the keyboard layout to mango (it comes from the mango
   # config anyway): no warning about it at every login
   xdg.configFile."fcitx5/conf/notifications.conf" = {
@@ -107,9 +96,11 @@ in
   '';
 
   # color-scheme, gtk-theme and icon-theme are set live by `theme`
-  dconf.settings."org/gnome/desktop/interface".font-name =
-    with config.stylix.fonts;
-    "${sansSerif.name} ${toString sizes.applications}";
+  dconf.settings."org/gnome/desktop/interface" = {
+    font-name = "${fonts.sansSerif.name} ${toString fonts.size}";
+    document-font-name = "${fonts.serif.name} ${toString fonts.size}";
+    monospace-font-name = "${fonts.monospace.name} ${toString fonts.size}";
+  };
   programs = {
     bat = {
       enable = true;
@@ -189,6 +180,7 @@ in
     brightnessctl
     wl-clipboard
     hyprpicker
+    papirus-icon-theme
     nautilus
     gruvbox-gtk-theme
     gruvbox-material-gtk-theme
