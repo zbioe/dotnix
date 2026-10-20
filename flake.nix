@@ -111,10 +111,48 @@
           ];
         }
       );
-      # `nix fmt`
       formatter.${system} = nixpkgs.legacyPackages.${system}.nixfmt-tree;
-      # `nix flake check`: every system and home evaluates (the derivation
-      # only, nothing is built) and the nix files are formatted
+
+      # nix build .#iso-full / .#iso-minimal / .#usb-key-test ...; nix run .#usb-stick
+      packages.${system} =
+        let
+          pkgs = nixpkgs.legacyPackages.${system};
+        in
+        {
+          iso-full = self.nixosConfigurations.full-iso.config.system.build.isoImage;
+          iso-minimal = self.nixosConfigurations.minimal-iso.config.system.build.isoImage;
+          dotnix-key = pkgs.callPackage ./pkgs/dotnix-key { };
+          usb-stick = pkgs.callPackage ./pkgs/usb-stick { };
+          usb-key-test = pkgs.testers.runNixOSTest ./tests/usb-key.nix;
+          usb-stick-test = pkgs.testers.runNixOSTest ./tests/usb-stick.nix;
+        };
+
+      # nix develop: ISOs, pen drives, the Go tool and formatting
+      devShells.${system}.default =
+        let
+          pkgs = nixpkgs.legacyPackages.${system};
+        in
+        pkgs.mkShellNoCC {
+          packages = with pkgs; [
+            nh
+            nixfmt-tree
+            go
+            gopls
+            gotools
+            self.packages.${system}.dotnix-key
+            self.packages.${system}.usb-stick
+            cryptsetup
+            util-linux
+            parted
+            dosfstools
+            e2fsprogs
+            grub2_efi
+            qemu_kvm
+            OVMF
+          ];
+        };
+
+      # nix flake check: everything evaluates (nothing is built), Go tests, formatting
       checks.${system} =
         let
           pkgs = nixpkgs.legacyPackages.${system};
@@ -129,6 +167,7 @@
           name: home: nixpkgs.lib.nameValuePair "home-${name}" (evaluates name home.activationPackage)
         ) self.homeConfigurations
         // {
+          inherit (self.packages.${system}) dotnix-key usb-stick;
           format = pkgs.runCommand "nixfmt-check" { nativeBuildInputs = [ pkgs.nixfmt ]; } ''
             cd ${self}
             find . -name '*.nix' -exec nixfmt --check {} +

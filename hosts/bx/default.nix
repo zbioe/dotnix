@@ -14,6 +14,7 @@
     host = {
       name = "bx";
     };
+    usbKey.enable = true;
     keyboard = {
       layout = "us";
       model = "";

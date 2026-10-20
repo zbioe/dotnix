@@ -236,6 +236,7 @@ in
     git
     gptfdisk
     cryptsetup
+    (callPackage ../pkgs/dotnix-key { })
     btrfs-progs
     restic
     rclone

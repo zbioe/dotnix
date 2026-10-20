@@ -3,8 +3,8 @@
 My NixOS setup: system and home-manager in one flake, for my desktop (`bx`)
 and laptop (`te`).
 
-The disk is LUKS with btrfs on top. It unlocks from a key hidden inside an
-ordinary USB stick, and falls back to the password after 10 seconds.
+The disk is LUKS with btrfs on top. It unlocks from a key hidden in any USB
+stick, and falls back to the password after 10 seconds.
 
 The desktop is [mango](https://github.com/DreamMaoMao/mangowc) with
 [noctalia](https://github.com/noctalia-dev/noctalia-shell) as the bar,
@@ -52,63 +52,68 @@ The ones I use most:
 
 ## Install
 
-Build the installer ISO and write it to a USB stick:
+`nix develop` has every tool used below (ISOs, sticks, the Go code).
+
+Build an ISO and write it to a USB stick:
 
 ```sh
-nix build .#nixosConfigurations.minimal-iso.config.system.build.isoImage
-dd if=result/iso/nixos-minimal-<version>.iso of=/dev/sdX
+nix build .#iso-minimal   # or .#iso-full: this whole setup, live
+dd if=result/iso/*.iso of=/dev/sdX bs=4M conv=fsync
 ```
 
-Boot from it, then partition, encrypt and install a minimal system:
+Boot from it and run `dotnix-install`: it partitions and encrypts a disk,
+adds `hosts/<host>` to the flake and installs it. `dotnix-mount` opens an
+installed disk on `/mnt` for recovery.
+
+Then `rebuild` (or `Super+Shift+U`) rebuilds system and home.
+
+## Checks
 
 ```sh
-iso/scripts/setup.sh -p "<luks password>"
-iso/scripts/update-hardware.sh <hardware file>
-cp iso/minimal-configuration.nix .
-vim minimal-configuration.nix   # user, password, hostname
-systemctl reboot -i
+nix flake check            # every host evaluates, Go tests, formatting
+nix fmt                    # format
+nix build .#usb-key-test   # boots VMs: unlock from a stick, PIN, password fallback
+nix build .#usb-stick-test # boots a VM from a multiboot stick
 ```
-
-Once it boots from the disk, set your user in `flake.nix`, edit
-`default/config.nix` and `default/key.nix`, and add
-`hosts/<host>/default.nix` and `hosts/<host>/hardware.nix`. Then:
-
-```sh
-sudo nixos-rebuild switch --flake .#<host>
-home-manager switch --flake .#<host>
-```
-
-After that, `rebuild` (or `Super+Shift+U`) does both.
 
 ## USB key
 
-The LUKS key sits in the gap before the stick's first partition, so the
-stick still works as a normal drive. Put some files on it and nobody will
-guess it is a key. See also the [wiki](https://nixos.wiki/wiki/Full_Disk_Encryption).
-
-Create the key and add it to LUKS:
-
-```sh
-dd if=/dev/random of=hdd.key bs=4096 count=1
-cryptsetup luksAddKey /dev/disk/by-uuid/<luks uuid> ./hdd.key
-```
-
-Partition the stick with `fdisk`, leaving at least 6144 bytes before the
-first partition, and format that partition as vfat. Then write the key 2048
-bytes in:
+The key hides in the gap before the stick's first partition: the whole gap is
+random bytes, the key somewhere in it, so the stick looks like any other and
+keeps working as a normal drive. Next to the key goes a tag (HMAC-SHA512 made
+with the key itself) naming the LUKS volume and key slot: at boot the initrd
+reads the gap of every disk, recognizes the stick made for this disk in a few
+milliseconds, and opens that one slot. Without the key the tag is just noise.
 
 ```sh
-dd if=hdd.key of=/dev/disk/by-id/<usb id> bs=1 seek=2048
+sudo dotnix-key create /dev/sdX        # a new key, in its own LUKS slot
+sudo dotnix-key create -pin /dev/sdX   # the stick also needs a short PIN at boot
+sudo dotnix-key adopt /dev/sdX         # a key written the old way (offset 2048)
+sudo dotnix-key list                   # sticks found and what they open
 ```
 
-And point the host's `hardware.nix` at it:
+Partitions and files are never touched, only the gap; a gap holding something
+else (GRUB, Ventoy) is refused. Running `create` again replaces the stick's key
+and revokes the old one. No stick, a stick for another machine or a wrong PIN
+(three times): the password is asked.
 
-```nix
-boot.initrd.luks.devices.enc = {
-  device = "/dev/disk/by-uuid/<luks uuid>";
-  keyFile = "/dev/disk/by-id/<usb id>";
-  keyFileSize = 4096;
-  keyFileOffset = 2048;
-  keyFileTimeout = 10; # then ask for the password
-};
+Enable it on a host with `modules.usbKey.enable = true;`.
+
+## Multiboot stick
+
+One stick for everything: music for the car (FAT32, first partition), a GRUB
+menu of Linux ISOs and the disk key.
+
+```sh
+nix run .#usb-stick -- create /dev/sdX .#iso-full .#iso-minimal ~/Downloads/zorin.iso
+nix run .#usb-stick -- add /dev/sdX ~/Downloads/other.iso   # or replace one
+nix run .#usb-stick -- remove /dev/sdX other.iso
+nix run .#usb-stick -- list /dev/sdX
 ```
+
+GRUB lists `isos/*.iso` of the ISOS partition at every boot, so copying or
+deleting files there by hand works too; `add` also checks that the ISO boots
+from a file and fits, and reads the copy back. Unsupported ISOs show up in the
+menu as such. Booting from a file works for ISOs with `boot/grub/loopback.cfg`
+(Ubuntu, Zorin, Mint, Debian live, Arch...) and for the NixOS ISOs of this
+flake (`iso/findiso.nix`); upstream NixOS ISOs can't, their initrd reads no ext4.

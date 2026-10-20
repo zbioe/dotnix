@@ -4,9 +4,7 @@
   ...
 }:
 {
-  imports = [
-
-  ];
+  imports = [ ./findiso.nix ];
   nix.settings.experimental-features = [
     "nix-command"
     "flakes"
@@ -15,6 +13,7 @@
 
   hardware.enableAllFirmware = true;
   nixpkgs.config.allowUnfree = true;
+  boot.zfs.forceImportRoot = false;
 
   services.openssh.enable = true;
   networking.firewall.enable = false;

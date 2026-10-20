@@ -18,6 +18,7 @@
     # initrd modules and firmware for whatever machine it lands on
     "${modulesPath}/profiles/all-hardware.nix"
     ./tools.nix
+    ./findiso.nix
   ];
 
   modules.host.name = "dotnix-live";

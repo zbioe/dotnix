@@ -23,6 +23,7 @@ in
     ./home-activation.nix
     ./disk-layout.nix
     ./kdeconnect.nix
+    ./usb-key.nix
   ];
   options.modules = with types; {
     user.name = mkOption {
