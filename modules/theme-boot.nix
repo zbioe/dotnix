@@ -22,7 +22,13 @@ let
   default = "gruvbox-dark";
 
   themes = import ../home/theme/themes.nix { inherit pkgs; };
-  fonts = import ../home/theme/fonts.nix { inherit pkgs; };
+  # boot screens can't follow `theme font`: the catalog's defaults
+  catalog = import ../home/theme/fonts/catalog.nix { inherit pkgs; };
+  fonts = {
+    sansSerif = catalog.defaultOf "ui";
+    monospace = catalog.defaultOf "mono";
+    size = catalog.default.ui_size;
+  };
   inherit (base16.lib { inherit pkgs lib; }) mkSchemeAttrs;
 
   variants = lib.concatLists (
@@ -49,7 +55,7 @@ let
       }
       ''
         font=$(${lib.getExe' pkgs.fontconfig "fc-match"} ${lib.escapeShellArg font.name} --format "%{file}")
-        ${lib.getExe' pkgs.grub2 "grub-mkfont"} $font --output $out --size ${toString fonts.size}
+        ${lib.getExe' pkgs.grub2 "grub-mkfont"} $font --output $out --size ${fonts.size}
       '';
 
   # GRUB theme, one per variant

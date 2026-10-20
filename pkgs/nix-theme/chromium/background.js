@@ -59,9 +59,25 @@ async function fallback(id) {
   ]);
 }
 
+// the page fonts of `theme font`: pages that name no font, or a generic one
+function fonts({ ui, serif, mono, size, fixedSize }) {
+  const set = (genericFamily, fontId) =>
+    chrome.fontSettings.setFont({ genericFamily, script: "Zyyy", fontId });
+  set("standard", serif);
+  set("serif", serif);
+  set("sansserif", ui);
+  set("fixed", mono);
+  chrome.fontSettings.setDefaultFontSize({ pixelSize: size });
+  chrome.fontSettings.setDefaultFixedFontSize({ pixelSize: fixedSize });
+}
+
 function connect() {
   const host = chrome.runtime.connectNative("nix_theme");
   host.onMessage.addListener((theme) => {
+    if (theme.font) {
+      fonts(theme.font);
+      return;
+    }
     last = theme;
     backoff = 1000;
     toDarkReader();

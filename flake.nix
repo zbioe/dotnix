@@ -151,7 +151,7 @@
           ];
         };
 
-      # nix flake check: everything evaluates (nothing is built), Go tests, formatting
+      # nix flake check: everything evaluates (nothing is built), Go tests, fonts, formatting
       checks.${system} =
         let
           pkgs = nixpkgs.legacyPackages.${system};
@@ -167,6 +167,7 @@
         ) self.homeConfigurations
         // {
           inherit (self.packages.${system}) dotnix-key usb-stick;
+          fonts = import ./home/theme/fonts/check.nix { inherit pkgs; };
           format = pkgs.runCommand "nixfmt-check" { nativeBuildInputs = [ pkgs.nixfmt ]; } ''
             cd ${self}
             find . -name '*.nix' -exec nixfmt --check {} +

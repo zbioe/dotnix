@@ -29,6 +29,25 @@ theme list
 
 ![themes](./assets/themes.png)
 
+## Fonts
+
+Fonts switch live too: interface, serif, monospace, terminal and emoji each
+pick from a catalog (`home/theme/fonts/catalog.nix`, all installed), with
+their own sizes. GTK, Qt, the bar, Emacs, kitty/ghostty/alacritty, Discord
+and Chromium/Brave pages change at once; foot and LibreWolf on their next
+start. Right click the palette icon, or:
+
+```sh
+theme font                      # what is in use
+theme font term "Iosevka"       # ROLE FAMILY: ui serif mono term emoji
+theme font size +1              # every size; or: size term 9
+theme font preset plex          # theme font presets
+theme font list mono
+```
+
+`nix flake check` fails if a catalog family is missing from its package or
+if any script, symbol or emoji would show as tofu.
+
 ## Shortcuts
 
 `Super+/` opens a list of every key binding. The list is generated from the

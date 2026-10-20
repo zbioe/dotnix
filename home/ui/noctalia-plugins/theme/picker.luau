@@ -137,6 +137,13 @@ render = function()
       ui.label({ text = current.name ~= "" and title(current.name) or "—", fontSize = 11, color = "on_surface_variant" }),
     }),
   }
+  table.insert(header, ui.button({
+    glyph = "typography",
+    variant = "ghost",
+    controlSize = "sm",
+    tooltip = "Fonts",
+    onClick = function() noctalia.runAsync({ "noctalia", "msg", "panel-toggle", "dotnix/theme:fonts" }, function(_r) end) end,
+  }))
   if closeButton then
     table.insert(header, ui.button({ glyph = "close", variant = "ghost", controlSize = "sm", onClick = function() panel.close() end }))
   end

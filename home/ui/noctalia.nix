@@ -85,6 +85,14 @@ let
           name: theme: { inherit name; } // lib.mapAttrs (_: swatchesOf) theme.schemes
         ) config.theme.themes;
       };
+      catalog = import ../theme/fonts/catalog.nix { inherit pkgs; };
+      fontsJson = (pkgs.formats.json { }).generate "fonts.json" {
+        theme = lib.getExe config.theme.package;
+        state = "${config.xdg.stateHome}/theme";
+        roles = lib.mapAttrs (_: map (f: f.name)) catalog.roles;
+        inherit (catalog) default;
+        presets = lib.attrNames catalog.presets;
+      };
       wifiJson = (pkgs.formats.json { }).generate "wifi.json" {
         command = "${config.home.profileDirectory}/bin/wifi-prefer";
       };
@@ -169,6 +177,14 @@ let
             placement = "attached";
             position = "auto";
           }
+          {
+            id = "fonts";
+            entry = "fonts.luau";
+            width = 420;
+            height = 640;
+            placement = "attached";
+            position = "auto";
+          }
         ];
         shortcut = [
           {
@@ -183,6 +199,7 @@ let
       cp ${./noctalia-plugins/theme}/*.luau $out/theme/
       cp ${manifest} $out/theme/plugin.toml
       cp ${themesJson} $out/theme/themes.json
+      cp ${fontsJson} $out/theme/fonts.json
       cp ${./noctalia-plugins/wifi}/*.luau $out/wifi/
       cp ${wifiManifest} $out/wifi/plugin.toml
       cp ${wifiJson} $out/wifi/wifi.json
@@ -430,8 +447,9 @@ in
         themes = {
           type = "custom_button";
           glyph = "palette";
-          tooltip = "Themes";
+          tooltip = "Themes (right click: fonts)";
           actions.left = "panel-toggle dotnix/theme:picker";
+          actions.right = "panel-toggle dotnix/theme:fonts";
         };
       };
 

@@ -7,7 +7,7 @@
   ...
 }:
 let
-  fonts = import ../home/theme/fonts.nix { inherit pkgs; };
+  fonts = import ../home/theme/fonts/catalog.nix { inherit pkgs; };
 in
 {
   environment.sessionVariables = {
@@ -159,32 +159,21 @@ in
   fonts.fontconfig = {
     enable = true;
     useEmbeddedBitmaps = true;
+    # the user's choice comes from `theme font` (home/theme/fonts); this is root's and the greeter's
     defaultFonts = {
-      sansSerif = [ fonts.sansSerif.name ];
-      serif = [ fonts.serif.name ];
-      monospace = [ fonts.monospace.name ];
-      emoji = [ fonts.emoji.name ];
+      sansSerif = [ fonts.default.ui ];
+      serif = [ fonts.default.serif ];
+      monospace = [ fonts.default.mono ];
+      emoji = [ fonts.default.emoji ];
     };
   };
-  fonts.packages = with pkgs; [
-    fonts.sansSerif.package
-    fonts.serif.package
-    fonts.monospace.package
-    fonts.emoji.package
-    noto-fonts
-    noto-fonts-cjk-sans
-    noto-fonts-color-emoji
-    meslo-lgs-nf
-    fira-code
-    inter
-    material-icons
-    iosevka
-    jetbrains-mono
-    hack-font
-    nerd-fonts.symbols-only
-    roboto
-    montserrat
-  ];
+  # every font `theme font` can pick, so any choice applies live
+  fonts.packages =
+    fonts.packages
+    ++ (with pkgs; [
+      meslo-lgs-nf
+      montserrat
+    ]);
 
   # Games
   programs.steam = {

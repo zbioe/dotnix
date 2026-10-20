@@ -18,7 +18,6 @@ let
   inherit (lib) mkOption types;
 
   inherit (base16.lib { inherit pkgs lib; }) mkSchemeAttrs;
-  fonts = import ./fonts.nix { inherit pkgs; };
 
   stateDir = "${config.xdg.stateHome}/theme";
 
@@ -603,10 +602,6 @@ let
         icon_theme=${if mode == "dark" then cfg.icons.dark else cfg.icons.light}
         standard_dialogs=xdgdesktopportal
         style=Fusion
-
-        [Fonts]
-        fixed="${fonts.monospace.name},${toString fonts.size}"
-        general="${fonts.sansSerif.name},${toString fonts.size}"
       '';
       emacsBase16 = ''
         (require 'base16-theme)
@@ -803,8 +798,10 @@ let
       mode=$(cat "$state/mode" 2>/dev/null || echo ${cfg.default.mode})
 
       usage() {
-        echo "usage: theme [list | status | set NAME [dark|light] | mode dark|light | toggle | auto [on|off|toggle] | entries | pick LINE | apply]"
+        echo "usage: theme [list | status | set NAME [dark|light] | mode dark|light | toggle | auto [on|off|toggle] | entries | pick LINE | apply | font ...]"
       }
+
+      ${cfg.fonts.script}
 
       # today's sunrise and sunset ("HH:MM HH:MM", local time) at the position
       # in $state/location ("LAT LON", written by the locator); the fixed
@@ -837,6 +834,56 @@ let
         mv -Tf "$2.tmp.$$" "$2"
       }
 
+      # settings.ini: what GTK reads without dconf (Electron, Chromium,
+      # XWayland and unwrapped apps), with this theme instead of a fixed one
+      gtk_settings() {
+        for g in 3 4; do
+          f=$HOME/.config/gtk-$g.0/settings.ini
+          mkdir -p "''${f%/*}"
+          {
+            grep -v '^gtk-theme-name=\|^gtk-icon-theme-name=\|^gtk-application-prefer-dark-theme=' \
+              "${gtkSettings}/gtk-$g.0.ini"
+            echo "gtk-theme-name=nix-$name-$mode"
+            if [ "$mode" = dark ]; then
+              echo "gtk-icon-theme-name=${cfg.icons.dark}"
+            else
+              echo "gtk-icon-theme-name=${cfg.icons.light}"
+            fi
+            # GTK4 has no dark variants of a named theme (libadwaita warns)
+            if [ "$g" = 3 ]; then
+              echo "gtk-application-prefer-dark-theme=$([ "$mode" = dark ] && echo 1 || echo 0)"
+            fi
+            font_gtk_ini
+          } > "$f.tmp.$$"
+          mv -f "$f.tmp.$$" "$f"
+        done
+      }
+
+      # Qt: qt5ct/qt6ct reload when their config directory changes; a fresh
+      # copy, not a store link: QSettings caches by size+mtime and every store
+      # file has the same mtime
+      qt_conf() {
+        for qt in qt5ct qt6ct; do
+          mkdir -p "$HOME/.config/$qt"
+          { cat "$state/current/$qt.conf"; font_qt_ini; } > "$HOME/.config/$qt/$qt.conf.tmp.$$"
+          mv -f "$HOME/.config/$qt/$qt.conf.tmp.$$" "$HOME/.config/$qt/$qt.conf"
+        done
+      }
+
+      # Discord (Vencord watches its themes folder); a real file, not a link
+      discord_css() {
+        if [ -d "$HOME/.config/Vencord/themes" ]; then
+          { cat "$state/current/discord.css"; font_discord_css; } > "$HOME/.config/Vencord/themes/.nix-theme.css.$$"
+          mv -f "$HOME/.config/Vencord/themes/.nix-theme.css.$$" "$HOME/.config/Vencord/themes/nix-theme.css"
+        fi
+      }
+
+      # kitty/ghostty: reload config (open windows already got the palette)
+      reload_terminals() {
+        pkill -USR1 -f '^/nix/store/[^ ]*/bin/\.?kitty(-wrapped)?( |$)' || true
+        pkill -USR2 -f '^/nix/store/[^ ]*/bin/\.?ghostty(-wrapped)?( |$)' || true
+      }
+
       apply() {
         local v="$index/$name-$mode"
         if [ ! -d "$v" ]; then
@@ -857,32 +904,13 @@ let
         # who changed it, for when the theme is not the expected one
         logger -t theme "$name-$mode ($cmd, from $(ps -o args= -p "$PPID" 2>/dev/null | cut -c1-100))" || true
         swap "$v" "$state/current"
+        font_write
 
         # GTK4/libadwaita (patched gtk reloads it live)
         mkdir -p "$HOME/.config/gtk-4.0"
         swap "$v/gtk4.css" "$HOME/.config/gtk-4.0/gtk.css"
 
-        # settings.ini: what GTK reads without dconf (Electron, Chromium,
-        # XWayland and unwrapped apps), with this theme instead of a fixed one
-        for g in 3 4; do
-          f=$HOME/.config/gtk-$g.0/settings.ini
-          mkdir -p "''${f%/*}"
-          {
-            grep -v '^gtk-theme-name=\|^gtk-icon-theme-name=\|^gtk-application-prefer-dark-theme=' \
-              "${gtkSettings}/gtk-$g.0.ini"
-            echo "gtk-theme-name=nix-$name-$mode"
-            if [ "$mode" = dark ]; then
-              echo "gtk-icon-theme-name=${cfg.icons.dark}"
-            else
-              echo "gtk-icon-theme-name=${cfg.icons.light}"
-            fi
-            # GTK4 has no dark variants of a named theme (libadwaita warns)
-            if [ "$g" = 3 ]; then
-              echo "gtk-application-prefer-dark-theme=$([ "$mode" = dark ] && echo 1 || echo 0)"
-            fi
-          } > "$f.tmp.$$"
-          mv -f "$f.tmp.$$" "$f"
-        done
+        gtk_settings
 
         # GTK3, plain GTK4, icons, and the dark/light preference (portal, browsers)
         dconf write /org/gnome/desktop/interface/color-scheme "'prefer-$mode'"
@@ -907,24 +935,9 @@ let
           timeout 5 emacsclient --eval "(load \"$v/emacs.el\" nil t)" >/dev/null 2>&1 || true
         fi
 
-        # Qt: qt5ct/qt6ct reload when their config directory changes
-        for qt in qt5ct qt6ct; do
-          mkdir -p "$HOME/.config/$qt"
-          # a fresh copy, not a store link: QSettings caches by size+mtime and
-          # every store file has the same mtime
-          install -m 644 "$v/$qt.conf" "$HOME/.config/$qt/$qt.conf.tmp.$$"
-          mv -f "$HOME/.config/$qt/$qt.conf.tmp.$$" "$HOME/.config/$qt/$qt.conf"
-        done
-
-        # Discord (Vencord watches its themes folder); a real file, not a link
-        if [ -d "$HOME/.config/Vencord/themes" ]; then
-          install -m 644 "$v/discord.css" "$HOME/.config/Vencord/themes/.nix-theme.css.$$"
-          mv -f "$HOME/.config/Vencord/themes/.nix-theme.css.$$" "$HOME/.config/Vencord/themes/nix-theme.css"
-        fi
-
-        # kitty/ghostty: reload config (open windows already got the palette above)
-        pkill -USR1 -f '^/nix/store/[^ ]*/bin/\.?kitty(-wrapped)?( |$)' || true
-        pkill -USR2 -f '^/nix/store/[^ ]*/bin/\.?ghostty(-wrapped)?( |$)' || true
+        qt_conf
+        discord_css
+        reload_terminals
 
         # mango session: border colors; noctalia: palette and mode
         mmsg dispatch reload_config >/dev/null 2>&1 || true
@@ -1040,6 +1053,21 @@ let
         apply)
           apply
           ;;
+        # fonts apply on their own: the colors stay as they are
+        font)
+          shift
+          if font_cmd "$@"; then
+            font_write
+            gtk_settings
+            qt_conf
+            discord_css
+            reload_terminals
+            if command -v emacsclient >/dev/null; then
+              timeout 5 emacsclient --eval "(load \"$fstate/emacs.el\" nil t)" >/dev/null 2>&1 || true
+            fi
+            font_status
+          fi
+          ;;
         *)
           usage
           exit 1
@@ -1051,6 +1079,8 @@ let
   schemeType = types.either types.path (types.attrsOf types.str);
 in
 {
+  imports = [ ./fonts ];
+
   options.theme = {
     themes = mkOption {
       description = "Themes available to `theme`, each with dark and/or light base16 schemes.";
@@ -1149,12 +1179,12 @@ in
       pkgs.callPackage ../../pkgs/nix-theme { }
     }/lib/mozilla/native-messaging-hosts/nix_theme.json";
 
-    programs.foot.settings.main.include = "${stateDir}/current/foot.ini";
+    programs.foot.settings.main.include = [ "${stateDir}/current/foot.ini" ];
     programs.fzf.defaultOptions = [ "--color=16" ];
     programs.bat.config.theme = "base16";
     programs.opencode.tui.theme = "system";
     programs.kitty.extraConfig = "include ${stateDir}/current/kitty.conf";
-    programs.ghostty.settings.config-file = "?${stateDir}/current/ghostty";
+    programs.ghostty.settings.config-file = [ "?${stateDir}/current/ghostty" ];
     programs.alacritty.settings.general.import = [ "${stateDir}/current/alacritty.toml" ];
     # fish: colors of the active theme, reloaded live through `set -U __nix_theme`
     # (see `theme apply`); new shells also re-send the terminal palette

@@ -1,6 +1,6 @@
 # Native messaging host for the nix-theme extension: sends
-# ~/.local/state/theme/current/browser.json now and whenever `theme` swaps
-# the `current` link.
+# ~/.local/state/theme/current/browser.json and font.json now and whenever
+# `theme` swaps the `current` link or rewrites font.json.
 import json
 import os
 import struct
@@ -14,9 +14,9 @@ STATE = os.path.join(
 )
 
 
-def send():
+def send(path):
     try:
-        with open(os.path.join(STATE, "current", "browser.json"), "rb") as f:
+        with open(os.path.join(STATE, path), "rb") as f:
             data = json.dumps(json.load(f)).encode()
     except (OSError, ValueError):
         return
@@ -33,7 +33,8 @@ def exit_with_browser():
 
 threading.Thread(target=exit_with_browser, daemon=True).start()
 os.makedirs(STATE, exist_ok=True)
-send()
+send("current/browser.json")
+send("font.json")
 
 watch = subprocess.Popen(
     ["@inotifywait@", "-m", "-q", "-e", "moved_to,create",
@@ -43,4 +44,6 @@ watch = subprocess.Popen(
 )
 for name in watch.stdout:
     if name.strip() == "current":
-        send()
+        send("current/browser.json")
+    elif name.strip() == "font.json":
+        send("font.json")

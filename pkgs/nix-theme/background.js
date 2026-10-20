@@ -60,6 +60,8 @@ async function pageFallback({ mode, darkSchemeBackgroundColor, darkSchemeTextCol
 }
 
 function apply(theme) {
+  // fonts: Firefox has no API for them, it takes fontconfig's on restart
+  if (theme.font) return;
   last = theme;
   retries = 0;
   browser.theme.update(theme.browser);

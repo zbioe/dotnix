@@ -12,7 +12,6 @@ let
     themeSet = config.theme.themes;
     inherit (base16.lib { inherit pkgs lib; }) mkSchemeAttrs;
   };
-  fonts = import ../theme/fonts.nix { inherit pkgs; };
   webuiTheme = pkgs.callPackage ../../pkgs/webui-theme { };
   braveTheme = pkgs.callPackage ../../pkgs/brave-theme { brave = unstable.brave; };
 in
@@ -95,12 +94,6 @@ in
       x-scheme-handler/http x-scheme-handler/https text/html application/xhtml+xml
   '';
 
-  # color-scheme, gtk-theme and icon-theme are set live by `theme`
-  dconf.settings."org/gnome/desktop/interface" = {
-    font-name = "${fonts.sansSerif.name} ${toString fonts.size}";
-    document-font-name = "${fonts.serif.name} ${toString fonts.size}";
-    monospace-font-name = "${fonts.monospace.name} ${toString fonts.size}";
-  };
   programs = {
     bat = {
       enable = true;
@@ -139,7 +132,6 @@ in
         tab_bar_style = "hidden";
         window_padding_width = 0;
         window_margin_width = 0;
-        font_size = 10.26;
       };
     };
     yazi = {
