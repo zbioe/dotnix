@@ -101,8 +101,9 @@ Enable it on a host with `modules.usbKey.enable = true;`.
 
 ## Multiboot stick
 
-One stick for everything: music for the car (FAT32, first partition), a GRUB
-menu of Linux ISOs and the disk key.
+One stick for everything: a FILES partition (FAT32, first, up to 4GiB), a GRUB
+menu of Linux ISOs and the disk key. Without ISOs, `create` makes only FILES
+(the whole stick) and the key; with them, FILES shrinks to fit a small stick.
 
 ```sh
 nix run .#usb-stick -- create /dev/sdX .#iso-full .#iso-minimal ~/Downloads/zorin.iso

@@ -91,9 +91,26 @@ in
     with open(image, "wb") as f:
         f.truncate(6 << 30)
 
+    machine.wait_for_unit("multi-user.target")
+    machine.succeed("echo -n pass | cryptsetup luksFormat -q --pbkdf pbkdf2 --iter-time 1 /dev/vdb -")
+
+    with subtest("a small stick without ISOs: only FILES and the key"):
+        small = machine.state_dir / "small.img"
+        with open(small, "wb") as f:
+            f.truncate(3800 << 20)
+        machine.send_monitor_command(f"drive_add 0 if=none,id=small,file={small},format=raw")
+        machine.send_monitor_command("device_add usb-storage,id=dev-small,drive=small,bus=xhci.0")
+        machine.wait_until_succeeds("test -b /dev/sda")
+        out = machine.succeed("echo -n pass | usb-stick create --yes /dev/sda 2>&1")
+        assert "opens /dev/vdb" in out, out
+        labels = machine.succeed("lsblk -nro PARTLABEL /dev/sda").split()
+        assert labels == ["FILES"], labels
+        out = machine.fail("usb-stick list /dev/sda 2>&1")
+        assert "no ISOS partition" in out, out
+        machine.send_monitor_command("device_del dev-small")
+        machine.wait_until_fails("test -b /dev/sda")
+
     with subtest("make the stick"):
-        machine.wait_for_unit("multi-user.target")
-        machine.succeed("echo -n pass | cryptsetup luksFormat -q --pbkdf pbkdf2 --iter-time 1 /dev/vdb -")
         machine.send_monitor_command(f"drive_add 0 if=none,id=stick,file={image},format=raw")
         machine.send_monitor_command("device_add usb-storage,id=dev-stick,drive=stick,bus=xhci.0")
         machine.wait_until_succeeds("test -b /dev/sda")

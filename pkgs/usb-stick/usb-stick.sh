@@ -1,6 +1,6 @@
-# usb-stick: music (FAT32, for the car), Linux ISOs booted from files by GRUB, and the dotnix-key.
+# usb-stick: files (FAT32, readable anywhere), Linux ISOs booted from files by GRUB, and the dotnix-key.
 
-MUSIC_SIZE_MIB=4096
+FILES_SIZE_MIB=4096
 ESP_SIZE_MIB=512
 MIB=$((1024 * 1024))
 
@@ -8,6 +8,7 @@ usage() {
   cat <<'EOF'
 usage:
   usb-stick create [--pin | --no-key] [--yes] [--serial] DEVICE [ISO...]
+                                    without ISOs: only FILES and the key
   usb-stick add DEVICE ISO...       copy ISOs (a same-named one is replaced)
   usb-stick remove DEVICE NAME...   remove ISOs by file name
   usb-stick list DEVICE
@@ -159,7 +160,7 @@ part_of() {
 
 mount_isos() {
   local p
-  p=$(part_of ISOS) || die "$disk was not made by usb-stick (no ISOS partition): use create"
+  p=$(part_of ISOS) || die "$disk has no ISOS partition: create it again with ISOs"
   mount_at "$p" "$work/isos" "${1:-rw}"
   if [ "${1:-rw}" = rw ]; then as_root mkdir -p "$work/isos/isos"; fi
 }
@@ -282,16 +283,37 @@ create() {
   fi
   [ -z "$(lsblk -nro MOUNTPOINTS "$disk" | tr -d '[:space:]')" ] || die "$disk is mounted: unmount it first"
 
-  local total isos_part usable need=0 s
+  # FILES shrinks (or goes) to fit the ISOs; without ISOs it takes the whole stick
+  local total avail need=0 s isos_part=0 files_part
   total=$(as_root blockdev --getsize64 "$disk")
-  isos_part=$((total - (2 + MUSIC_SIZE_MIB + ESP_SIZE_MIB) * MIB))
-  ((isos_part >= 256 * MIB)) || die "$disk is too small: $(human "$total")"
-  usable=$((isos_part - isos_part / 50 - 128 * MIB))
-  for s in "${sizes[@]}"; do need=$((need + s)); done
-  ((need <= usable)) || die "the ISOs need $(human "$need"), $disk has about $(human "$usable") for them"
+  avail=$((total - 2 * MIB))
+  files_part=$avail
+  if ((${#names[@]})); then
+    for s in "${sizes[@]}"; do need=$((need + s)); done
+    isos_part=$(((need + 128 * MIB) * 50 / 49 / MIB * MIB + MIB))
+    ((isos_part >= 256 * MIB)) || isos_part=$((256 * MIB))
+    avail=$((avail - ESP_SIZE_MIB * MIB))
+    ((isos_part <= avail)) || die "the ISOs need $(human "$need"), $disk ($(human "$total")) is too small for them"
+    files_part=$((avail - isos_part))
+    ((files_part <= FILES_SIZE_MIB * MIB)) || files_part=$((FILES_SIZE_MIB * MIB))
+    ((files_part >= 64 * MIB)) || files_part=0
+    isos_part=$((avail - files_part))
+  fi
+  ((files_part >= 64 * MIB || isos_part)) || die "$disk is too small: $(human "$total")"
+
+  local table=("label: gpt") layout=()
+  if ((files_part)); then
+    table+=("size=$((files_part / MIB))MiB, type=EBD0A0A2-B9E5-4433-87C0-68B6B72699C7, name=FILES")
+    layout+=("FILES $(human "$files_part")")
+  fi
+  if ((isos_part)); then
+    table+=("size=${ESP_SIZE_MIB}MiB, type=C12A7328-F81F-11D2-BA4B-00A0C93EC93B, name=ESP")
+    table+=("type=0FC63DAF-8483-4772-8E79-3D69D8477DE4, name=ISOS")
+    layout+=("ESP ${ESP_SIZE_MIB}MiB" "ISOS $(human "$isos_part")")
+  fi
 
   lsblk -o NAME,SIZE,TRAN,MODEL,FSTYPE,LABEL "$disk"
-  echo "EVERYTHING on $disk is erased: MUSIC ${MUSIC_SIZE_MIB}MiB, ESP ${ESP_SIZE_MIB}MiB, ISOS $(human "$isos_part")."
+  echo "EVERYTHING on $disk is erased: ${layout[*]}."
   if ((yes == 0)); then
     local answer
     read -rp "Type ${args[0]} to continue: " answer
@@ -299,27 +321,24 @@ create() {
   fi
 
   as_root wipefs -aq "$disk"
-  printf '%s\n' "label: gpt" \
-    "size=${MUSIC_SIZE_MIB}MiB, type=EBD0A0A2-B9E5-4433-87C0-68B6B72699C7, name=MUSIC" \
-    "size=${ESP_SIZE_MIB}MiB, type=C12A7328-F81F-11D2-BA4B-00A0C93EC93B, name=ESP" \
-    "type=0FC63DAF-8483-4772-8E79-3D69D8477DE4, name=ISOS" |
-    as_root sfdisk --quiet --wipe always --wipe-partitions always "$disk"
+  printf '%s\n' "${table[@]}" | as_root sfdisk --quiet --wipe always --wipe-partitions always "$disk"
   as_root udevadm settle 2>/dev/null || true
-  local music esp isos
-  music=$(part_of MUSIC) || die "the MUSIC partition did not show up"
-  esp=$(part_of ESP) || die "the ESP partition did not show up"
-  isos=$(part_of ISOS) || die "the ISOS partition did not show up"
-  as_root mkfs.vfat -F 32 -n MUSIC "$music" >/dev/null
-  as_root mkfs.vfat -F 32 -n ESP "$esp" >/dev/null
-  as_root mkfs.ext4 -q -F -m 0 -T largefile -L ISOS "$isos"
+  local files esp isos
+  if ((files_part)); then
+    files=$(part_of FILES) || die "the FILES partition did not show up"
+    as_root mkfs.vfat -F 32 -n FILES "$files" >/dev/null
+  fi
 
-  mount_at "$esp" "$work/esp"
-  as_root grub-install --target=x86_64-efi --efi-directory="$work/esp" \
-    --boot-directory="$work/esp/boot" --removable --no-nvram "$disk"
-  grub_cfg "$(as_root blkid -s UUID -o value "$isos")" "$serial" | as_root tee "$work/esp/boot/grub/grub.cfg" >/dev/null
-  umount_at "$work/esp"
-
-  if ((${#names[@]})); then
+  if ((isos_part)); then
+    esp=$(part_of ESP) || die "the ESP partition did not show up"
+    isos=$(part_of ISOS) || die "the ISOS partition did not show up"
+    as_root mkfs.vfat -F 32 -n ESP "$esp" >/dev/null
+    as_root mkfs.ext4 -q -F -m 0 -T largefile -L ISOS "$isos"
+    mount_at "$esp" "$work/esp"
+    as_root grub-install --target=x86_64-efi --efi-directory="$work/esp" \
+      --boot-directory="$work/esp/boot" --removable --no-nvram "$disk"
+    grub_cfg "$(as_root blkid -s UUID -o value "$isos")" "$serial" | as_root tee "$work/esp/boot/grub/grub.cfg" >/dev/null
+    umount_at "$work/esp"
     mount_isos
     copy_isos
   fi
