@@ -317,7 +317,6 @@ let
     id=$(${pkgs.coreutils}/bin/basename "$(${pkgs.coreutils}/bin/readlink /var/lib/theme/current)")
     cmdline=$(${pkgs.gnused}/bin/sed 's/plymouth\.splash=[^ ]*//' /proc/cmdline)
     exec ${config.boot.plymouth.package}/sbin/plymouthd --mode=shutdown --attach-to-session \
-      --debug --debug-file=/var/log/plymouth-shutdown.log \
       --kernel-command-line="$cmdline plymouth.splash=nix-$id"
   '';
 in
@@ -363,8 +362,6 @@ in
   # at all (boot messages as text instead)
   boot.kernelParams = lib.mkAfter [
     "plymouth.splash=nix-\${nix_theme}"
-    # which theme it loaded: /var/log/plymouth-debug.log
-    "plymouth.debug"
     "vt.default_red=\${nix_vt_red}"
     "vt.default_grn=\${nix_vt_grn}"
     "vt.default_blu=\${nix_vt_blu}"
