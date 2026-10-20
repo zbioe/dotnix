@@ -1,0 +1,30 @@
+# bx, te, full-iso and home need their whole closure to evaluate (IFD): `nix flake check` covers them locally
+name: check
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v5
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: system-features = nixos-test benchmark big-parallel kvm
+      - name: Format, Go tests, shellcheck
+        run: nix build -L .#checks.x86_64-linux.format .#checks.x86_64-linux.dotnix-key .#checks.x86_64-linux.usb-stick
+      - name: Evaluate the minimal ISO
+        run: nix eval --raw .#nixosConfigurations.minimal-iso.config.system.build.toplevel.drvPath
+      - name: USB key VM test
+        run: nix build -L .#usb-key-test
+      - name: Multiboot stick VM test
+        run: nix build -L .#usb-stick-test
