@@ -33,6 +33,12 @@ let
         installation_mode = "force_installed";
         install_url = "file://${nixTheme}/nix-theme.xpi";
       };
+    }
+    // lib.optionalAttrs cfg.protonPass.enable {
+      "78272b6fa58f4a1abaac99321d503a20@proton.me" = {
+        installation_mode = "force_installed";
+        install_url = "https://addons.mozilla.org/firefox/downloads/latest/proton-pass/latest.xpi";
+      };
     };
   };
 

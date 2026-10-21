@@ -60,8 +60,17 @@
         default = "foot";
       };
       noctalia.enable = true;
-      vpn.enable = true;
+      vpn = {
+        enable = true;
+        favorites = [
+          "fastest"
+          "BR"
+          "US"
+          "securecore"
+        ];
+      };
       wifi.enable = true;
+      pass.enable = true;
       rebuild.enable = true;
       insightful.enable = true;
     };

@@ -1,5 +1,5 @@
-# Proton VPN's app: every server, through NetworkManager, so `vpn` and the
-# bar's widget (home) see it too
+# Proton VPN (app and CLI) through NetworkManager, so `vpn` and the bar's
+# widget (home) see and stop it too
 {
   config,
   lib,
@@ -19,7 +19,10 @@ in
 
   config = lib.mkMerge [
     (lib.mkIf cfg.proton.enable {
-      environment.systemPackages = [ unstable.proton-vpn ];
+      environment.systemPackages = [
+        unstable.proton-vpn # the app: every server, by country, settings
+        unstable.proton-vpn-cli # `protonvpn connect`, used by `vpn`
+      ];
       # WireGuard routes everything through the tunnel; strict rpfilter drops its replies
       networking.firewall.checkReversePath = "loose";
     })

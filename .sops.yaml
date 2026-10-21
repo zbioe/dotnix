@@ -1,0 +1,11 @@
+# who opens secrets/: you (~/.config/sops/age/keys.txt, backed up in Proton
+# Pass) and each host through its SSH host key (ssh-to-age)
+keys:
+  - &zbioe age16tz3z9a0jety6e2ydphgqs46apyg5r8qm4wgzu20mh9zlem98vlqzx2zqj
+  - &bx age14hk6x0gjs7raz2d44d59vlrunw4zr8za8uw5nwaj0v3w4464nf5qud8jvv
+creation_rules:
+  - path_regex: secrets/common\.yaml$
+    key_groups:
+      - age:
+          - *zbioe
+          - *bx

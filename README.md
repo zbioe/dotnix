@@ -74,17 +74,56 @@ lacks.
 
 ## VPN
 
-The shield in the bar lights up while a VPN is up: right click turns it on or
-off, left click opens a panel with what is connected and the saved
-connections. Every Proton server comes from Proton's own app
-(`dotnix.network.vpn.proton.enable`); a WireGuard file from anywhere is one command:
+The shield in the bar lights up while a VPN is up: right click connects to
+the last place (or the fastest server) and disconnects; left click opens a
+panel with quick connections (Fastest, Brazil, United States, Secure Core;
+add any country, server or city) and WireGuard files. Proton goes through its
+own CLI, so nothing opens; its app is a click away for every other setting.
 
 ```sh
-vpn                  # up NAME or down
+vpn up BR            # fastest in a country; or BR#10, fastest, securecore, city:Tokyo
+vpn down
 vpn toggle           # the last one used
-vpn add proton.conf  # import a WireGuard file; vpn remove NAME
-vpn app              # Proton VPN: every server, fastest, by country
+vpn fav add DE       # one more quick connection (the first ones: home/default.nix)
+vpn add other.conf   # a WireGuard file from anywhere; vpn remove NAME
 ```
+
+## Passwords
+
+Proton Pass is in the launcher: `/pw github` finds an item and Enter copies
+its password (marked secret, so it stays out of the clipboard history, and
+cleared after 30 seconds); with few matches left, the username, e-mail,
+one-time code and website show up too. Pass has its own lock code: it locks
+with the screen and after 15 idle minutes, and the launcher asks for the code
+in a small panel. The browsers come with its extension. The desktop app
+follows Proton's newest stable release (`flake-updates`).
+
+```sh
+pass-cli login                                     # once
+pass-cli session create-lock --idle-timeout 900    # the lock code
+pw copy pass://VAULT/ITEM [username|email|note]    # pw search TEXT finds the URI
+pw run terraform apply                             # ~/.env values like pass://Dev/AWS/key, resolved for one command
+```
+
+## Secrets
+
+The login password, searx's key and the Wi-Fi networks (names included) live
+in `secrets/common.yaml`, encrypted with [sops](https://github.com/getsops/sops):
+public, but only you and the hosts open it. At boot each host decrypts it
+with its SSH host key into `/run/secrets` (RAM); a new install gets the
+networks it lacks, so it connects by itself. Your key is
+`~/.config/sops/age/keys.txt`: keep a copy in Proton Pass, it opens
+everything.
+
+```sh
+sops secrets/common.yaml                # edit (opens decrypted, saves encrypted)
+mkpasswd -m yescrypt                    # a new user-password hash
+ssh-to-age < /etc/ssh/ssh_host_ed25519_key.pub   # a new host's key, for .sops.yaml
+sops updatekeys secrets/common.yaml     # after changing .sops.yaml
+```
+
+Only what can be changed if it ever leaks goes here (it is public for good);
+personal secrets stay in Proton Pass.
 
 ## Shortcuts
 

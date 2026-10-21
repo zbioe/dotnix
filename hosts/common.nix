@@ -10,8 +10,8 @@
       };
       compat.enable = true;
       updates.enable = true;
-      # the login password as a hash in /persist, outside the (public) flake
-      user.passwordFile = "/persist/secrets/zbioe.passwd";
+      # the login password, searx's key and the Wi-Fi networks: secrets/common.yaml
+      secrets.enable = true;
     };
 
     hardware = {
@@ -38,6 +38,7 @@
 
     network = {
       ssh.enable = true;
+      wifi.enable = true;
       vpn = {
         proton.enable = true;
         warp.enable = true;
@@ -59,6 +60,7 @@
         chromium.enable = true;
         brave.enable = true;
         default = "brave";
+        protonPass.enable = true;
       };
     };
 

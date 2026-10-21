@@ -22,8 +22,10 @@
   dotnix = {
     # the ISO boots with its own loader (isolinux / GRUB EFI from iso-image)
     core.boot.enable = lib.mkForce false;
-    # weakPass: the live user's password
+    # no secrets on a live system: weakPass is the user's password
+    core.secrets.enable = lib.mkForce false;
     core.user.passwordFile = lib.mkForce null;
+    network.wifi.enable = lib.mkForce false;
     hardware.keyboard = {
       layout = "br";
       model = "br";

@@ -60,6 +60,16 @@
         home-manager.follows = "home";
       };
     };
+    # secrets/*.yaml, decrypted at boot into /run/secrets (system/core/secrets.nix)
+    sops = {
+      url = "github:Mic92/sops-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    # Proton's own build of the newest stable Proton Pass (pkgs/proton-pass)
+    proton-pass = {
+      url = "file+https://proton.me/download/PassDesktop/linux/x64/ProtonPass.deb";
+      flake = false;
+    };
     bwt = {
       url = "github:bwt-dev/bwt";
       flake = false;

@@ -4,6 +4,7 @@
     ./locale.nix
     ./boot.nix
     ./security.nix
+    ./secrets.nix
     ./compat.nix
     ./home-activation.nix
     ./updates.nix

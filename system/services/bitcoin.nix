@@ -8,6 +8,12 @@
 }:
 let
   cfg = config.dotnix.services.bitcoin;
+  # RPC_USER, RPC_PASS (and ZPUB for bwt): from secrets/, or by hand in /var/lib/bitcoin
+  rpcEnv =
+    if config.dotnix.core.secrets.enable then
+      config.sops.secrets.bitcoin-rpc-env.path
+    else
+      "/var/lib/bitcoin/rpc.env";
   instance = config.networking.hostName;
   bwtPkg = pkgs.rustPlatform.buildRustPackage {
     pname = "bwt";
@@ -21,11 +27,14 @@ let
 in
 {
   options.dotnix.services.bitcoin = {
-    enable = lib.mkEnableOption "a pruned Bitcoin node (RPC credentials in /var/lib/bitcoin/rpc.env)";
-    bwt.enable = lib.mkEnableOption "BWT on the node (ZPUB in rpc.env)";
+    enable = lib.mkEnableOption "a pruned Bitcoin node";
+    bwt.enable = lib.mkEnableOption "BWT on the node";
   };
 
   config = lib.mkMerge [
+    (lib.mkIf (cfg.enable && config.dotnix.core.secrets.enable) {
+      sops.secrets.bitcoin-rpc-env.owner = config.services.bitcoind.${instance}.user;
+    })
     (lib.mkIf cfg.enable {
       environment.persistence."/persist".directories = [ "/var/lib/bitcoin" ];
       fileSystems."/var/lib/bitcoind" = {
@@ -38,7 +47,7 @@ in
         prune = 100000; # the last 100GB of blocks
         extraConfig = ''
           server=1
-          include=/var/lib/bitcoin/rpc.env
+          include=${rpcEnv}
         '';
       };
     })
@@ -48,7 +57,7 @@ in
         after = [ "bitcoind-${instance}.service" ];
         wantedBy = [ "multi-user.target" ];
         serviceConfig = {
-          EnvironmentFile = "/var/lib/bitcoin/rpc.env";
+          EnvironmentFile = rpcEnv;
           ExecStart = "${bwtPkg}/bin/bwt --bitcoind-url http://\${RPC_USER}:\${RPC_PASS}@127.0.0.1:8332 --xpub \${ZPUB} --electrum-addr 127.0.0.1:50001";
           Restart = "always";
           User = "bitcoin";

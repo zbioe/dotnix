@@ -54,15 +54,21 @@ let
           .nodes as $old | $new[0].nodes as $n
           | $old.root.inputs | to_entries[]
           | (.value | if type == "array" then empty else . end) as $node
-          | select($old[$node].locked.lastModified != null)
-          | select($old[$node].locked.lastModified != $n[$node].locked.lastModified)
-          | [ .key,
-              ($old[$node].locked.lastModified | day),
-              ($n[$node].locked.lastModified | day),
-              ((($n[$node].locked.lastModified - $old[$node].locked.lastModified) / 86400) | floor) ]
+          | $old[$node].locked as $o | $n[$node].locked as $l
+          # files (proton-pass) have no date, only a hash
+          | if $o.lastModified != null then
+              select($o.lastModified != $l.lastModified)
+              | [ .key, ($o.lastModified | day), ($l.lastModified | day),
+                  ((($l.lastModified - $o.lastModified) / 86400) | floor) ]
+            else
+              select($o.narHash != $l.narHash) | [ .key, "older", "newest", 0 ]
+            end
           | @tsv' "$1"
       }
-      pretty() { awk -F'\t' '{ printf "%-18s %s → %s (+%s days)\n", $1, $2, $3, $4 }' "$1"; }
+      pretty() {
+        awk -F'\t' '$2 == "older" { printf "%-18s new release\n", $1; next }
+          { printf "%-18s %s → %s (+%s days)\n", $1, $2, $3, $4 }' "$1"
+      }
       inputs() { jq -r '.nodes.root.inputs | keys[]' "$flake/flake.lock"; }
 
       check() {

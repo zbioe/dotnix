@@ -3,6 +3,7 @@
   imports = [
     ./ssh.nix
     ./vpn.nix
+    ./wifi.nix
   ];
 
   networking.networkmanager = {

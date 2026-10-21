@@ -95,8 +95,8 @@ local function changeRows()
     table.insert(rows, ui.row({ key = c.name, gap = 8, align = "center" }, {
       ui.glyph({ name = "arrow-up-circle", size = 14, color = "primary" }),
       ui.label({ text = c.name, fontSize = 12, fontWeight = "medium", flexGrow = 1 }),
-      ui.label({ text = `{c.from} → {c.to}`, fontSize = 10, color = "on_surface_variant" }),
-      ui.label({ text = `+{c.days}d`, fontSize = 10, color = "primary", width = 34, textAlign = "end" }),
+      ui.label({ text = c.from == "older" and "new release" or `{c.from} → {c.to}`, fontSize = 10, color = "on_surface_variant" }),
+      ui.label({ text = c.from == "older" and "" or `+{c.days}d`, fontSize = 10, color = "primary", width = 34, textAlign = "end" }),
     }))
   end
   return rows

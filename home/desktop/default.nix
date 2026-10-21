@@ -14,6 +14,7 @@
     ./rebuild.nix
     ./wifi
     ./vpn
+    ./pass
     ./updates
     ./insightful
     ./kdeconnect.nix

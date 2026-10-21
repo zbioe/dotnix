@@ -277,6 +277,18 @@
         "type": "github"
       }
     },
+    "proton-pass": {
+      "flake": false,
+      "locked": {
+        "narHash": "sha256-crVXPH4EQAJm023r36j6cw0PQIpBl0628JXdsvB+y/8=",
+        "type": "file",
+        "url": "https://proton.me/download/PassDesktop/linux/x64/ProtonPass.deb"
+      },
+      "original": {
+        "type": "file",
+        "url": "https://proton.me/download/PassDesktop/linux/x64/ProtonPass.deb"
+      }
+    },
     "root": {
       "inputs": {
         "base16": "base16",
@@ -291,6 +303,8 @@
         "noctalia": "noctalia",
         "parts": "parts",
         "programsdb": "programsdb",
+        "proton-pass": "proton-pass",
+        "sops": "sops",
         "systems": "systems"
       }
     },
@@ -316,6 +330,26 @@
       "original": {
         "owner": "wlrfx",
         "repo": "scenefx",
+        "type": "github"
+      }
+    },
+    "sops": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1792056300,
+        "narHash": "sha256-YU1LjDe1o2Ymg5zEiCHbmMXLkDCtxHQRiVqZ3nC5GGk=",
+        "owner": "Mic92",
+        "repo": "sops-nix",
+        "rev": "44931708c62937c2b1bf7953902989fa5bb9ee1b",
+        "type": "github"
+      },
+      "original": {
+        "owner": "Mic92",
+        "repo": "sops-nix",
         "type": "github"
       }
     },
