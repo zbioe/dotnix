@@ -22,6 +22,7 @@ in
     ./noctalia.nix
     ./rebuild.nix
     ./wifi-prefer.nix
+    ./vpn.nix
     ./flake-updates.nix
     ./insightful.nix
     ./kdeconnect.nix

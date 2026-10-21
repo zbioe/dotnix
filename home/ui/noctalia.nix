@@ -44,7 +44,8 @@ let
 
   # local plugins (noctalia-plugins/): "dotnix/theme", the theme panel and
   # control center tile; "dotnix/wifi", the Wi-Fi priority panel;
-  # "dotnix/updates", the flake-updates panel
+  # "dotnix/updates", the flake-updates panel; "dotnix/vpn", the VPN widget
+  # and panel
   dotnixPlugins =
     let
       swatchesOf =
@@ -118,6 +119,36 @@ let
             entry = "priority.luau";
             width = 380;
             height = 460;
+            placement = "attached";
+            position = "auto";
+          }
+        ];
+      };
+      vpnJson = (pkgs.formats.json { }).generate "vpn.json" {
+        command = "${config.home.profileDirectory}/bin/vpn";
+      };
+      vpnManifest = (pkgs.formats.toml { }).generate "plugin.toml" {
+        id = "dotnix/vpn";
+        name = "VPN";
+        version = "1.0.0";
+        plugin_api = 26;
+        author = "dotnix";
+        license = "MIT";
+        icon = "shield";
+        description = "VPN state and connections of the dotnix `vpn` command.";
+        widget = [
+          {
+            id = "vpn";
+            entry = "widget.luau";
+            actions.left = "panel-toggle dotnix/vpn:panel";
+          }
+        ];
+        panel = [
+          {
+            id = "panel";
+            entry = "panel.luau";
+            width = 420;
+            height = 520;
             placement = "attached";
             position = "auto";
           }
@@ -202,7 +233,7 @@ let
       };
     in
     pkgs.runCommandLocal "noctalia-plugins" { } ''
-      mkdir -p $out/theme $out/wifi $out/keys $out/updates
+      mkdir -p $out/theme $out/wifi $out/keys $out/updates $out/vpn
       cp ${./noctalia-plugins/theme}/*.luau $out/theme/
       cp ${manifest} $out/theme/plugin.toml
       cp ${themesJson} $out/theme/themes.json
@@ -210,6 +241,9 @@ let
       cp ${./noctalia-plugins/wifi}/*.luau $out/wifi/
       cp ${wifiManifest} $out/wifi/plugin.toml
       cp ${wifiJson} $out/wifi/wifi.json
+      cp ${./noctalia-plugins/vpn}/*.luau $out/vpn/
+      cp ${vpnManifest} $out/vpn/plugin.toml
+      cp ${vpnJson} $out/vpn/vpn.json
       cp ${./noctalia-plugins/updates}/*.luau $out/updates/
       cp ${updatesManifest} $out/updates/plugin.toml
       cp ${updatesJson} $out/updates/updates.json
@@ -382,6 +416,7 @@ in
           "cpu"
           "disk"
           "volume"
+          "vpn"
           "network"
           "themes"
           "keys" # shortcuts list (also Super+/)
@@ -426,6 +461,8 @@ in
         # icons only (details on hover / in the panels)
         network = {
           show_label = false;
+          # the vpn widget shows it
+          vpn_status = "hidden";
           # nm-applet's menu (VPN, ethernet, ...), hidden from the tray below
           actions.right = "tray-menu nm-applet";
           # order of the saved Wi-Fi networks (home/ui/wifi-prefer.nix)
@@ -445,6 +482,9 @@ in
           "nm-applet"
           "blueman"
         ];
+
+        # shield lit while a VPN is up: the dotnix/vpn panel, right click toggles
+        vpn.type = "dotnix/vpn:vpn";
 
         # shortcuts list: the dotnix/keys panel
         keys = {
@@ -496,6 +536,7 @@ in
           "dotnix/wifi"
           "dotnix/keys"
           "dotnix/updates"
+          "dotnix/vpn"
         ];
         auto_update = "none";
         source = [

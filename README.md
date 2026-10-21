@@ -8,8 +8,7 @@ stick, and falls back to the password after 10 seconds.
 
 The desktop is [mango](https://github.com/DreamMaoMao/mangowc) with
 [noctalia](https://github.com/noctalia-dev/noctalia-shell) as the bar,
-launcher, notifications and lock screen. Hyprland is still there as a
-second session.
+launcher, notifications and lock screen.
 
 ![overview](./assets/overview.png)
 
@@ -72,6 +71,20 @@ them from its own Tabler font only.
 any script, symbol or emoji would show as tofu, or if an icon would come from
 the wrong font; building the icon index fails if a pack names an icon its font
 lacks.
+
+## VPN
+
+The shield in the bar lights up while a VPN is up: right click turns it on or
+off, left click opens a panel with what is connected and the saved
+connections. Every Proton server comes from Proton's own app
+(`modules.protonvpn.enable`); a WireGuard file from anywhere is one command:
+
+```sh
+vpn                  # up NAME or down
+vpn toggle           # the last one used
+vpn add proton.conf  # import a WireGuard file; vpn remove NAME
+vpn app              # Proton VPN: every server, fastest, by country
+```
 
 ## Shortcuts
 

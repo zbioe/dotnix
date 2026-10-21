@@ -19,7 +19,6 @@
     "${config.home.homeDirectory}/.config/emacs/bin"
     "${config.home.homeDirectory}/.local/bin"
     "${config.home.homeDirectory}/.emacs.d/bin"
-    "${config.home.homeDirectory}/.emacs.d/bin"
     "${config.home.homeDirectory}/.cache/bun/bin"
     "${config.home.homeDirectory}/bin"
     "${config.home.homeDirectory}/go/bin"

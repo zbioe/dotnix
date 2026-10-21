@@ -15,6 +15,7 @@
       name = "bx";
     };
     usbKey.enable = true;
+    protonvpn.enable = true;
     keyboard = {
       layout = "us";
       model = "";
@@ -52,7 +53,7 @@
     enable = true;
     enable32Bit = true;
     extraPackages = with pkgs; [
-      rocmPackages.clr.icd # OpenCL para tarefas pesadas
+      rocmPackages.clr.icd # OpenCL for heavy compute
     ];
   };
 

@@ -50,6 +50,7 @@ let
       "ethernet" = "settings_ethernet";
       "ethernet-off" = "signal_disconnected";
       "shield-check" = "verified_user";
+      "shield-off" = "remove_moderator";
       "palette" = "palette";
       "keyboard" = "keyboard";
       "clipboard" = "content_paste";
@@ -159,6 +160,10 @@ rec {
     {
       name = "shield-check";
       title = "VPN";
+    }
+    {
+      name = "shield-off";
+      title = "VPN off";
     }
     {
       name = "palette";
@@ -284,6 +289,7 @@ rec {
         "ethernet" = "md-ethernet";
         "ethernet-off" = "md-ethernet_cable_off";
         "shield-check" = "md-shield_check";
+        "shield-off" = "md-shield_off_outline";
         "palette" = "md-palette";
         "keyboard" = "md-keyboard";
         "clipboard" = "md-clipboard_outline";
@@ -343,6 +349,7 @@ rec {
         "ethernet" = "ethernet-port";
         "ethernet-off" = "unplug";
         "shield-check" = "shield-check";
+        "shield-off" = "shield-off";
         "palette" = "palette";
         "keyboard" = "keyboard";
         "clipboard" = "clipboard";
