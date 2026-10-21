@@ -1,0 +1,292 @@
+# Mango session (the login session, see system/desktop). The shell (bar,
+# panels, notifications, lock, wallpaper) is noctalia (home/desktop/noctalia).
+{
+  lib,
+  osConfig,
+  config,
+  pkgs,
+  ...
+}:
+let
+  # the default terminal, running a command
+  terms = {
+    foot = "foot -e";
+    alacritty = "alacritty -e";
+    ghostty = "ghostty -e";
+    kitty = "kitty";
+  };
+  main = config.dotnix.desktop.terminals.default;
+  term = terms.${if main == null then "foot" else main};
+  inherit (import ./session.nix { inherit pkgs term; }) terminal toggleMic annotate;
+  stateDir = "${config.xdg.stateHome}/theme";
+
+  # Super+W, back to the previous tag. mango's own `view,-1` counts the
+  # special (scratch) tag as a tag and lands on it; this remembers the
+  # previous normal one instead (the IPC never reports the special tag
+  # active, so it never gets in), and the special tag stays Super+S only
+  prevTag = "$XDG_RUNTIME_DIR/mango-prev-tag";
+  tagHistory = pkgs.writeShellScript "mango-tag-history" ''
+    # mango's IPC answers a moment after the session starts
+    until mon=$(${mmsg} get all-monitors 2>/dev/null |
+      ${pkgs.jq}/bin/jq -er '[.monitors[] | select(.active)][0].name'); do
+      sleep 1
+    done
+    cur=""
+    ${mmsg} watch tags "$mon" |
+      ${pkgs.jq}/bin/jq --unbuffered -r '[.tags[] | select(.is_active) | .index] | map(tostring) | join("|")' |
+      while read -r tags; do
+        if [ -n "$tags" ] && [ "$tags" != "$cur" ]; then
+          [ -n "$cur" ] && echo "$cur" > "${prevTag}"
+          cur=$tags
+        fi
+      done
+  '';
+  tagBack = pkgs.writeShellScript "mango-tag-back" ''
+    prev=$(cat "${prevTag}" 2>/dev/null) || prev=1
+    exec ${mmsg} dispatch "view,$prev"
+  '';
+  mmsg = "${config.wayland.windowManager.mango.package}/bin/mmsg";
+
+  # every bind with what it does: mango's binds and the noctalia "Shortcuts"
+  # panel (Super+/, home/desktop/noctalia) both come from this list
+  keys =
+    let
+      k = group: key: action: desc: {
+        inherit
+          group
+          key
+          action
+          desc
+          ;
+      };
+    in
+    [
+      (k "Apps" "SUPER,Return" "spawn_shell,${terminal}" "Terminal (with tmux)")
+      (k "Apps" "SUPER,p" "spawn,noctalia msg panel-toggle launcher" "App launcher (noctalia)")
+      (k "Apps" "SUPER+SHIFT,b" "spawn,uwsm app -- librewolf" "Browser (LibreWolf)")
+      (k "Apps" "SUPER+ALT,n" "spawn,uwsm app -- nautilus" "Files (Nautilus)")
+      (k "Apps" "SUPER,y" "spawn,${term} yazi" "Files in the terminal (yazi)")
+      (k "Apps" "SUPER+SHIFT,p" "spawn_shell,hyprpicker | wl-copy"
+        "Color picker: copy a color from the screen"
+      )
+
+      (k "System" "SUPER,slash" "spawn,noctalia msg panel-toggle dotnix/keys:list" "This shortcut list")
+      (k "System" "SUPER,v" "spawn,noctalia msg panel-toggle clipboard" "Clipboard history")
+      (k "System" "SUPER,n" "spawn,noctalia msg notification-clear-active"
+        "Dismiss the notifications on screen"
+      )
+      # no IPC for it: opening the history marks it seen
+      (k "System" "SUPER+SHIFT,n"
+        "spawn_shell,noctalia msg panel-open control-center notifications && noctalia msg panel-close"
+        "Mark notifications as read (clears the bell's dot)"
+      )
+      (k "System" "SUPER+CTRL,n" "spawn,noctalia msg notification-dnd-toggle" "Toggle do not disturb")
+      (k "System" "SUPER+SHIFT,r" "spawn,noctalia msg session lock" "Lock the screen")
+      (k "System" "SUPER+SHIFT,u" "spawn,rebuild" "Update the system (rebuild)")
+      (k "System" "SUPER+SHIFT,x" "quit" "Quit the session (mango)")
+
+      (k "Screenshot" "NONE,Print" "spawn_shell,grim -g \"$(slurp)\" - | wl-copy" "Area to the clipboard")
+      (k "Screenshot" "SHIFT,Print"
+        "spawn_shell,AREA=$(slurp) && sleep 2 && grim -g \"$AREA\" - | wl-copy"
+        "Area to the clipboard after 2 s"
+      )
+      (k "Screenshot" "SUPER,Print" "spawn_shell,${annotate}" "Area to annotate (satty)")
+      (k "Screenshot" "SUPER+SHIFT,y"
+        "spawn_shell,grim -g \"$(slurp)\" - | tesseract stdin stdout | wl-copy"
+        "Copy the text in an area (OCR)"
+      )
+
+      (k "Audio and brightness" "SUPER+SHIFT,o" "spawn,wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.1+"
+        "Volume up"
+      )
+      (k "Audio and brightness" "SUPER+SHIFT,i" "spawn,wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.1-"
+        "Volume down"
+      )
+      (k "Audio and brightness" "SUPER+SHIFT,m" "spawn,wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"
+        "Toggle mute"
+      )
+      (k "Audio and brightness" "NONE,XF86AudioRaiseVolume"
+        "spawn,wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.1+"
+        "Volume up"
+      )
+      (k "Audio and brightness" "NONE,XF86AudioLowerVolume"
+        "spawn,wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.1-"
+        "Volume down"
+      )
+      (k "Audio and brightness" "NONE,XF86AudioMute" "spawn,wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"
+        "Toggle mute"
+      )
+      (k "Audio and brightness" "NONE,XF86AudioMicMute" "spawn,${toggleMic}" "Toggle microphone mute")
+      (k "Audio and brightness" "NONE,XF86MonBrightnessUp" "spawn,brightnessctl s +5%" "Brightness up")
+      (k "Audio and brightness" "NONE,XF86MonBrightnessDown" "spawn,brightnessctl s 5%-"
+        "Brightness down"
+      )
+
+      (k "Windows" "SUPER,h" "focusdir,left" "Focus the window on the left")
+      (k "Windows" "SUPER,l" "focusdir,right" "Focus the window on the right")
+      (k "Windows" "SUPER,k" "focusdir,up" "Focus the window above")
+      (k "Windows" "SUPER,j" "focusdir,down" "Focus the window below")
+      (k "Windows" "SUPER+SHIFT,h" "exchange_client,left" "Swap with the window on the left")
+      (k "Windows" "SUPER+SHIFT,l" "exchange_client,right" "Swap with the window on the right")
+      (k "Windows" "SUPER+SHIFT,k" "exchange_client,up" "Swap with the window above")
+      (k "Windows" "SUPER+SHIFT,j" "exchange_client,down" "Swap with the window below")
+      (k "Windows" "SUPER,f" "togglefullscreen" "Fullscreen")
+      (k "Windows" "SUPER+SHIFT,q" "killclient" "Close the window")
+      (k "Windows" "SUPER,minus" "minimized" "Minimize (hide) the window")
+      (k "Windows" "SUPER+SHIFT,minus" "restore_minimized" "Bring back a minimized window, one per press")
+
+      (k "Tags" "SUPER,w" "spawn,${tagBack}" "Back to the previous tag (never the special one)")
+      (k "Tags" "SUPER,s" "toggle_special_tag" "Show/hide the special (scratch) tag")
+      (k "Tags" "SUPER+SHIFT,s" "tag_special_tag" "Move the window to the special tag")
+    ]
+    ++ builtins.concatMap (
+      n:
+      let
+        key = toString (if n == 10 then 0 else n);
+      in
+      [
+        (k "Tags" "SUPER,${key}" "view,${toString n}" "Go to tag ${toString n}")
+        (k "Tags" "SUPER+SHIFT,${key}" "tag,${toString n}" "Move the window to tag ${toString n}")
+      ]
+    ) (builtins.genList (i: i + 1) 10);
+
+  # window_rule helper: open windows of an app_id on a tag
+  onTag =
+    tag: appId: extra:
+    "tags:${toString tag},${extra}app_id:${appId}";
+in
+{
+  options.dotnix.desktop.mango.enable = lib.mkEnableOption "the mango session" // {
+    default = osConfig.dotnix.desktop.mango.enable;
+  };
+
+  config = lib.mkIf config.dotnix.desktop.mango.enable {
+    wayland.windowManager.mango = {
+      enable = true;
+      systemd.enable = false; # uwsm handles the session (system/desktop)
+
+      topPrefixes = [ "source" ];
+
+      settings = {
+        # active theme colors (borders etc.), see home/theme
+        source = "${stateDir}/current/mango.conf";
+
+        tag_num = 10; # Super+0 is tag 10
+
+        # look: flat, no gaps, borders, rounding or effects
+        animations = 0;
+        border_px = 0;
+        border_radius = 0;
+        gap_inner_horizontal = 0;
+        gap_inner_vertical = 0;
+        gap_outer_horizontal = 0;
+        gap_outer_vertical = 0;
+        blur = 0;
+        shadows = 0;
+
+        # master-stack, new windows go to the stack
+        tag_rule = "id:*,layout_name:tile";
+        new_is_master = 0;
+        default_master_factor = 0.5;
+
+        sloppy_focus = 0;
+        cursor_size = config.home.pointerCursor.size;
+        cursor_theme = config.home.pointerCursor.name;
+
+        xkb_rules_layout = "us";
+        xkb_rules_variant = "intl";
+        device_rule = [
+          "name:kanata-internal,kb_layout:br,kb_variant:thinkpad"
+          "name:kanata-external,kb_layout:us,kb_variant:intl"
+        ];
+
+        monitor_rule = "name:DP-1,width:1920,height:1080,refresh:180,x:0,y:0,scale:1";
+
+        window_rule = [
+          (onTag 2 "^librewolf$" "")
+          (onTag 3 "^brave-browser$" "")
+          (onTag 5 "^discord$" "is_open_silent:1,")
+          (onTag 6 "^gimp" "")
+          (onTag 8 "^workpuls-agent$" "is_open_silent:1,")
+          (onTag 9 "^(alacritty|foot)$" "")
+          (onTag 10 "^emacs$" "")
+          "is_floating:1,app_id:^org.pulseaudio.pavucontrol$"
+          "is_floating:1,app_id:^nm-connection-editor$"
+          "is_floating:1,app_id:^.blueman-manager-wrapped$"
+          # `rebuild` (home/desktop/rebuild.nix): over whatever is open
+          "is_floating:1,width:1100,height:700,app_id:^dotnix-rebuild$"
+          # its password prompt and log window (zenity)
+          "is_floating:1,app_id:^(org\\.gnome\\.)?[Zz]enity$"
+          # the browsers' "<site> is sharing your screen" bar (no app_id): its
+          # Hide button asks to be minimized, which mango ignores unless allowed
+          # per window
+          "ignore_minimize:0,title:(is sharing|está compartilhando) (your screen|a window|this tab|sua tela|uma janela|esta guia)"
+        ];
+
+        exec_once = [
+          "uwsm app -- noctalia"
+          "uwsm app -- librewolf"
+          terminal
+          "uwsm app -- discord"
+          "emacsclient -cn ~/dev/"
+        ];
+
+        bind = map (k: "${k.key},${k.action}") keys;
+      };
+
+      # private, unversioned binds (macros keymode etc.); must stay last: it
+      # switches key_mode, and anything after it would land in that mode
+      extraConfig = ''
+        source_optional=${config.xdg.configHome}/mango/priv.conf
+      '';
+    };
+
+    # read by the noctalia "Shortcuts" panel (home/desktop/noctalia)
+    xdg.configFile."mango/keys.json".source = (pkgs.formats.json { }).generate "keys.json" (
+      map (k: { inherit (k) group key desc; }) keys
+      ++ [
+        {
+          group = "System";
+          key = "SUPER,m";
+          desc = "Macro mode (private binds in ~/.config/mango/priv.conf; Esc leaves)";
+        }
+      ]
+    );
+
+    # the tag history of Super+W, for the whole session (restarted if mango's
+    # IPC drops, e.g. after a config reload)
+    systemd.user.services.mango-tag-history = {
+      Unit = {
+        Description = "Previous normal tag for Super+W (mango)";
+        PartOf = [ "graphical-session.target" ];
+        After = [ "graphical-session.target" ];
+      };
+      Service = {
+        ExecStart = "${tagHistory}";
+        Restart = "always";
+        RestartSec = 2;
+      };
+      Install.WantedBy = [ "graphical-session.target" ];
+    };
+
+    dotnix.desktop.noctalia.plugins.keys = {
+      src = ./plugin;
+      manifest = {
+        name = "Shortcuts";
+        icon = "keyboard";
+        description = "Every mango bind with what it does.";
+        panel = [
+          {
+            id = "list";
+            entry = "list.luau";
+            width = 560;
+            height = 720;
+            placement = "attached";
+            position = "auto";
+          }
+        ];
+      };
+      files."keys.json" = config.xdg.configFile."mango/keys.json".source;
+    };
+  };
+}

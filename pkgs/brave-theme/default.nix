@@ -14,7 +14,7 @@
 #    from Preferences, written by `prelaunch` before Brave starts.
 # Switching live: `theme` copies the new pack into the folder and Brave
 # rereads it when its BrowserThemeColor policy is unset (the reload service
-# in default/brave.nix sets it for a moment). The seed changes on the
+# in system/desktop/browsers/brave.nix sets it for a moment). The seed changes on the
 # next start; the color scheme (dark/light) follows the portal live.
 {
   lib,

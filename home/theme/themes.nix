@@ -1,5 +1,5 @@
 # Themes available to `theme` (home/theme) and to the boot screens
-# (modules/theme-boot.nix): base16 schemes per mode, optional Doom theme.
+# (system/desktop/boot-screens.nix): base16 schemes per mode, optional Doom theme.
 { pkgs }:
 let
   schemeFile = name: "${pkgs.base16-schemes}/share/themes/${name}.yaml";

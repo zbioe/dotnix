@@ -1,7 +1,4 @@
-# NixOS snowflake in the colors of one base16 scheme: lambdas in the
-# opposite-mode color (base05) and the theme's blue muted towards the
-# background (57%: the teal of assets/wallpaper-gruvbox.jpg). Used for the
-# wallpaper (home/theme) and the boot screens (modules/theme-boot.nix).
+# The NixOS snowflake in the colors of a base16 scheme (wallpaper, boot screens)
 {
   pkgs,
   lib,

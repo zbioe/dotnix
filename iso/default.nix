@@ -38,7 +38,7 @@
   };
 
   users.users.root = {
-    openssh.authorizedKeys.keys = import ../default/keys.nix;
+    openssh.authorizedKeys.keys = import ../system/core/keys.nix;
   };
 
   environment.systemPackages = with pkgs; [

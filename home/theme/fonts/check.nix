@@ -18,7 +18,7 @@ let
       )
       (
         {
-          default = catalog.default;
+          inherit (catalog) default;
         }
         // lib.mapAttrs' (n: lib.nameValuePair "presets.${n}") catalog.presets
       )
@@ -46,12 +46,13 @@ pkgs.runCommand "fonts-check"
       pkgs.python3
     ];
     FONTCONFIG_FILE = fontsConf;
-    sample = sample;
+    inherit sample;
     # the icons the setup shows: its private use area characters
     icons = lib.concatMapStrings builtins.readFile [
-      ../../ui/noctalia.nix
-      ../../ui/mango.nix
+      ../../desktop/noctalia/default.nix
+      ../../desktop/mango/default.nix
       ../default.nix
+      ../theme.sh
     ];
     ui = lib.concatMapStringsSep "\n" (f: f.name) catalog.roles.ui;
     mono = lib.concatMapStringsSep "\n" (f: f.name) catalog.roles.mono;

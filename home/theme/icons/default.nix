@@ -1,6 +1,7 @@
 # Icons switched live by `theme icons` (icons.sh): the bar's pack, any tag's
 # or glyph's own icon and the app icon theme live in ~/.local/state/theme/icons
 {
+  config,
   lib,
   pkgs,
   noctalia,
@@ -10,7 +11,7 @@ let
   catalog = import ./catalog.nix { inherit pkgs noctalia; };
 in
 {
-  options.theme.icons = {
+  options.dotnix.theme.icons = {
     index = lib.mkOption {
       type = lib.types.package;
       readOnly = true;
@@ -52,5 +53,5 @@ in
     };
   };
 
-  config.home.packages = [ catalog.appThemes ];
+  config.home.packages = lib.mkIf config.dotnix.theme.enable [ catalog.appThemes ];
 }

@@ -56,7 +56,7 @@ icon_bar() {
 }
 
 # noctalia merges every *.toml of its folder: the tags' labels and font, and
-# the bar's glyphs from the pack's font (patches/noctalia-glyph-override.patch)
+# the bar's glyphs from the pack's font (overlays/patches/noctalia-glyph-override.patch)
 icon_write() {
   local p map glyphs
   p=$(icon_pack)

@@ -1,86 +1,69 @@
-{ lib, pkgs, ... }:
+{ inputs, ... }:
 {
   imports = [
-    ./hardware.nix
+    ../common.nix
+    ./hardware-configuration.nix
+    inputs.hardware.nixosModules.common-pc
+    inputs.hardware.nixosModules.common-cpu-amd
+    inputs.hardware.nixosModules.common-cpu-amd-pstate
+    inputs.hardware.nixosModules.common-gpu-amd
+    inputs.hardware.nixosModules.common-pc-ssd
   ];
 
-  # the login password as a hash in /persist, outside the (public) flake
-  users.users.zbioe = {
-    hashedPassword = lib.mkForce null;
-    hashedPasswordFile = "/persist/secrets/zbioe.passwd";
-  };
+  networking.hostName = "bx";
 
-  modules = {
-    host = {
-      name = "bx";
+  dotnix = {
+    hardware = {
+      graphics.amd = {
+        enable = true;
+        compute.enable = true;
+      };
+      keyboard = {
+        layout = "us";
+        variant = "intl";
+      };
     };
-    usbKey.enable = true;
-    protonvpn.enable = true;
-    keyboard = {
-      layout = "us";
-      model = "";
-      variant = "intl";
+    storage = {
+      disk = {
+        enable = true;
+        luks = "/dev/disk/by-uuid/8e7e951a-5b4c-4bfe-92f2-57d1f88da1d7";
+        efi = "/dev/disk/by-uuid/12CE-A600";
+        swap = "/dev/disk/by-partuuid/87f16c7f-16be-46da-ab99-db8f719b49a0";
+      };
+      impermanence.enable = true;
+      usbKey.enable = true;
+      snapshots = {
+        enable = true;
+        exclude = [
+          {
+            path = ".cache";
+            keep = false;
+          }
+          { path = "Downloads"; }
+        ];
+      };
+      # Proton Drive (`backup setup` once)
+      backup = {
+        enable = true;
+        exclude = [
+          "Mail" # already on the mail server
+          "bkp"
+        ];
+        # persisted and outside the snapshots (/ is wiped at boot)
+        cacheDir = "/var/lib/nodatacow/backup";
+      };
     };
-    snapshots = {
-      enable = true;
-      exclude = [
-        {
-          path = ".cache";
-          keep = false;
-        }
-        { path = "Downloads"; }
-      ];
-    };
-    # Proton Drive (`backup setup` once), see modules/backup.nix
-    backup = {
-      enable = true;
-      exclude = [
-        "Mail" # already on the mail server
-        "bkp"
-      ];
-      # persisted and outside the snapshots (/ is wiped at boot)
-      cacheDir = "/var/lib/nodatacow/backup";
-    };
+    services.ai.ollama.rocm = "11.0.0";
   };
 
   # a desktop (no battery): full speed always; amd-pstate is already active
   # (nixos-hardware common-cpu-amd-pstate)
   powerManagement.cpuFreqGovernor = "performance";
 
-  services.xserver.videoDrivers = [ "amdgpu" ];
-
-  hardware.graphics = {
-    enable = true;
-    enable32Bit = true;
-    extraPackages = with pkgs; [
-      rocmPackages.clr.icd # OpenCL for heavy compute
-    ];
-  };
-
-  environment.persistence."/persist" = {
-    hideMounts = true;
-    directories = [
-      "/var/log"
-      "/var/lib/bluetooth"
-      "/var/lib/bitcoin"
-      "/var/lib/nixos"
-      "/var/lib/systemd/coredump"
-      "/etc/NetworkManager/system-connections"
-      "/var/lib/systemd/resolved"
-    ];
-    files = [
-      "/etc/hosts"
-      "/etc/machine-id"
-      "/etc/ssh/ssh_host_ed25519_key"
-      "/etc/ssh/ssh_host_ed25519_key.pub"
-      "/etc/ssh/ssh_host_rsa_key"
-      "/etc/ssh/ssh_host_rsa_key.pub"
-    ];
-  };
-  services.ollama = {
-    package = pkgs.ollama-rocm;
-    rocmOverrideGfx = "11.0.0";
-  };
+  # the MediaTek Wi-Fi drops out with PCIe power saving
+  boot.extraModprobeConfig = ''
+    options mt7921e disable_aspm=1
+  '';
 
   # DO NOT CHANGE IT
   system.stateVersion = "25.11";

@@ -1,0 +1,2 @@
+# repeated keys (boot.x = ...; boot.y = ...;) read better spread out
+disabled = [ "repeated_keys" ]

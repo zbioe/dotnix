@@ -1,22 +1,39 @@
-{ pkgs, ... }:
+{ inputs, ... }:
 {
   imports = [
-    ./hardware.nix
+    ../common.nix
+    ./hardware-configuration.nix
+    inputs.hardware.nixosModules.lenovo-thinkpad-e14-amd
   ];
 
-  modules = {
-    host = {
-      name = "te";
+  networking.hostName = "te";
+
+  dotnix = {
+    hardware = {
+      graphics.amd = {
+        enable = true;
+        compute.enable = true;
+      };
+      keyboard = {
+        layout = "br";
+        model = "thinkpad";
+        variant = "thinkpad";
+      };
     };
-    protonvpn.enable = true;
-    keyboard = {
-      layout = "br";
-      model = "thinkpad";
-      variant = "thinkpad";
+    storage = {
+      disk = {
+        enable = true;
+        luks = "/dev/disk/by-uuid/6809fd8d-bbe9-4415-b5f0-f57a64ce7443";
+        efi = "/dev/disk/by-uuid/BE46-97A6";
+        swap = "/dev/disk/by-partuuid/353ac003-1244-4840-973a-37c8911a2e3e";
+      };
+      impermanence.enable = true;
+      # the stick of the old keyfile: `sudo dotnix-key adopt /dev/sdX` once
+      usbKey.enable = true;
     };
   };
 
-  # force deep sleep
+  # full speed on AC, saving on battery
   services.tlp = {
     enable = true;
     settings = {
@@ -28,38 +45,7 @@
 
       CPU_DRIVER_OPMODE_ON_AC = "active";
       CPU_DRIVER_OPMODE_ON_BAT = "active";
-
-      # DEVICES_TO_DISABLE_ON_STARTUP = "bluetooth";
     };
-  };
-
-  services.xserver.videoDrivers = [ "amdgpu" ];
-
-  hardware.graphics = {
-    enable = true;
-    enable32Bit = true;
-    extraPackages = with pkgs; [
-      rocmPackages.clr.icd # OpenCL for heavy compute
-    ];
-  };
-
-  environment.persistence."/persist" = {
-    hideMounts = true;
-    directories = [
-      "/var/log"
-      "/var/lib/bluetooth"
-      "/var/lib/nixos"
-      "/var/lib/systemd/coredump"
-      "/etc/NetworkManager/system-connections"
-    ];
-    files = [
-      "/etc/hosts"
-      "/etc/machine-id"
-      "/etc/ssh/ssh_host_ed25519_key"
-      "/etc/ssh/ssh_host_ed25519_key.pub"
-      "/etc/ssh/ssh_host_rsa_key"
-      "/etc/ssh/ssh_host_rsa_key.pub"
-    ];
   };
 
   # DO NOT CHANGE IT

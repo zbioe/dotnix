@@ -100,7 +100,7 @@ EOF
   dconf write /org/gnome/desktop/interface/monospace-font-name "'$mono $mono_size'"
 }
 
-# open terminals: foot (patches/foot-osc50-font.patch) takes the font from
+# open terminals: foot (overlays/patches/foot-osc50-font.patch) takes the font from
 # OSC 50 written to its pty, also the one under a tmux client; the others
 # ignore it and reload their files instead
 font_osc() {

@@ -21,7 +21,7 @@ buildNpmPackage rec {
     hash = "sha256-dtFsM4xeiBoF9mNRC8Y1RN1/boW/cGVim4UZBFUCBtc=";
   };
 
-  patches = [ ../../patches/darkreader-theme-bridge.patch ];
+  patches = [ ./theme-bridge.patch ];
 
   npmDepsHash = "sha256-FsuIsoVHYOBnG0RiryCoKmh3B8f/FbOihMPh3c7nKXw=";
   buildPhase = ''

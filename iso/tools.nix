@@ -1,17 +1,12 @@
-# Tools on both ISOs (minimal and full):
-#   dotnix-install  partition a disk (modules/disk-layout.nix), create a host
-#                   for this machine in the flake and install it
-#   dotnix-mount    open and mount an installed disk on /mnt (recovery), then
-#                   `nixos-enter` to work inside it
-# plus what a recovery needs: disks, btrfs, LUKS, and restic/rclone to get
-# files back from the backup (modules/backup.nix).
+# On both ISOs: dotnix-install (a disk and a host for this machine),
+# dotnix-mount (recovery) and the tools a recovery needs.
 {
   lib,
   pkgs,
   ...
 }:
 let
-  # the directories default/ bind-mounts from the nodatacow subvolume
+  # the directories bind-mounted from the nodatacow subvolume
   nodatacowDirs = [
     "docker"
     "flatpak"
@@ -21,7 +16,7 @@ let
   ];
 
   mountAll = ''
-    # subvolumes of modules/disk-layout.nix on /mnt
+    # subvolumes of system/storage/disk.nix on /mnt
     mount_all() {
       local o=compress=zstd,noatime
       mount -o subvol=root,$o /dev/mapper/enc /mnt
@@ -152,39 +147,40 @@ let
       cp -r /etc/dotnix/. "$flake"
       chmod -R u+w "$flake"
       mkdir -p "$flake/hosts/$host"
-      nixos-generate-config --root /mnt --no-filesystems --show-hardware-config 2>/dev/null > "$flake/hosts/$host/hardware.nix"
-      # the login password as a hash in /persist, outside the flake
-      passwd=""
+      nixos-generate-config --root /mnt --no-filesystems --show-hardware-config 2>/dev/null > "$flake/hosts/$host/hardware-configuration.nix"
+      # the login password as a hash in /persist, outside the flake; none keeps weakPass
+      password="core.user.passwordFile = null;"
       if [ -n "$upw" ]; then
         mkdir -p /mnt/persist/secrets
         printf '%s' "$upw" | mkpasswd -m yescrypt -s > /mnt/persist/secrets/zbioe.passwd
         chmod 600 /mnt/persist/secrets/zbioe.passwd
-        passwd='
-        # hash written by dotnix-install (outside the flake)
-        users.users.zbioe = {
-          hashedPassword = lib.mkForce null;
-          hashedPasswordFile = "/persist/secrets/zbioe.passwd";
-        };'
+        password=""
       fi
       unset upw upw2
       cat > "$flake/hosts/$host/default.nix" <<EOF
-      # $host: installed by dotnix-install on $(date +%F) (iso/tools.nix)
-      { lib, ... }:
+      # $host: installed by dotnix-install on $(date +%F)
       {
-        imports = [ ./hardware.nix ];
-      $passwd
+        imports = [
+          ../common.nix
+          ./hardware-configuration.nix
+        ];
 
-        modules = {
-          host.name = "$host";
-          disk = {
-            enable = true;
-            impermanence = $impermanence;
-          };
-          snapshots.enable = true;
-          # Proton Drive backup: \`backup setup\` once
-          backup = {
-            enable = true;
-            cacheDir = "/var/lib/nodatacow/backup";
+        networking.hostName = "$host";
+
+        dotnix = {
+          $password
+          # its home, the first time (then \`nh home switch\`)
+          core.homeActivation.enable = true;
+          hardware.keyboard.layout = "br";
+          storage = {
+            disk.enable = true;
+            impermanence.enable = $impermanence;
+            snapshots.enable = true;
+            # Proton Drive: \`backup setup\` once
+            backup = {
+              enable = true;
+              cacheDir = "/var/lib/nodatacow/backup";
+            };
           };
         };
 

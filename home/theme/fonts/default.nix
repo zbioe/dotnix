@@ -13,7 +13,7 @@ let
   lines = lib.concatStringsSep "\n";
 in
 {
-  options.theme.fonts.script = lib.mkOption {
+  options.dotnix.theme.fonts.script = lib.mkOption {
     type = lib.types.lines;
     readOnly = true;
     description = "Shell code of `theme font`, included in `theme`.";
@@ -37,7 +37,7 @@ in
     '';
   };
 
-  config = {
+  config = lib.mkIf config.dotnix.theme.enable {
     # sans-serif, serif, monospace and emoji for every app that asks fontconfig
     xdg.configFile."fontconfig/conf.d/60-theme-fonts.conf".text = ''
       <?xml version="1.0"?>

@@ -33,7 +33,7 @@ theme list
 Fonts switch live too: interface, serif, monospace, terminal and emoji each
 pick from a catalog (`home/theme/fonts/catalog.nix`, all installed), with
 their own sizes. GTK, Qt, the bar, Emacs, every terminal (foot through
-`patches/foot-osc50-font.patch`, tmux inside too), Discord and Chromium/Brave
+`overlays/patches/foot-osc50-font.patch`, tmux inside too), Discord and Chromium/Brave
 pages change at once; LibreWolf on its next start. Right click the palette
 icon, or:
 
@@ -64,7 +64,7 @@ theme icons apps tela           # app icons (theme icons apps lists them)
 theme icons tint on             # app icons in the theme's color
 ```
 
-The bar's glyphs need `patches/noctalia-glyph-override.patch`: noctalia draws
+The bar's glyphs need `overlays/patches/noctalia-glyph-override.patch`: noctalia draws
 them from its own Tabler font only.
 
 `nix flake check` fails if a catalog family is missing from its package, if
@@ -77,7 +77,7 @@ lacks.
 The shield in the bar lights up while a VPN is up: right click turns it on or
 off, left click opens a panel with what is connected and the saved
 connections. Every Proton server comes from Proton's own app
-(`modules.protonvpn.enable`); a WireGuard file from anywhere is one command:
+(`dotnix.network.vpn.proton.enable`); a WireGuard file from anywhere is one command:
 
 ```sh
 vpn                  # up NAME or down
@@ -89,7 +89,7 @@ vpn app              # Proton VPN: every server, fastest, by country
 ## Shortcuts
 
 `Super+/` opens a list of every key binding. The list is generated from the
-same file that defines the binds (`home/ui/mango.nix`), so it never goes out
+same file that defines the binds (`home/desktop/mango`), so it never goes out
 of date.
 
 ![shortcuts](./assets/shortcuts.png)
@@ -106,6 +106,43 @@ The ones I use most:
 | `Super+Shift+Q` | close window |
 | `Super+V` | clipboard history |
 | `Super+Shift+U` | rebuild system and home |
+
+## Layout
+
+```
+flake.nix     inputs; the outputs are built by lib/
+lib/          hosts, homes, packages, checks; the option helpers
+hosts/        one folder per machine (only what differs) and common.nix,
+              the desktop both machines run
+system/       NixOS: core, nix, hardware, storage, network, desktop,
+              services, packages
+home/         home-manager: shell, editors, desktop, theme, dev
+pkgs/         our own packages
+overlays/     nixpkgs packages with our patches
+checks/       flake checks and VM tests
+iso/          the install images
+```
+
+Anything that can be turned off is an option, and the option's name is the
+file's path: `dotnix.storage.backup` lives in `system/storage/backup.nix`.
+Everything is off by default; `hosts/common.nix` and `home/default.nix` turn
+on the desktop, the hosts add their hardware. Options come in three kinds:
+
+```nix
+dotnix.desktop.browsers.enable = true;      # a group: all of it,
+dotnix.desktop.browsers = {                 # or item by item, with a main one
+  chromium.enable = true;
+  default = "chromium";
+};
+dotnix.desktop.greeter = "sddm";            # one of a kind
+dotnix.packages.dev = {                     # a package group
+  enable = true;
+  exclude = [ "julia" ];
+};
+```
+
+The home follows the host's choices (`osConfig`): the desktop and the main
+browser picked in `hosts/` are the home's defaults too.
 
 ## Install
 
@@ -127,7 +164,8 @@ Then `rebuild` (or `Super+Shift+U`) rebuilds system and home.
 ## Checks
 
 ```sh
-nix flake check            # every host evaluates, Go tests, formatting
+nix flake check            # every host evaluates, Go tests, fonts, formatting, dead code, lint
+nix run .#options -- bx    # every dotnix.* option of a host and its value
 nix fmt                    # format
 nix build .#usb-key-test   # boots VMs: unlock from a stick, PIN, password fallback
 nix build .#usb-stick-test # boots a VM from a multiboot stick
@@ -154,7 +192,7 @@ else (GRUB, Ventoy) is refused. Running `create` again replaces the stick's key
 and revokes the old one. No stick, a stick for another machine or a wrong PIN
 (three times): the password is asked.
 
-Enable it on a host with `modules.usbKey.enable = true;`.
+Enable it on a host with `dotnix.storage.usbKey.enable = true;`.
 
 ## Multiboot stick
 
