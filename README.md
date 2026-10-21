@@ -33,9 +33,10 @@ theme list
 
 Fonts switch live too: interface, serif, monospace, terminal and emoji each
 pick from a catalog (`home/theme/fonts/catalog.nix`, all installed), with
-their own sizes. GTK, Qt, the bar, Emacs, kitty/ghostty/alacritty, Discord
-and Chromium/Brave pages change at once; foot and LibreWolf on their next
-start. Right click the palette icon, or:
+their own sizes. GTK, Qt, the bar, Emacs, every terminal (foot through
+`patches/foot-osc50-font.patch`, tmux inside too), Discord and Chromium/Brave
+pages change at once; LibreWolf on its next start. Right click the palette
+icon, or:
 
 ```sh
 theme font                      # what is in use
@@ -43,10 +44,34 @@ theme font term "Iosevka"       # ROLE FAMILY: ui serif mono term emoji
 theme font size +1              # every size; or: size term 9
 theme font preset plex          # theme font presets
 theme font list mono
+theme font save work            # your own preset: fonts, sizes and icons
+theme font default              # what reset goes back to (default clear: the catalog's)
+theme font reset
 ```
 
-`nix flake check` fails if a catalog family is missing from its package or
-if any script, symbol or emoji would show as tofu.
+Every icon of the bar comes from an icon pack (Tabler, Nerd Font, Material
+Symbols outlined, rounded and sharp, Lucide, Font Awesome;
+`home/theme/icons/catalog.nix`): the tags and every glyph a widget draws, each
+state included (Wi-Fi levels, volume, battery...). Any of them can take any icon
+of the pack, and app icons pick from 16 themes (Papirus, Numix, Tela, Qogir,
+Fluent, WhiteSur, Colloid, Kora, Breeze, Yaru...), from the Icons and Apps tabs or:
+
+```sh
+theme icons pack lucide         # theme icons packs
+theme icons find dice           # icons of the pack by name
+theme icons tag 6 dice-6        # a tag's own icon; theme icons reset 6
+theme icons bar wifi wifi-high  # a bar glyph's own icon; theme icons reset wifi
+theme icons apps tela           # app icons (theme icons apps lists them)
+theme icons tint on             # app icons in the theme's color
+```
+
+The bar's glyphs need `patches/noctalia-glyph-override.patch`: noctalia draws
+them from its own Tabler font only.
+
+`nix flake check` fails if a catalog family is missing from its package, if
+any script, symbol or emoji would show as tofu, or if an icon would come from
+the wrong font; building the icon index fails if a pack names an icon its font
+lacks.
 
 ## Shortcuts
 

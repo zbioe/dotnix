@@ -27,7 +27,6 @@ in
     ./kdeconnect.nix
   ];
 
-  # icons: Papirus-Dark/-Light, picked by `theme` (home/theme)
   home.pointerCursor = {
     package = pkgs.bibata-cursors;
     name = "Bibata-Modern-Ice";
@@ -100,6 +99,10 @@ in
     };
     foot = {
       enable = true;
+      # OSC 50: `theme font` changes the font of open windows (tmux inside too)
+      package = pkgs.foot.overrideAttrs (old: {
+        patches = (old.patches or [ ]) ++ [ ../../patches/foot-osc50-font.patch ];
+      });
       server.enable = true;
       settings = {
         main = {
@@ -172,7 +175,6 @@ in
     brightnessctl
     wl-clipboard
     hyprpicker
-    papirus-icon-theme
     nautilus
     gruvbox-gtk-theme
     gruvbox-material-gtk-theme

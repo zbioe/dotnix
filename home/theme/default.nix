@@ -599,7 +599,7 @@ let
         [Appearance]
         color_scheme_path=${placeholder "out"}/${qt}-colors.conf
         custom_palette=true
-        icon_theme=${if mode == "dark" then cfg.icons.dark else cfg.icons.light}
+        icon_theme=
         standard_dialogs=xdgdesktopportal
         style=Fusion
       '';
@@ -766,6 +766,7 @@ let
     name = "theme";
     runtimeInputs = with pkgs; [
       coreutils
+      jq # theme icons
       glib
       procps
       dconf
@@ -798,10 +799,11 @@ let
       mode=$(cat "$state/mode" 2>/dev/null || echo ${cfg.default.mode})
 
       usage() {
-        echo "usage: theme [list | status | set NAME [dark|light] | mode dark|light | toggle | auto [on|off|toggle] | entries | pick LINE | apply | font ...]"
+        echo "usage: theme [list | status | set NAME [dark|light] | mode dark|light | toggle | auto [on|off|toggle] | entries | pick LINE | apply | font ... | icons ...]"
       }
 
       ${cfg.fonts.script}
+      ${cfg.icons.script}
 
       # today's sunrise and sunset ("HH:MM HH:MM", local time) at the position
       # in $state/location ("LAT LON", written by the locator); the fixed
@@ -844,11 +846,7 @@ let
             grep -v '^gtk-theme-name=\|^gtk-icon-theme-name=\|^gtk-application-prefer-dark-theme=' \
               "${gtkSettings}/gtk-$g.0.ini"
             echo "gtk-theme-name=nix-$name-$mode"
-            if [ "$mode" = dark ]; then
-              echo "gtk-icon-theme-name=${cfg.icons.dark}"
-            else
-              echo "gtk-icon-theme-name=${cfg.icons.light}"
-            fi
+            echo "gtk-icon-theme-name=$(icon_apps_theme "$mode")"
             # GTK4 has no dark variants of a named theme (libadwaita warns)
             if [ "$g" = 3 ]; then
               echo "gtk-application-prefer-dark-theme=$([ "$mode" = dark ] && echo 1 || echo 0)"
@@ -865,7 +863,10 @@ let
       qt_conf() {
         for qt in qt5ct qt6ct; do
           mkdir -p "$HOME/.config/$qt"
-          { cat "$state/current/$qt.conf"; font_qt_ini; } > "$HOME/.config/$qt/$qt.conf.tmp.$$"
+          {
+            sed "s/^icon_theme=.*/icon_theme=$(icon_apps_theme "$mode")/" "$state/current/$qt.conf"
+            font_qt_ini
+          } > "$HOME/.config/$qt/$qt.conf.tmp.$$"
           mv -f "$HOME/.config/$qt/$qt.conf.tmp.$$" "$HOME/.config/$qt/$qt.conf"
         done
       }
@@ -880,8 +881,8 @@ let
 
       # kitty/ghostty: reload config (open windows already got the palette)
       reload_terminals() {
-        pkill -USR1 -f '^/nix/store/[^ ]*/bin/\.?kitty(-wrapped)?( |$)' || true
-        pkill -USR2 -f '^/nix/store/[^ ]*/bin/\.?ghostty(-wrapped)?( |$)' || true
+        pkill -USR1 -f '^([^ ]*/)?\.?kitty(-wrapped)?( |$)' || true
+        pkill -USR2 -f '^([^ ]*/)?\.?ghostty(-wrapped)?( |$)' || true
       }
 
       apply() {
@@ -905,6 +906,7 @@ let
         logger -t theme "$name-$mode ($cmd, from $(ps -o args= -p "$PPID" 2>/dev/null | cut -c1-100))" || true
         swap "$v" "$state/current"
         font_write
+        icon_write
 
         # GTK4/libadwaita (patched gtk reloads it live)
         mkdir -p "$HOME/.config/gtk-4.0"
@@ -915,11 +917,7 @@ let
         # GTK3, plain GTK4, icons, and the dark/light preference (portal, browsers)
         dconf write /org/gnome/desktop/interface/color-scheme "'prefer-$mode'"
         dconf write /org/gnome/desktop/interface/gtk-theme "'nix-$name-$mode'"
-        if [ "$mode" = dark ]; then
-          dconf write /org/gnome/desktop/interface/icon-theme "'${cfg.icons.dark}'"
-        else
-          dconf write /org/gnome/desktop/interface/icon-theme "'${cfg.icons.light}'"
-        fi
+        dconf write /org/gnome/desktop/interface/icon-theme "'$(icon_apps_theme "$mode")'"
 
         # running terminals (foot directly, tmux panes via their own pty)
         for pts in /dev/pts/[0-9]*; do
@@ -1053,15 +1051,28 @@ let
         apply)
           apply
           ;;
+        # the tags' icons (home/theme/icons): only the bar changes
+        icons)
+          shift
+          if icon_cmd "$@"; then
+            icon_write
+            gtk_settings
+            qt_conf
+            dconf write /org/gnome/desktop/interface/icon-theme "'$(icon_apps_theme "$mode")'"
+            icon_status
+          fi
+          ;;
         # fonts apply on their own: the colors stay as they are
         font)
           shift
           if font_cmd "$@"; then
             font_write
+            icon_write
             gtk_settings
             qt_conf
             discord_css
             reload_terminals
+            font_osc
             if command -v emacsclient >/dev/null; then
               timeout 5 emacsclient --eval "(load \"$fstate/emacs.el\" nil t)" >/dev/null 2>&1 || true
             fi
@@ -1079,7 +1090,10 @@ let
   schemeType = types.either types.path (types.attrsOf types.str);
 in
 {
-  imports = [ ./fonts ];
+  imports = [
+    ./fonts
+    ./icons
+  ];
 
   options.theme = {
     themes = mkOption {
@@ -1114,16 +1128,6 @@ in
           "light"
         ];
         default = "dark";
-      };
-    };
-    icons = {
-      dark = mkOption {
-        type = types.str;
-        default = "Papirus-Dark";
-      };
-      light = mkOption {
-        type = types.str;
-        default = "Papirus-Light";
       };
     };
     auto = {
@@ -1184,7 +1188,11 @@ in
     programs.bat.config.theme = "base16";
     programs.opencode.tui.theme = "system";
     programs.kitty.extraConfig = "include ${stateDir}/current/kitty.conf";
-    programs.ghostty.settings.config-file = [ "?${stateDir}/current/ghostty" ];
+    programs.ghostty.settings = {
+      config-file = [ "?${stateDir}/current/ghostty" ];
+      # `theme` reloads it on every switch: no toast each time
+      app-notifications = "no-config-reload";
+    };
     programs.alacritty.settings.general.import = [ "${stateDir}/current/alacritty.toml" ];
     # fish: colors of the active theme, reloaded live through `set -U __nix_theme`
     # (see `theme apply`); new shells also re-send the terminal palette

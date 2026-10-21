@@ -39,23 +39,40 @@ font_file() {
 font_px() { awk -v p="$1" 'BEGIN { printf "%d", p * 4 / 3 + 0.5 }'; }
 font_dec() { awk -v p="$1" 'BEGIN { printf "%.1f", p }'; }
 
+# the generic families as chosen: font_fontconfig UI SERIF MONO EMOJI
+font_fontconfig() {
+  # binding "same": an app naming a font keeps it (a "strong" alias beat it,
+  # as fontconfig adds monospace to any spacing=100 query)
+  cat <<EOF
+<?xml version="1.0"?>
+<!DOCTYPE fontconfig SYSTEM "urn:fontconfig:fonts.dtd">
+<fontconfig>
+  <alias binding="same"><family>sans-serif</family><prefer><family>$1</family></prefer></alias>
+  <alias binding="same"><family>system-ui</family><prefer><family>$1</family></prefer></alias>
+  <alias binding="same"><family>serif</family><prefer><family>$2</family></prefer></alias>
+  <alias binding="same"><family>monospace</family><prefer><family>$3</family></prefer></alias>
+  <alias binding="same"><family>emoji</family><prefer><family>$4</family></prefer></alias>
+  <!-- icons (private use area) and emoji before any other fallback: strong
+       outranks the language match that let Latin fonts with their own glyphs
+       there win (Cascadia NF, IBM Plex Sans TC, DejaVu); last, so a font asked
+       by name still draws everything it has -->
+  <match target="pattern">
+    <edit name="family" mode="append_last" binding="strong">
+      <string>Symbols Nerd Font</string>
+      <string>$4</string>
+    </edit>
+  </match>
+</fontconfig>
+EOF
+}
+
 font_write() {
-  local ui serif mono term emoji ui_size mono_size term_size editor_size px
+  local ui serif mono term emoji ui_size mono_size term_size editor_size px scale
   ui=$(font_get ui) serif=$(font_get serif) mono=$(font_get mono) term=$(font_get term) emoji=$(font_get emoji)
   ui_size=$(font_get ui_size) mono_size=$(font_get mono_size) term_size=$(font_get term_size) editor_size=$(font_get editor_size)
   px=$(font_px "$ui_size")
 
-  font_file "$fstate/fontconfig.conf" <<EOF
-<?xml version="1.0"?>
-<!DOCTYPE fontconfig SYSTEM "urn:fontconfig:fonts.dtd">
-<fontconfig>
-  <alias binding="strong"><family>sans-serif</family><prefer><family>$ui</family><family>$emoji</family></prefer></alias>
-  <alias binding="strong"><family>system-ui</family><prefer><family>$ui</family><family>$emoji</family></prefer></alias>
-  <alias binding="strong"><family>serif</family><prefer><family>$serif</family><family>$emoji</family></prefer></alias>
-  <alias binding="strong"><family>monospace</family><prefer><family>$mono</family><family>$emoji</family></prefer></alias>
-  <alias binding="strong"><family>emoji</family><prefer><family>$emoji</family></prefer></alias>
-</fontconfig>
-EOF
+  font_fontconfig "$ui" "$serif" "$mono" "$emoji" | font_file "$fstate/fontconfig.conf"
   printf '[main]\nfont=%s:size=%s\n' "$term" "$term_size" | font_file "$fstate/foot.ini"
   printf 'font_family %s\nfont_size %s\n' "$term" "$term_size" | font_file "$fstate/kitty.conf"
   printf 'font-family = ""\nfont-family = "%s"\nfont-size = %s\n' "$term" "$term_size" | font_file "$fstate/ghostty"
@@ -72,12 +89,28 @@ EOF
   # Chromium's fixed size keeps its default ratio to the normal one (13/16)
   printf '{"font":{"ui":"%s","serif":"%s","mono":"%s","size":%s,"fixedSize":%s}}\n' \
     "$ui" "$serif" "$mono" "$px" "$((px * 13 / 16))" | font_file "$state/font.json"
-  # noctalia merges every *.toml of its folder, later names winning
-  printf '[shell]\nfont_family = "%s"\n' "$ui" | font_file "$HOME/.config/noctalia/font.toml"
+  # noctalia merges every *.toml of its folder, later names winning; the
+  # bar and the panels (icons too) scale with the interface size, 12 being 1.0
+  scale=$(awk -v s="$ui_size" 'BEGIN { printf "%.3f", s / 12 }')
+  printf '[shell]\nfont_family = "%s"\n[accessibility]\nui_scale = %s\n[bar.main]\nscale = %s\n' \
+    "$ui" "$scale" "$scale" | font_file "$HOME/.config/noctalia/font.toml"
 
   dconf write /org/gnome/desktop/interface/font-name "'$ui $ui_size'"
   dconf write /org/gnome/desktop/interface/document-font-name "'$serif $ui_size'"
   dconf write /org/gnome/desktop/interface/monospace-font-name "'$mono $mono_size'"
+}
+
+# open terminals: foot (patches/foot-osc50-font.patch) takes the font from
+# OSC 50 written to its pty, also the one under a tmux client; the others
+# ignore it and reload their files instead
+font_osc() {
+  local seq pts
+  seq=$(printf '\033]50;%s:size=%s\007' "$(font_get term)" "$(font_get term_size)")
+  for pts in /dev/pts/[0-9]*; do
+    if [ -O "$pts" ] && [ -w "$pts" ]; then
+      printf '%s' "$seq" | timeout 1 tee "$pts" >/dev/null 2>&1 || true
+    fi
+  done
 }
 
 # pieces of the files `theme` writes whole (settings.ini, qtct, Discord)
@@ -92,6 +125,26 @@ font_discord_css() {
   printf ':root {\n  --font-primary: "%s", sans-serif !important;\n  --font-display: "%s", sans-serif !important;\n  --font-headline: "%s", sans-serif !important;\n  --font-code: "%s", monospace !important;\n}\n' \
     "$ui" "$ui" "$ui" "$mono"
 }
+
+# fonts and icons as they are, "key=value" lines (the icons' ones prefixed)
+font_snapshot() {
+  local k
+  for k in $font_roles; do echo "$k=$(font_get "$k")"; done
+  for k in $font_sizes; do echo "${k}_size=$(font_get "${k}_size")"; done
+  sed 's/^/icons./' "$istate" 2>/dev/null || true
+}
+
+# make fonts and icons what a snapshot on stdin says
+font_restore() {
+  local s
+  s=$(cat)
+  mkdir -p "$fstate"
+  { grep -v '^icons\.' <<<"$s" || true; } | font_file "$fstate/state"
+  { grep '^icons\.' <<<"$s" || true; } | sed 's/^icons\.//' | font_file "$istate"
+}
+
+# the user's own presets ("name<TAB>key=value" lines), whole snapshots
+font_slot() { awk -F'\t' -v n="$1" '$1 == n { print $2 }' "$fstate/slots" 2>/dev/null || true; }
 
 font_status() {
   local r
@@ -112,7 +165,8 @@ font_list() {
 }
 
 font_usage() {
-  echo "usage: theme font [status | list [ROLE] | ROLE FAMILY | size [ROLE] N|+N|-N | preset NAME | presets | reset]"
+  echo "usage: theme font [status | list [ROLE] | ROLE FAMILY | size [ROLE] N|+N|-N | presets | preset NAME"
+  echo "                   | save NAME | delete NAME | default [clear] | reset]"
   echo "  ROLE: $font_roles; size ROLE: $font_sizes (none: all)"
 }
 
@@ -126,13 +180,53 @@ font_cmd() {
       font_list "${2:-}"
       return 1
       ;;
-    presets) awk -F'\t' '{ print $1 }' <<<"$FONT_PRESETS" | sort -u; return 1 ;;
-    preset)
-      v=$(awk -F'\t' -v p="${2:-}" '$1 == p { print $2 }' <<<"$FONT_PRESETS")
-      [ -n "$v" ] || { echo "theme: no font preset '${2:-}' (theme font presets)" >&2; exit 1; }
-      while IFS='=' read -r r new; do font_put "$r" "$new"; done <<<"$v"
+    presets)
+      awk -F'\t' '{ print $1 }' <<<"$FONT_PRESETS" | sort -u
+      awk -F'\t' '!seen[$1]++ { print $1 " (yours)" }' "$fstate/slots" 2>/dev/null || true
+      return 1
       ;;
-    reset) rm -f "$fstate/state" ;;
+    preset)
+      v=$(font_slot "${2:-}")
+      if [ -n "$v" ]; then
+        font_restore <<<"$v"
+      else
+        v=$(awk -F'\t' -v p="${2:-}" '$1 == p { print $2 }' <<<"$FONT_PRESETS")
+        [ -n "$v" ] || { echo "theme: no font preset '${2:-}' (theme font presets)" >&2; exit 1; }
+        while IFS='=' read -r r new; do font_put "$r" "$new"; done <<<"$v"
+      fi
+      ;;
+    save)
+      [[ "${2:-}" =~ ^[[:alnum:]][[:alnum:]\ _.-]{0,23}$ ]] ||
+        { echo "theme: a preset name has up to 24 letters, digits, spaces, _ . -" >&2; exit 1; }
+      [ -z "$(awk -F'\t' -v p="$2" '$1 == p' <<<"$FONT_PRESETS")" ] ||
+        { echo "theme: '$2' is a built-in preset" >&2; exit 1; }
+      { awk -F'\t' -v n="$2" '$1 != n' "$fstate/slots" 2>/dev/null || true; font_snapshot | sed "s/^/$2\t/"; } |
+        font_file "$fstate/slots"
+      echo "saved preset '$2'"
+      return 1
+      ;;
+    delete)
+      [ -n "$(font_slot "${2:-}")" ] || { echo "theme: no preset of yours named '${2:-}'" >&2; exit 1; }
+      awk -F'\t' -v n="$2" '$1 != n' "$fstate/slots" | font_file "$fstate/slots"
+      return 1
+      ;;
+    # what reset goes back to: this snapshot, or the catalog's without one
+    default)
+      if [ "${2:-}" = clear ]; then
+        rm -f "$fstate/default"
+      else
+        font_snapshot | font_file "$fstate/default"
+        echo "fonts and icons as they are now are the default"
+      fi
+      return 1
+      ;;
+    reset)
+      if [ -s "$fstate/default" ]; then
+        font_restore <"$fstate/default"
+      else
+        rm -f "$fstate/state" "$istate"
+      fi
+      ;;
     size)
       shift
       local roles=$font_sizes

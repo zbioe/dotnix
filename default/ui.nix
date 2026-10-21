@@ -4,6 +4,7 @@
   pkgs,
   username,
   unstable,
+  noctalia,
   ...
 }:
 let
@@ -170,6 +171,8 @@ in
   # every font `theme font` can pick, so any choice applies live
   fonts.packages =
     fonts.packages
+    # the icon packs of the bar's tags (home/theme/icons)
+    ++ (import ../home/theme/icons/catalog.nix { inherit pkgs noctalia; }).packages
     ++ (with pkgs; [
       meslo-lgs-nf
       montserrat

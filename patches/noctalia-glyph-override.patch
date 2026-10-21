@@ -1,0 +1,324 @@
+diff -ruN a/src/app/application_ui.cpp b/src/app/application_ui.cpp
+--- a/src/app/application_ui.cpp	2026-10-20 23:39:44.147993029 -0300
++++ b/src/app/application_ui.cpp	2026-10-20 23:40:19.886927750 -0300
+@@ -1,3 +1,4 @@
++#include "render/text/glyph_registry.h"
+ #include "app/main_loop.h"
+ #include "application.h"
+ #include "application_internal.h"
+@@ -139,6 +140,8 @@
+     m_asyncTextureCache.setMakeCurrentCallback([this]() { m_renderContext.backend().makeCurrentNoSurface(); });
+   }
+   m_renderContext.setTextFontFamily(m_configService.config().shell.fontFamily);
++  GlyphRegistry::setOverrides(m_configService.config().shell.glyphMap);
++  m_renderContext.setGlyphOverrideFont(m_configService.config().shell.glyphFont);
+   Style::setRtl(i18n::Service::instance().rtl());
+   m_renderContext.setTextBaseDirection(i18n::Service::instance().rtl());
+   m_wallpaper.initialize(m_wayland, &m_configService, &m_renderContext, &m_sharedTextureCache, &m_themeService);
+@@ -1076,6 +1079,24 @@
+       "shell-font-family"
+   );
+ 
++  std::string lastGlyphs = m_configService.config().shell.glyphFont + "\n" + m_configService.config().shell.glyphMap;
++  m_configService.addReloadCallback(
++      [this, lastGlyphs]() mutable {
++        const auto& shell = m_configService.config().shell;
++        std::string glyphs = shell.glyphFont + "\n" + shell.glyphMap;
++        if (glyphs == lastGlyphs) {
++          return;
++        }
++
++        lastGlyphs = std::move(glyphs);
++        GlyphRegistry::setOverrides(shell.glyphMap);
++        m_renderContext.setGlyphOverrideFont(shell.glyphFont);
++        m_bar.reload();
++        m_panelManager.requestLayout();
++      },
++      "shell-glyphs"
++  );
++
+   bool lastRtl = i18n::Service::instance().rtl();
+   m_configService.addReloadCallback(
+       [this, lastRtl]() mutable {
+diff -ruN a/src/config/config_types.h b/src/config/config_types.h
+--- a/src/config/config_types.h	2026-10-20 23:39:44.154811063 -0300
++++ b/src/config/config_types.h	2026-10-20 23:40:15.064003704 -0300
+@@ -1295,6 +1295,10 @@
+   bool settingsWindowTranslucent = false;
+   bool showLocation = true;
+   bool appIconColorize = false;
++  /// Icon font for the glyphs named in glyph_map, drawn instead of Tabler's
++  std::string glyphFont;
++  /// "name=U+XXXX,...": glyph names and their codepoints in glyph_font
++  std::string glyphMap;
+   std::optional<ColorSpec> appIconColor;
+   bool launchAppsAsSystemdServices = false;
+   std::string launchAppsCustomCommand;
+diff -ruN a/src/config/schema/config_schema.cpp b/src/config/schema/config_schema.cpp
+--- a/src/config/schema/config_schema.cpp	2026-10-20 23:39:44.155556147 -0300
++++ b/src/config/schema/config_schema.cpp	2026-10-20 23:40:15.065270704 -0300
+@@ -1668,6 +1668,8 @@
+         field(&ShellConfig::settingsWindowTranslucent, "settings_window_translucent"),
+         field(&ShellConfig::showLocation, "show_location"),
+         field(&ShellConfig::appIconColorize, "app_icon_colorize"),
++        stringIfNonEmptyField(&ShellConfig::glyphFont, "glyph_font"),
++        stringIfNonEmptyField(&ShellConfig::glyphMap, "glyph_map"),
+         colorSpecField(&ShellConfig::appIconColor, "app_icon_color", /*alwaysEmit=*/false),
+         field(&ShellConfig::launchAppsAsSystemdServices, "launch_apps_as_systemd_services"),
+         field(&ShellConfig::launchAppsCustomCommand, "launch_apps_custom_command"),
+diff -ruN a/src/render/render_context.cpp b/src/render/render_context.cpp
+--- a/src/render/render_context.cpp	2026-10-20 23:39:44.166810839 -0300
++++ b/src/render/render_context.cpp	2026-10-20 23:40:15.068702720 -0300
+@@ -164,6 +164,11 @@
+   ++m_textMetricsGeneration;
+ }
+ 
++void RenderContext::setGlyphOverrideFont(const std::string& path) {
++  makeCurrentNoSurface();
++  m_glyphRenderer.setOverrideFont(path);
++}
++
+ void RenderContext::setTextBaseDirection(bool rtl) {
+   if (m_textBaseDirRtl == rtl) {
+     return;
+diff -ruN a/src/render/render_context.h b/src/render/render_context.h
+--- a/src/render/render_context.h	2026-10-20 23:39:44.166810839 -0300
++++ b/src/render/render_context.h	2026-10-20 23:40:15.068354484 -0300
+@@ -37,6 +37,8 @@
+   // best-effort callers may ignore it, render paths must skip the frame.
+   bool makeCurrent(RenderTarget& target);
+   void setTextFontFamily(std::string family);
++  // shell.glyph_font: drawn for the codepoints GlyphRegistry overrides
++  void setGlyphOverrideFont(const std::string& path);
+   void setTextBaseDirection(bool rtl);
+   void notifyFontConfigChanged();
+ 
+diff -ruN a/src/render/text/cairo_glyph_renderer.cpp b/src/render/text/cairo_glyph_renderer.cpp
+--- a/src/render/text/cairo_glyph_renderer.cpp	2026-10-20 23:39:44.170010868 -0300
++++ b/src/render/text/cairo_glyph_renderer.cpp	2026-10-20 23:40:15.068209044 -0300
+@@ -2,6 +2,7 @@
+ 
+ #include "render/backend/render_backend.h"
+ #include "render/core/texture_manager.h"
++#include "render/text/glyph_registry.h"
+ 
+ #include <cairo-ft.h>
+ #include <cairo.h>
+@@ -111,6 +112,46 @@
+   m_cache.reserve(kMaxCacheEntries + 16);
+ }
+ 
++void CairoGlyphRenderer::dropOverrideFont() {
++  if (m_overrideCairoFace != nullptr) {
++    cairo_font_face_destroy(m_overrideCairoFace);
++    m_overrideCairoFace = nullptr;
++  }
++  if (m_overrideFace != nullptr) {
++    FT_Done_Face(m_overrideFace);
++    m_overrideFace = nullptr;
++  }
++  m_overridePath.clear();
++}
++
++void CairoGlyphRenderer::setOverrideFont(const std::string& fontPath) {
++  if (fontPath == m_overridePath) {
++    return;
++  }
++  invalidateGlyphTextures();
++  dropOverrideFont();
++  if (fontPath.empty() || m_ftLibrary == nullptr) {
++    return;
++  }
++  if (FT_New_Face(m_ftLibrary, fontPath.c_str(), 0, &m_overrideFace) != 0) {
++    m_overrideFace = nullptr;
++    return;
++  }
++  m_overrideCairoFace = cairo_ft_font_face_create_for_ft_face(m_overrideFace, 0);
++  if (m_overrideCairoFace == nullptr || cairo_font_face_status(m_overrideCairoFace) != CAIRO_STATUS_SUCCESS) {
++    dropOverrideFont();
++    return;
++  }
++  m_overridePath = fontPath;
++}
++
++CairoGlyphRenderer::FaceFor CairoGlyphRenderer::faceFor(char32_t codepoint) const {
++  if ((codepoint & GlyphRegistry::kOverrideBit) != 0) {
++    return {m_overrideFace, m_overrideCairoFace, codepoint & ~GlyphRegistry::kOverrideBit};
++  }
++  return {m_face, m_cairoFace, codepoint};
++}
++
+ void CairoGlyphRenderer::invalidateGlyphTextures() {
+   for (auto& [key, entry] : m_cache) {
+     if (m_textureManager != nullptr) {
+@@ -138,6 +179,7 @@
+   m_lru.clear();
+   m_cacheBytes = 0;
+ 
++  dropOverrideFont();
+   if (m_fontOptions != nullptr) {
+     cairo_font_options_destroy(m_fontOptions);
+     m_fontOptions = nullptr;
+@@ -183,19 +225,20 @@
+ 
+ CairoGlyphRenderer::TextMetrics
+ CairoGlyphRenderer::measureGlyph(float contentScale, char32_t codepoint, float fontSize) {
+-  if (m_face == nullptr || codepoint == 0 || fontSize <= 0.0F) {
++  const FaceFor f = faceFor(codepoint);
++  if (f.face == nullptr || codepoint == 0 || fontSize <= 0.0F) {
+     return {};
+   }
+ 
+   const float rasterSize = std::max(1.0F, fontSize * contentScale);
+   const float invScale = 1.0F / contentScale;
+ 
+-  const FT_UInt glyphIndex = FT_Get_Char_Index(m_face, codepoint);
++  const FT_UInt glyphIndex = FT_Get_Char_Index(f.face, f.codepoint);
+   if (glyphIndex == 0) {
+     return {};
+   }
+ 
+-  cairo_scaled_font_t* scaledFont = create_scaled_font(m_cairoFace, m_fontOptions, rasterSize);
++  cairo_scaled_font_t* scaledFont = create_scaled_font(f.cairoFace, m_fontOptions, rasterSize);
+   if (scaledFont == nullptr || cairo_scaled_font_status(scaledFont) != CAIRO_STATUS_SUCCESS) {
+     if (scaledFont != nullptr) {
+       cairo_scaled_font_destroy(scaledFont);
+@@ -228,15 +271,19 @@
+     return &it->second;
+   }
+ 
++  const FaceFor f = faceFor(codepoint);
++  if (f.face == nullptr) {
++    return nullptr;
++  }
+   const float rasterSize = std::max(1.0F, fontSize * contentScale);
+-  FT_Set_Pixel_Sizes(m_face, 0, static_cast<FT_UInt>(std::round(rasterSize)));
++  FT_Set_Pixel_Sizes(f.face, 0, static_cast<FT_UInt>(std::round(rasterSize)));
+ 
+-  const FT_UInt glyphIndex = FT_Get_Char_Index(m_face, codepoint);
++  const FT_UInt glyphIndex = FT_Get_Char_Index(f.face, f.codepoint);
+   if (glyphIndex == 0) {
+     return nullptr;
+   }
+ 
+-  cairo_scaled_font_t* scaledFont = create_scaled_font(m_cairoFace, m_fontOptions, rasterSize);
++  cairo_scaled_font_t* scaledFont = create_scaled_font(f.cairoFace, m_fontOptions, rasterSize);
+   if (scaledFont == nullptr || cairo_scaled_font_status(scaledFont) != CAIRO_STATUS_SUCCESS) {
+     if (scaledFont != nullptr) {
+       cairo_scaled_font_destroy(scaledFont);
+diff -ruN a/src/render/text/cairo_glyph_renderer.h b/src/render/text/cairo_glyph_renderer.h
+--- a/src/render/text/cairo_glyph_renderer.h	2026-10-20 23:39:44.170010868 -0300
++++ b/src/render/text/cairo_glyph_renderer.h	2026-10-20 23:40:15.067031710 -0300
+@@ -42,6 +42,9 @@
+   void initialize(const std::string& fontPath, RenderBackend* backend, TextureManager* textures);
+   void cleanup();
+ 
++  // Font for codepoints carrying GlyphRegistry::kOverrideBit; empty drops it.
++  void setOverrideFont(const std::string& fontPath);
++
+   // Drops the uploaded icon-glyph textures so they are re-rasterized on the next
+   // draw. Recovers from GPU memory loss across suspend/resume. Requires the
+   // render context to be current.
+@@ -84,6 +87,15 @@
+ 
+   using CacheMap = std::unordered_map<CacheKey, CacheEntry, CacheKeyHash>;
+ 
++  // the face and plain codepoint for a (maybe override) codepoint
++  struct FaceFor {
++    FT_Face face = nullptr;
++    cairo_font_face_t* cairoFace = nullptr;
++    char32_t codepoint = 0;
++  };
++  [[nodiscard]] FaceFor faceFor(char32_t codepoint) const;
++  void dropOverrideFont();
++
+   CacheEntry* lookupOrRasterize(float contentScale, char32_t codepoint, float fontSize);
+   void touch(CacheMap::iterator it);
+   void evict(CacheMap::iterator it);
+@@ -92,6 +104,9 @@
+   FT_Library m_ftLibrary = nullptr;
+   FT_Face m_face = nullptr;
+   cairo_font_face_t* m_cairoFace = nullptr;
++  FT_Face m_overrideFace = nullptr;
++  cairo_font_face_t* m_overrideCairoFace = nullptr;
++  std::string m_overridePath;
+   cairo_font_options_t* m_fontOptions = nullptr;
+   RenderBackend* m_backend = nullptr;
+   TextureManager* m_textureManager = nullptr;
+diff -ruN a/src/render/text/glyph_registry.cpp b/src/render/text/glyph_registry.cpp
+--- a/src/render/text/glyph_registry.cpp	2026-10-20 23:39:44.170010868 -0300
++++ b/src/render/text/glyph_registry.cpp	2026-10-20 23:40:15.066305824 -0300
+@@ -228,6 +228,43 @@
+ 
+ } // namespace
+ 
++namespace {
++  std::unordered_map<std::string, char32_t>& overrides() {
++    static std::unordered_map<std::string, char32_t> map;
++    return map;
++  }
++} // namespace
++
++void GlyphRegistry::setOverrides(std::string_view map) {
++  overrides().clear();
++  for (std::size_t start = 0; start < map.size();) {
++    const std::size_t end = std::min(map.find(',', start), map.size());
++    const std::string_view entry = map.substr(start, end - start);
++    if (const std::size_t eq = entry.find('='); eq != std::string_view::npos) {
++      if (auto cp = parseCodepointLiteral(entry.substr(eq + 1))) {
++        overrides()[std::string(entry.substr(0, eq))] = *cp | kOverrideBit;
++      }
++    }
++    start = end + 1;
++  }
++}
++
++char32_t GlyphRegistry::lookupOverridable(std::string_view name) {
++  const auto& map = overrides();
++  if (!map.empty()) {
++    const std::string key{name};
++    if (const auto it = map.find(key); it != map.end()) {
++      return it->second;
++    }
++    if (const auto alias = kAliases.find(key); alias != kAliases.end()) {
++      if (const auto it = map.find(std::string(alias->second)); it != map.end()) {
++        return it->second;
++      }
++    }
++  }
++  return lookup(name);
++}
++
+ bool GlyphRegistry::contains(std::string_view name) {
+   if (parseCodepointLiteral(name).has_value()) {
+     return true;
+diff -ruN a/src/render/text/glyph_registry.h b/src/render/text/glyph_registry.h
+--- a/src/render/text/glyph_registry.h	2026-10-20 23:39:44.170010868 -0300
++++ b/src/render/text/glyph_registry.h	2026-10-20 23:40:15.065737440 -0300
+@@ -16,6 +16,14 @@
+     std::string category;
+   };
+ 
++  // Codepoints of glyphs drawn from the override font (shell.glyph_font) carry this bit.
++  inline constexpr char32_t kOverrideBit = 0x200000;
++
++  // "name=U+XXXX,...": names drawn from the override font instead (shell.glyph_map).
++  void setOverrides(std::string_view map);
++  // lookup(), but an overridden name (or the Tabler name it aliases) gives its override.
++  [[nodiscard]] char32_t lookupOverridable(std::string_view name);
++
+   [[nodiscard]] bool contains(std::string_view name);
+   [[nodiscard]] char32_t lookup(std::string_view name);
+ 
+diff -ruN a/src/ui/controls/glyph.cpp b/src/ui/controls/glyph.cpp
+--- a/src/ui/controls/glyph.cpp	2026-10-20 23:39:44.193928630 -0300
++++ b/src/ui/controls/glyph.cpp	2026-10-20 23:40:15.066779212 -0300
+@@ -19,7 +19,7 @@
+ }
+ 
+ bool Glyph::setGlyph(std::string_view name) {
+-  char32_t cp = GlyphRegistry::lookup(name);
++  char32_t cp = GlyphRegistry::lookupOverridable(name);
+   if (cp == 0 || cp == m_glyphNode->codepoint())
+     return false;
+   m_glyphNode->setCodepoint(cp);

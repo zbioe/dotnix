@@ -12,23 +12,6 @@
   ...
 }:
 let
-  # one icon per tag (what usually lives there, see home/ui/mango.nix)
-  icons = {
-    "1" = "󱢢";
-    "2" = "";
-    "3" = "󱑴";
-    "4" = "󱪿";
-    "5" = "";
-    "6" = "󰇏";
-    "7" = "";
-    "8" = "󱂏";
-    "9" = "";
-    "10" = "";
-  };
-  workspaceIcons = lib.concatMapStringsSep "," (n: "${toString n}=${icons.${toString n}}") (
-    lib.range 1 10
-  );
-
   # where am I (GeoClue, Wi-Fi based) -> ~/.config/noctalia/location.toml;
   # noctalia merges every *.toml in its config dir
   locate = pkgs.writeShellApplication {
@@ -91,8 +74,32 @@ let
         state = "${config.xdg.stateHome}/theme";
         roles = lib.mapAttrs (_: map (f: f.name)) catalog.roles;
         inherit (catalog) default;
-        presets = lib.attrNames catalog.presets;
+        presets = lib.mapAttrsToList (name: p: p // { inherit name; }) catalog.presets;
+        inherit emojiPreviews;
+        iconIndex = config.theme.icons.index;
+        apps = config.theme.icons.apps;
+        appsDefault = "papirus";
+        appPreviews = "${config.theme.icons.appPreviews}/previews.json";
       };
+      # emoji go through the generic "emoji" family, whatever a label asks: each
+      # emoji font's preview drawn here, alone (pango, as the panel would)
+      emojiPreviews =
+        let
+          sample = pkgs.writeText "emoji-sample" "😀🫠🪿👍🏽❤️✨🇧🇷";
+        in
+        pkgs.runCommand "emoji-previews" { } ''
+          mkdir $out
+          ${lib.concatMapStrings (f: ''
+            printf '<fontconfig><dir>%s</dir><cachedir>%s</cachedir></fontconfig>' \
+              ${f.package}/share/fonts "$TMPDIR/cache" > fonts.conf
+            FONTCONFIG_FILE=$PWD/fonts.conf ${pkgs.pango.bin}/bin/pango-view --no-display \
+              --background=transparent --foreground='#9aa0a6' --font=${lib.escapeShellArg "${f.name} 40"} \
+              -o raw.png ${sample}
+            # same height, left-aligned on one canvas: every preview lines up
+            ${lib.getExe pkgs.imagemagick} raw.png -trim +repage -resize x96 -background none \
+              -gravity west -extent 960x96 $out/${lib.replaceStrings [ " " ] [ "-" ] f.name}.png
+          '') catalog.roles.emoji}
+        '';
       wifiJson = (pkgs.formats.json { }).generate "wifi.json" {
         command = "${config.home.profileDirectory}/bin/wifi-prefer";
       };
@@ -180,8 +187,8 @@ let
           {
             id = "fonts";
             entry = "fonts.luau";
-            width = 420;
-            height = 640;
+            width = 540;
+            height = 720;
             placement = "attached";
             position = "auto";
           }
@@ -253,6 +260,7 @@ in
         ../../patches/noctalia-workspace-label-map.patch
         ../../patches/noctalia-tray-menu.patch
         ../../patches/noctalia-ctrl-h-backspace.patch
+        ../../patches/noctalia-glyph-override.patch
       ];
     });
     customPalettes = config.theme.noctaliaPalettes;
@@ -263,9 +271,7 @@ in
         inherit (config.theme.default) mode;
       };
 
-      # tray and window icons drawn in the theme's colors (Discord's white
-      # tray icon included); the launcher keeps the full-color Papirus set
-      shell.app_icon_colorize = true;
+      # app_icon_colorize comes from `theme icons tint` (home/theme/icons)
 
       # everything here is declared: no first-run wizard (it shows on every
       # fresh home: the live ISO, a new install)
@@ -395,7 +401,8 @@ in
         };
         workspaces = {
           style = "minimal";
-          label_map = workspaceIcons;
+          # label_map (an icon per tag), font_family and font_weight come from
+          # `theme icons` (home/theme/icons), in ~/.config/noctalia/icons.toml
           hide_when_empty = true;
           focused_color = "primary";
           occupied_color = "on_surface";
@@ -425,7 +432,11 @@ in
           actions.middle = "panel-toggle dotnix/wifi:priority";
         };
         volume.show_label = false;
-        battery.show_label = false;
+        # a glyph, so it follows the icon pack
+        battery = {
+          show_label = false;
+          display_mode = "glyph";
+        };
 
         # fcitx's "us" says nothing (fixed layout); network and bluetooth
         # already have their own widgets

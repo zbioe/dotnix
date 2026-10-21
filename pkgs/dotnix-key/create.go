@@ -11,6 +11,7 @@ import (
 	"os"
 	"sort"
 	"strings"
+	"syscall"
 )
 
 const minPIN = 4
@@ -32,6 +33,27 @@ type target struct {
 	info luksInfo
 	gap  gapRange
 	cur  []byte
+	lock *os.File
+}
+
+// lockDisk holds the whole disk's BSD lock: udev then leaves its partition
+// table alone (no re-read making partitions vanish) while the gap changes.
+func lockDisk(path string) (*os.File, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	if err := syscall.Flock(int(f.Fd()), syscall.LOCK_EX); err != nil {
+		f.Close()
+		return nil, fmt.Errorf("lock %s: %w", path, err)
+	}
+	return f, nil
+}
+
+func (t target) unlock() {
+	if t.lock != nil {
+		t.lock.Close()
+	}
 }
 
 func (c *creator) printf(format string, args ...any) { fmt.Fprintf(c.out, format, args...) }
@@ -126,11 +148,21 @@ func (c *creator) prepare(device, luksPath string) (target, error) {
 	if luks.Disk == disk.Name {
 		return target{}, fmt.Errorf("%s holds the encrypted volume itself (%s)", disk.Path, luks.Path)
 	}
+	lock, err := lockDisk(disk.Path)
+	if err != nil {
+		return target{}, err
+	}
+	// the partitions as they are under the lock
+	if devs, err = c.fs.blockDevs(); err != nil {
+		lock.Close()
+		return target{}, err
+	}
 	g, cur, err := c.fs.diskGap(disk, devs)
 	if err != nil {
+		lock.Close()
 		return target{}, fmt.Errorf("%s: %w", disk.Path, err)
 	}
-	return target{disk: disk, luks: luks, info: info, gap: g, cur: cur}, nil
+	return target{disk: disk, luks: luks, info: info, gap: g, cur: cur, lock: lock}, nil
 }
 
 // checkGap refuses to overwrite what isn't ours (GRUB BIOS and Ventoy live there).
@@ -225,6 +257,7 @@ func (c *creator) create(device, luksPath string, withPIN bool) error {
 	if err != nil {
 		return err
 	}
+	defer t.unlock()
 	old, hasOld, err := c.checkGap(t)
 	if err != nil {
 		return err
@@ -327,6 +360,7 @@ func (c *creator) adopt(device, luksPath string, offset int64) error {
 	if err != nil {
 		return err
 	}
+	defer t.unlock()
 	if offset < t.gap.Start || offset+keySize > t.gap.End {
 		return fmt.Errorf("offset %d is outside the gap of %s (%d to %d)", offset, t.disk.Path, t.gap.Start, t.gap.End)
 	}

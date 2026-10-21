@@ -30,6 +30,7 @@
         inherit (home.packages.${system}) home-manager;
         inherit bwt base16;
         inherit unstable;
+        noctalia = noctalia.packages.${system}.default;
         home-module = home.nixosModules.home-manager;
       };
       # hosts made by dotnix-install (iso/tools.nix): any other folder in hosts/

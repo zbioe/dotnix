@@ -1,0 +1,114 @@
+# foot: xterm OSC 50 sets the font live (`theme font` sends it to every terminal)
+--- a/osc.c
++++ b/osc.c
+@@ -1498,6 +1498,11 @@
+     case 30:  /* Set tab title */
+         break;
+ 
++    case 50:  /* Set font (xterm): a fontconfig pattern, queries ignored */
++        if (string[0] != '\0' && string[0] != '?' && string[0] != '#')
++            term_font_set(term, string);
++        break;
++
+     case 52:  /* Copy to/from clipboard/primary */
+         osc_selection(term, string);
+         break;
+--- a/pgo/pgo.c
++++ b/pgo/pgo.c
+@@ -136,6 +136,12 @@
+     return false;
+ }
+ 
++bool
++config_font_parse(const char *pattern, struct config_font *font)
++{
++    return false;
++}
++
+ struct extraction_context *
+ extract_begin(enum selection_kind kind, bool strip_trailing_empty)
+ {
+--- a/terminal.c
++++ b/terminal.c
+@@ -1015,11 +1015,21 @@
+ {
+     const struct config *conf = term->conf;
+ 
++    /* OSC 50 replaces the configured fonts (bold/italic derive from it) */
++    struct config_font override = {.pattern = term->font_override};
++    struct config_font_list lists[4];
++    for (size_t i = 0; i < 4; i++)
++        lists[i] = conf->fonts[i];
++    if (term->font_override != NULL) {
++        lists[0] = (struct config_font_list){.count = 1, .arr = &override};
++        lists[1].count = lists[2].count = lists[3].count = 0;
++    }
++
+     const size_t counts[4] = {
+-        conf->fonts[0].count,
+-        conf->fonts[1].count,
+-        conf->fonts[2].count,
+-        conf->fonts[3].count,
++        lists[0].count,
++        lists[1].count,
++        lists[2].count,
++        lists[3].count,
+     };
+ 
+     /* Configure size (which may have been changed run-time) */
+@@ -1027,7 +1037,7 @@
+     for (size_t i = 0; i < 4; i++) {
+         names[i] = xmalloc(counts[i] * sizeof(names[i][0]));
+ 
+-        const struct config_font_list *font_list = &conf->fonts[i];
++        const struct config_font_list *font_list = &lists[i];
+ 
+         for (size_t j = 0; j < font_list->count; j++) {
+             const struct config_font *font = &font_list->arr[j];
+@@ -1145,6 +1155,20 @@
+     return success ? term_set_fonts(term, fonts, resize_grid) : success;
+ }
+ 
++bool
++term_font_set(struct terminal *term, const char *pattern)
++{
++    struct config_font font;
++    if (!config_font_parse(pattern, &font))
++        return false;
++
++    free(term->font_override);
++    term->font_override = font.pattern;
++    term->font_sizes[0][0] = (struct config_font){
++        .pt_size = font.pt_size, .px_size = font.px_size};
++    return reload_fonts(term, true);
++}
++
+ static bool
+ load_fonts_from_conf(struct terminal *term)
+ {
+@@ -1880,6 +1904,7 @@
+         fcft_destroy(term->fonts[i]);
+     for (size_t i = 0; i < 4; i++)
+         free(term->font_sizes[i]);
++    free(term->font_override);
+ 
+ 
+     free_custom_glyphs(
+--- a/terminal.h
++++ b/terminal.h
+@@ -461,6 +461,7 @@
+ 
+     struct fcft_font *fonts[4];
+     struct config_font *font_sizes[4];
++    char *font_override;  /* OSC 50: one font in place of the configured ones */
+     struct pt_or_px font_line_height;
+     float font_dpi;
+     float font_dpi_before_unmap;
+@@ -857,6 +858,7 @@
+ bool term_preferred_buffer_scale(const struct terminal *term);
+ bool term_update_scale(struct terminal *term);
+ bool term_font_size_increase(struct terminal *term);
++bool term_font_set(struct terminal *term, const char *pattern);
+ bool term_font_size_decrease(struct terminal *term);
+ bool term_font_size_reset(struct terminal *term);
+ bool term_font_dpi_changed(struct terminal *term, float old_scale);
