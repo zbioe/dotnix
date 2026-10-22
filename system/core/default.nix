@@ -5,6 +5,8 @@
     ./boot.nix
     ./security.nix
     ./secrets.nix
+    ./hardening.nix
+    ./time.nix
     ./compat.nix
     ./home-activation.nix
     ./updates.nix

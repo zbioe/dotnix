@@ -1,6 +1,7 @@
 {
   config,
   lib,
+  osConfig,
   unstable,
   dotlib,
   ...
@@ -16,6 +17,11 @@ in
   };
 
   config = lib.mkMerge [
+    # rootless Docker: every shell and app talks to your daemon
+    (lib.mkIf osConfig.dotnix.services.containers.docker.rootless {
+      home.sessionVariables.DOCKER_HOST = "unix://$XDG_RUNTIME_DIR/docker.sock";
+      systemd.user.sessionVariables.DOCKER_HOST = "unix://%t/docker.sock";
+    })
     (lib.mkIf cfg.node.enable {
       home.packages = with unstable; [
         nodejs_22 # node

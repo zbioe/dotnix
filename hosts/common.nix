@@ -12,6 +12,13 @@
       updates.enable = true;
       # the login password, searx's key and the Wi-Fi networks: secrets/common.yaml
       secrets.enable = true;
+      # privsec.dev's Desktop Linux Hardening, what fits a desktop
+      hardening = {
+        kernel.enable = true;
+        sysctl.enable = true;
+        coreDumps.block = true;
+      };
+      time.nts.enable = true;
     };
 
     hardware = {
@@ -39,9 +46,15 @@
     network = {
       ssh.enable = true;
       wifi.enable = true;
+      dnssec.enable = true;
+      privacy = {
+        macAddress.enable = true;
+        hideHostname.enable = true;
+      };
       vpn = {
         proton.enable = true;
         warp.enable = true;
+        killswitch.enable = true;
       };
     };
 
@@ -66,7 +79,12 @@
 
     services = {
       containers = {
-        docker.enable = true;
+        # the system's images and volumes stay in /var/lib/nodatacow/docker
+        # until moved: rootless = false brings them back for that
+        docker = {
+          enable = true;
+          rootless = true;
+        };
         distrobox.enable = true;
       };
       vms = {
@@ -81,7 +99,16 @@
         protonBridge.enable = true;
         mu.enable = true;
       };
-      flatpak.enable = true;
+      flatpak = {
+        enable = true;
+        restrict.enable = true;
+        allow."com.albiononline.AlbionOnline" = ''
+          [Context]
+          sockets=x11;pulseaudio;
+          shared=network;ipc;
+          devices=dri;shm;
+        '';
+      };
       searx.enable = true;
       kdeconnect.enable = true;
       localsend.enable = true;

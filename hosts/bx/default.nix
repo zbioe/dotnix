@@ -40,6 +40,10 @@
             keep = false;
           }
           { path = "Downloads"; }
+          {
+            path = ".local/share/docker";
+            keep = false;
+          }
         ];
       };
       # Proton Drive (`backup setup` once)
@@ -48,6 +52,7 @@
         exclude = [
           "Mail" # already on the mail server
           "bkp"
+          ".local/share/docker" # images and containers: rebuilt, not restored
         ];
         # persisted and outside the snapshots (/ is wiped at boot)
         cacheDir = "/var/lib/nodatacow/backup";

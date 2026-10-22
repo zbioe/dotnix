@@ -105,6 +105,26 @@ pw copy pass://VAULT/ITEM [username|email|note]    # pw search TEXT finds the UR
 pw run terraform apply                             # ~/.env values like pass://Dev/AWS/key, resolved for one command
 ```
 
+## Hardening
+
+Following [Privacy Guides](https://www.privacyguides.org/en/desktop-browsers/),
+[arkenfox](https://github.com/arkenfox/user.js) and
+[privsec.dev](https://privsec.dev/posts/linux/desktop-linux-hardening/), as far
+as they fit a desktop (SMT and user namespaces stay):
+
+- kernel: hardened boot parameters (memory, IOMMU) and sysctls, no core dumps;
+- time: chrony with NTS (authenticated, several operators);
+- DNS: over TLS to Cloudflare, with DNSSEC;
+- network: a stable MAC address of its own per network, no hostname in DHCP;
+- VPN: while a WireGuard tunnel is up, the physical interfaces carry only the
+  tunnel, the LAN and DHCP (Proton's kill switch lets programs bound to the
+  interface out);
+- Docker rootless (the docker group is root by another name); Flatpak apps
+  get nothing unless allowed one by one;
+- LibreWolf: its hardening locked, HTTPS only, nothing fetched ahead, a closed
+  list of extensions; uBlock's rules and the sites that stay logged in are
+  private (`secrets/librewolf.yaml`, `librewolf-save`).
+
 ## Secrets
 
 The login password, searx's key and the Wi-Fi networks (names included) live
