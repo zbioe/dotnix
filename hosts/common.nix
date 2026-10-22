@@ -120,6 +120,7 @@
       cloud.enable = true;
       ai.enable = true;
       security.enable = true;
+      pentest.enable = true;
       media.enable = true;
       office.enable = true;
       chat.enable = true;

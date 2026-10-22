@@ -8,6 +8,7 @@
     ./cloud.nix
     ./ai.nix
     ./security.nix
+    ./pentest.nix
     ./media.nix
     ./office.nix
     ./chat.nix

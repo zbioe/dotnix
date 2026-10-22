@@ -166,6 +166,29 @@ The ones I use most:
 | `Super+V` | clipboard history |
 | `Super+Shift+U` | rebuild system and home |
 
+## Editors
+
+Doom Emacs and a small Neovim, both in Nix. Doom itself comes from the flake
+and its config lives in `home/editors/doom` (edited in place, `doom sync` runs
+as a user service on change); Emacs is built with vterm, pdf-tools, mu4e and
+every tree-sitter grammar. Mail is mu4e over mbsync, Proton through its Bridge,
+the password from `secrets/mail.yaml`. `doom doctor` runs clean.
+
+Neovim (`home/editors/nvim`) is a short `init.lua`: tree-sitter, LSP, blink
+completion, mini, fzf-lua, oil and gitsigns, no framework.
+
+Both take their colours from `theme` and format on save with the very tools
+`nix flake check` uses, so a file looks the same whichever editor wrote it:
+nixfmt for Nix, gofumpt, shfmt, black, stylua, prettier.
+
+## Labs
+
+`dotnix.packages.pentest` is the HackTheBox and HTB Academy toolbox: recon,
+web, Active Directory, password cracking, reverse engineering, forensics,
+pivoting and Metasploit. `$SECLISTS` points at the wordlists. Professional
+video and audio editing (DaVinci Resolve, Kdenlive, Ardour, Reaper, OBS and
+the rest) is in `dotnix.packages.media`.
+
 ## Layout
 
 ```
