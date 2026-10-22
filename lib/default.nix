@@ -73,7 +73,7 @@ let
             unstable
             dotlib
             ;
-          inherit (inputs) base16;
+          inherit (inputs) base16 doomemacs;
           stateVersion = "25.11";
           ai-memory = inputs.ai-memory.packages.${system}.default;
           # the host's choices, as home-manager names them inside NixOS

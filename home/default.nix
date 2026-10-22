@@ -19,9 +19,7 @@
   home.homeDirectory = "/home/${username}";
 
   home.sessionPath = [
-    "${config.home.homeDirectory}/.config/emacs/bin"
     "${config.home.homeDirectory}/.local/bin"
-    "${config.home.homeDirectory}/.emacs.d/bin"
     "${config.home.homeDirectory}/bin"
     "${config.home.homeDirectory}/go/bin"
   ];

@@ -65,6 +65,12 @@
       url = "github:Mic92/sops-nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    # Doom Emacs (home/editors/emacs.nix): its packages come from `doom sync`
+    doomemacs = {
+      # held at the last release with modules in tree; v3 fetches them apart
+      url = "github:doomemacs/doomemacs/43912efdcbc9d63f84becfd6cfde86dec04c168d";
+      flake = false;
+    };
     # long-term memory shared by the coding agents (home/dev)
     ai-memory.url = "github:akitaonrails/ai-memory";
     # Proton's own build of the newest stable Proton Pass (pkgs/proton-pass)

@@ -31,6 +31,7 @@ in
       ++ (with pkgs; [
         meslo-lgs-nf
         montserrat
+        symbola # fallback for symbols no other font has (Emacs)
       ]);
   };
 }

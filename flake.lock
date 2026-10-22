@@ -57,6 +57,23 @@
         "type": "github"
       }
     },
+    "doomemacs": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1774431053,
+        "narHash": "sha256-j0WGkNnL3QhEUA1y770myqePFM4EnIHOLsi5+5+1BXg=",
+        "owner": "doomemacs",
+        "repo": "doomemacs",
+        "rev": "43912efdcbc9d63f84becfd6cfde86dec04c168d",
+        "type": "github"
+      },
+      "original": {
+        "owner": "doomemacs",
+        "repo": "doomemacs",
+        "rev": "43912efdcbc9d63f84becfd6cfde86dec04c168d",
+        "type": "github"
+      }
+    },
     "emacs-overlay": {
       "inputs": {
         "nixpkgs": [
@@ -349,6 +366,7 @@
         "ai-memory": "ai-memory",
         "base16": "base16",
         "bwt": "bwt",
+        "doomemacs": "doomemacs",
         "emacs-overlay": "emacs-overlay",
         "hardware": "hardware",
         "home": "home",

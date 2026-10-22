@@ -96,10 +96,7 @@
         ollama.enable = true;
         openWebui.enable = true;
       };
-      mail = {
-        protonBridge.enable = true;
-        mu.enable = true;
-      };
+      mail.protonBridge.enable = true;
       flatpak = {
         enable = true;
         restrict.enable = true;
