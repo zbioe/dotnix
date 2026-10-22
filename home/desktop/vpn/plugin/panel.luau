@@ -10,10 +10,23 @@ local newTarget = ""
 local render
 
 local countries = {
-  AR = "Argentina", AU = "Australia", BR = "Brazil", CA = "Canada", CH = "Switzerland",
-  DE = "Germany", ES = "Spain", FR = "France", GB = "United Kingdom", IT = "Italy",
-  JP = "Japan", MX = "Mexico", NL = "Netherlands", PT = "Portugal", SE = "Sweden",
-  SG = "Singapore", US = "United States",
+  AR = "Argentina",
+  AU = "Australia",
+  BR = "Brazil",
+  CA = "Canada",
+  CH = "Switzerland",
+  DE = "Germany",
+  ES = "Spain",
+  FR = "France",
+  GB = "United Kingdom",
+  IT = "Italy",
+  JP = "Japan",
+  MX = "Mexico",
+  NL = "Netherlands",
+  PT = "Portugal",
+  SE = "Sweden",
+  SG = "Singapore",
+  US = "United States",
 }
 
 local function flag(code)
@@ -22,16 +35,30 @@ end
 
 -- glyph (or flag), title and detail of a target
 local function describe(target)
-  if target == "fastest" then return "bolt", nil, "Fastest server", "the quickest one right now" end
-  if target == "securecore" then return "shield-lock", nil, "Secure Core", "through a privacy-friendly country" end
-  if target == "p2p" then return "arrows-exchange", nil, "P2P", "fastest server for file sharing" end
-  if target == "tor" then return "spy", nil, "Tor", "Tor over VPN" end
+  if target == "fastest" then
+    return "bolt", nil, "Fastest server", "the quickest one right now"
+  end
+  if target == "securecore" then
+    return "shield-lock", nil, "Secure Core", "through a privacy-friendly country"
+  end
+  if target == "p2p" then
+    return "arrows-exchange", nil, "P2P", "fastest server for file sharing"
+  end
+  if target == "tor" then
+    return "spy", nil, "Tor", "Tor over VPN"
+  end
   local city = target:match("^city:(.+)$")
-  if city then return "building", nil, city, "fastest server in the city" end
+  if city then
+    return "building", nil, city, "fastest server in the city"
+  end
   local code = target:upper():match("^(%a%a)$")
-  if code then return nil, flag(code), countries[code] or code, "fastest server in " .. code end
+  if code then
+    return nil, flag(code), countries[code] or code, "fastest server in " .. code
+  end
   local server = target:upper():match("^(%a%a)#%d+$")
-  if server then return nil, flag(server), target:upper(), "this server" end
+  if server then
+    return nil, flag(server), target:upper(), "this server"
+  end
   return "shield", nil, target, "WireGuard"
 end
 
@@ -46,7 +73,9 @@ end
 local function run(...)
   busy = true
   render()
-  noctalia.runAsync({ data.command, ... }, function(_result) refresh() end)
+  noctalia.runAsync({ data.command, ... }, function(_result)
+    refresh()
+  end)
 end
 
 local function activeName()
@@ -57,11 +86,15 @@ end
 -- the favorite the current connection came from
 local function isActive(target)
   local name = activeName()
-  if not name then return false end
+  if not name then
+    return false
+  end
   local server = name:match("^ProtonVPN (%a%a#%d+)")
   if server then
     local t = target:upper()
-    if t == server or t == server:sub(1, 2) then return true end
+    if t == server or t == server:sub(1, 2) then
+      return true
+    end
   end
   return target == st.last or target == name
 end
@@ -72,8 +105,10 @@ end
 
 local function stateCard()
   if st == nil then
-    return card({ ui.glyph({ name = "loader-2", size = 22, color = "on_surface_variant" }),
-      ui.label({ text = "Reading…", flexGrow = 1 }) })
+    return card({
+      ui.glyph({ name = "loader-2", size = 22, color = "on_surface_variant" }),
+      ui.label({ text = "Reading…", flexGrow = 1 }),
+    })
   end
   local name = activeName()
   if name then
@@ -83,7 +118,14 @@ local function stateCard()
         ui.label({ text = name:gsub("^ProtonVPN ", ""), fontSize = 13, fontWeight = "bold", maxLines = 1 }),
         ui.label({ text = "connected", fontSize = 10, color = "on_surface_variant" }),
       }),
-      ui.button({ text = "Disconnect", glyph = "plug-x", enabled = not busy, onClick = function() run("down") end }),
+      ui.button({
+        text = "Disconnect",
+        glyph = "plug-x",
+        enabled = not busy,
+        onClick = function()
+          run("down")
+        end,
+      }),
     })
   end
   local _, _, title = describe(st.last ~= "" and st.last or "fastest")
@@ -93,7 +135,14 @@ local function stateCard()
       ui.label({ text = busy and "Connecting…" or "Not connected", fontSize = 13, fontWeight = "bold" }),
       ui.label({ text = "Connect: " .. title, fontSize = 10, color = "on_surface_variant", maxLines = 1 }),
     }),
-    ui.button({ text = "Connect", glyph = "plug-connected", enabled = not busy, onClick = function() run("up") end }),
+    ui.button({
+      text = "Connect",
+      glyph = "plug-connected",
+      enabled = not busy,
+      onClick = function()
+        run("up")
+      end,
+    }),
   })
 end
 
@@ -108,14 +157,40 @@ local function targetRow(target, removable, removeArgs)
       ui.label({ text = title, fontSize = 12, fontWeight = active and "bold" or "medium", maxLines = 1 }),
       ui.label({ text = detail, fontSize = 10, color = "on_surface_variant", maxLines = 1 }),
     }),
-    active and ui.button({ glyph = "plug-x", variant = "ghost", controlSize = "sm", tooltip = "Disconnect",
-        enabled = not busy, onClick = function() run("down") end })
-      or ui.button({ glyph = "plug-connected", variant = "ghost", controlSize = "sm", tooltip = "Connect",
-        enabled = not busy, onClick = function() run("up", target) end }),
+    active and ui.button({
+      glyph = "plug-x",
+      variant = "ghost",
+      controlSize = "sm",
+      tooltip = "Disconnect",
+      enabled = not busy,
+      onClick = function()
+        run("down")
+      end,
+    }) or ui.button({
+      glyph = "plug-connected",
+      variant = "ghost",
+      controlSize = "sm",
+      tooltip = "Connect",
+      enabled = not busy,
+      onClick = function()
+        run("up", target)
+      end,
+    }),
   }
   if removable then
-    table.insert(children, ui.button({ glyph = "trash", variant = "ghost", controlSize = "sm", tooltip = "Remove",
-      enabled = not busy and not active, onClick = function() run(table.unpack(removeArgs)) end }))
+    table.insert(
+      children,
+      ui.button({
+        glyph = "trash",
+        variant = "ghost",
+        controlSize = "sm",
+        tooltip = "Remove",
+        enabled = not busy and not active,
+        onClick = function()
+          run(table.unpack(removeArgs))
+        end,
+      })
+    )
   end
   return ui.row({
     key = target,
@@ -139,14 +214,32 @@ render = function()
     ui.label({ text = "VPN", fontSize = 16, fontWeight = "bold", flexGrow = 1 }),
   }
   if st and st.proton then
-    table.insert(header, ui.button({ glyph = "external-link", variant = "ghost", controlSize = "sm",
-      tooltip = "Proton VPN app: every server and the settings", onClick = function()
-        noctalia.runAsync({ data.command, "app" })
-        panel.close()
-      end }))
+    table.insert(
+      header,
+      ui.button({
+        glyph = "external-link",
+        variant = "ghost",
+        controlSize = "sm",
+        tooltip = "Proton VPN app: every server and the settings",
+        onClick = function()
+          noctalia.runAsync({ data.command, "app" })
+          panel.close()
+        end,
+      })
+    )
   end
   if closeButton then
-    table.insert(header, ui.button({ glyph = "close", variant = "ghost", controlSize = "sm", onClick = function() panel.close() end }))
+    table.insert(
+      header,
+      ui.button({
+        glyph = "close",
+        variant = "ghost",
+        controlSize = "sm",
+        onClick = function()
+          panel.close()
+        end,
+      })
+    )
   end
 
   local rows = {}
@@ -155,19 +248,32 @@ render = function()
     for _, target in ipairs(st.favorites) do
       table.insert(rows, targetRow(target, true, { "fav", "remove", target }))
     end
-    table.insert(rows, ui.row({ gap = 8, align = "center" }, {
-      ui.input({
-        key = "new-target",
-        placeholder = "Country (DE), server (BR#10), city:Tokyo…",
-        controlSize = "sm",
-        flexGrow = 1,
-        onChange = function(value) newTarget = value end,
-      }),
-      ui.button({ text = "Add", glyph = "plus", controlSize = "sm", enabled = not busy, onClick = function()
-        local target = newTarget:gsub("^%s+", ""):gsub("%s+$", "")
-        if target ~= "" then run("fav", "add", target) end
-      end }),
-    }))
+    table.insert(
+      rows,
+      ui.row({ gap = 8, align = "center" }, {
+        ui.input({
+          key = "new-target",
+          placeholder = "Country (DE), server (BR#10), city:Tokyo…",
+          controlSize = "sm",
+          flexGrow = 1,
+          onChange = function(value)
+            newTarget = value
+          end,
+        }),
+        ui.button({
+          text = "Add",
+          glyph = "plus",
+          controlSize = "sm",
+          enabled = not busy,
+          onClick = function()
+            local target = newTarget:gsub("^%s+", ""):gsub("%s+$", "")
+            if target ~= "" then
+              run("fav", "add", target)
+            end
+          end,
+        }),
+      })
+    )
   end
   local saved = st and st.saved or {}
   if #saved > 0 then
@@ -181,7 +287,12 @@ render = function()
     ui.row({ align = "center", gap = 10 }, header),
     stateCard(),
     ui.scroll({ flexGrow = 1, gap = 6 }, rows),
-    ui.label({ text = "Add a WireGuard file: vpn add FILE.conf", fontSize = 10, color = "on_surface_variant", paddingH = 4 }),
+    ui.label({
+      text = "Add a WireGuard file: vpn add FILE.conf",
+      fontSize = 10,
+      color = "on_surface_variant",
+      paddingH = 4,
+    }),
   }))
 end
 
@@ -195,5 +306,7 @@ end
 local ticks = 0
 function update()
   ticks += 1
-  if ticks % 3 == 0 and not busy then refresh() end
+  if ticks % 3 == 0 and not busy then
+    refresh()
+  end
 end

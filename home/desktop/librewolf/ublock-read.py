@@ -1,6 +1,9 @@
 # ublock-read.py IDB.sqlite: uBlock Origin's settings (from LibreWolf's
 # storage.local) as the JSON its managed storage takes
-import json, sqlite3, struct, sys
+import json
+import sqlite3
+import struct
+import sys
 
 import snappy
 

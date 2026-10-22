@@ -612,6 +612,7 @@ pkgs.runCommandLocal "theme-${id}" { } ''
   printf '${termSeq}' > $out/terminal.seq
 
   cat > $out/emacs.el <<'EOF'
+  ;;; emacs.el -*- lexical-binding: t; -*-
   ${emacsTheme}
   ;; already running: switch now
   (when after-init-time
@@ -619,6 +620,7 @@ pkgs.runCommandLocal "theme-${id}" { } ''
     (load-theme doom-theme t))
   EOF
   cat > $out/emacs/base16-nix-${id}-theme.el <<'EOF'
+  ;;; base16-nix-${id}-theme.el -*- lexical-binding: t; -*-
   ${emacsBase16}
   EOF
   cat > $out/nvim.lua <<'EOF'

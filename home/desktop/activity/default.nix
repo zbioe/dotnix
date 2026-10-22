@@ -1,0 +1,275 @@
+# ActivityWatch, everything on this machine only: aw-server-rust on
+# 127.0.0.1:5600 with watchers for windows and AFK (awatcher, Wayland), the
+# system (load, processes, state), media (MPRIS) and the shell; the browsers'
+# extension (system/desktop/activity.nix) and zmacs send their own. Grafana
+# draws it all at 127.0.0.1:5610, started on the first visit and stopped when
+# left alone.
+{
+  config,
+  lib,
+  osConfig,
+  pkgs,
+  ...
+}:
+let
+  cfg = config.dotnix.desktop.activity;
+  host = osConfig.networking.hostName;
+  api = "http://127.0.0.1:5600/api/0";
+  data = "${config.xdg.dataHome}/activitywatch";
+  db = "${data}/aw-server-rust/sqlite.db";
+  grafanaPort = 5610;
+  grafanaBackend = 5611;
+
+  python = pkgs.python3.withPackages (p: [ p.psutil ]);
+
+  watcher =
+    name: script: inputs:
+    pkgs.writeShellApplication {
+      inherit name;
+      runtimeInputs = inputs;
+      text = ''exec ${python}/bin/python3 -u ${script} "$@"'';
+    };
+
+  systemWatcher = watcher "aw-watcher-system" ./system.py (
+    with pkgs;
+    [
+      wireplumber # wpctl: audio output
+      networkmanager # nmcli: Wi-Fi
+      bluez # bluetoothctl: connected devices
+    ]
+  );
+  mediaWatcher = watcher "aw-watcher-media" ./media.py [ pkgs.playerctl ];
+
+  term = pkgs.writeShellApplication {
+    name = "aw-term";
+    runtimeInputs = with pkgs; [
+      coreutils
+      gawk
+      git
+      jq
+      curl
+      tmux
+    ];
+    text = ''
+      AW_API=${api}
+      HOSTNAME=${host}
+      ${builtins.readFile ./term.sh}
+    '';
+  };
+
+  # buckets the shell writes to with plain events
+  buckets = pkgs.writeShellScript "aw-buckets" ''
+    for _ in $(seq 60); do
+      ${lib.getExe pkgs.curl} -sf ${api}/info >/dev/null && break
+      sleep 0.5
+    done
+    ${lib.getExe pkgs.curl} -sf -X POST -H 'Content-Type: application/json' \
+      -d '{"client":"aw-term","type":"app.terminal.command","hostname":"${host}"}' \
+      ${api}/buckets/aw-watcher-terminal_${host} >/dev/null || true
+  '';
+
+  grafanaIni = pkgs.writeText "grafana.ini" (
+    lib.generators.toINI { } {
+      server = {
+        http_addr = "127.0.0.1";
+        http_port = grafanaBackend;
+        root_url = "http://127.0.0.1:${toString grafanaPort}/";
+      };
+      paths = {
+        data = "${config.xdg.dataHome}/grafana";
+        logs = "${config.xdg.stateHome}/grafana";
+        plugins = pkgs.linkFarm "grafana-plugins" [
+          {
+            name = "frser-sqlite-datasource";
+            path = pkgs.grafanaPlugins.frser-sqlite-datasource;
+          }
+        ];
+        inherit provisioning;
+      };
+      # nothing leaves the machine
+      analytics = {
+        reporting_enabled = false;
+        check_for_updates = false;
+        check_for_plugin_updates = false;
+        feedback_links_enabled = false;
+      };
+      news.news_feed_enabled = false;
+      snapshots.external_enabled = false;
+      public_dashboards.enabled = false;
+      security.disable_gravatar = true;
+      plugins.plugin_admin_enabled = false;
+      unified_alerting.enabled = false;
+      # one user, on localhost
+      auth.disable_login_form = true;
+      "auth.anonymous".enabled = true;
+      users.default_theme = "system";
+      dashboards.default_home_dashboard_path = "${dashboards}/activity.json";
+      log.mode = "console";
+    }
+  );
+
+  dashboards = pkgs.writeTextDir "activity.json" (
+    builtins.toJSON (import ./dashboard.nix { inherit lib; })
+  );
+
+  provisioning = pkgs.linkFarm "grafana-provisioning" [
+    {
+      name = "datasources/activitywatch.yaml";
+      path = pkgs.writeText "datasource.yaml" (
+        builtins.toJSON {
+          apiVersion = 1;
+          datasources = [
+            {
+              name = "ActivityWatch";
+              uid = "activitywatch";
+              type = "frser-sqlite-datasource";
+              isDefault = true;
+              jsonData = {
+                path = db;
+                pathPrefix = "file:";
+                pathOptions = "?mode=ro";
+              };
+            }
+          ];
+        }
+      );
+    }
+    {
+      name = "dashboards/activity.yaml";
+      path = pkgs.writeText "dashboards.yaml" (
+        builtins.toJSON {
+          apiVersion = 1;
+          providers = [
+            {
+              name = "dotnix";
+              type = "file";
+              disableDeletion = true;
+              allowUiUpdates = false;
+              options.path = dashboards;
+            }
+          ];
+        }
+      );
+    }
+  ];
+
+  # the launcher entry: the socket starts Grafana on the first request
+  activity = pkgs.writeShellScriptBin "activity" ''
+    exec ${pkgs.xdg-utils}/bin/xdg-open http://127.0.0.1:${toString grafanaPort}/d/activity
+  '';
+
+  service = description: exec: extra: {
+    Unit = {
+      Description = description;
+      After = [ "aw-server.service" ];
+      Requires = [ "aw-server.service" ];
+    }
+    // extra.Unit or { };
+    Service = {
+      ExecStart = exec;
+      Restart = "on-failure";
+      RestartSec = 5;
+    };
+    Install.WantedBy = extra.wantedBy or [ "graphical-session.target" ];
+  };
+in
+{
+  options.dotnix.desktop.activity.enable =
+    lib.mkEnableOption "ActivityWatch with every watcher, and Grafana over it"
+    // {
+      default = osConfig.dotnix.desktop.activity.enable or false;
+    };
+
+  config = lib.mkIf cfg.enable {
+    home.packages = [
+      activity
+      term
+    ];
+
+    xdg.desktopEntries.activity = {
+      name = "Activity";
+      genericName = "Where the time goes";
+      exec = lib.getExe activity;
+      icon = "utilities-system-monitor";
+      categories = [ "Utility" ];
+    };
+
+    # every finished command, in the background so the prompt never waits
+    programs.fish.functions.__aw_postexec = {
+      onEvent = "fish_postexec";
+      body = ''
+        set -l st $status
+        ${lib.getExe term} "$argv[1]" $st $CMD_DURATION "$PWD" &>/dev/null &
+        disown 2>/dev/null
+      '';
+    };
+
+    systemd.user.services = {
+      aw-server = {
+        Unit.Description = "ActivityWatch server (127.0.0.1:5600)";
+        Service = {
+          ExecStart = "${pkgs.aw-server-rust}/bin/aw-server --host 127.0.0.1 --port 5600 --dbpath ${db}";
+          ExecStartPre = "${pkgs.coreutils}/bin/mkdir -p ${data}/aw-server-rust";
+          ExecStartPost = buckets;
+          Restart = "on-failure";
+          RestartSec = 5;
+        };
+        Install.WantedBy = [ "default.target" ];
+      };
+
+      aw-awatcher =
+        service "ActivityWatch: windows and AFK (Wayland)"
+          "${pkgs.awatcher}/bin/awatcher --idle-timeout 120"
+          {
+            Unit = {
+              PartOf = [ "graphical-session.target" ];
+              After = [
+                "aw-server.service"
+                "graphical-session.target"
+              ];
+            };
+          };
+      aw-watcher-system = service "ActivityWatch: load, processes and state" (lib.getExe systemWatcher) {
+        wantedBy = [ "default.target" ];
+      };
+      aw-watcher-media = service "ActivityWatch: what plays (MPRIS)" (lib.getExe mediaWatcher) {
+        Unit.PartOf = [ "graphical-session.target" ];
+      };
+
+      grafana = {
+        Unit = {
+          Description = "Grafana over ActivityWatch (on demand)";
+          StopWhenUnneeded = true;
+        };
+        Service = {
+          ExecStartPre = "${pkgs.coreutils}/bin/mkdir -p ${config.xdg.dataHome}/grafana ${config.xdg.stateHome}/grafana";
+          ExecStart = "${pkgs.grafana}/bin/grafana server --homepath ${pkgs.grafana}/share/grafana --config ${grafanaIni}";
+          # ready once it answers, so the first request waits for it
+          ExecStartPost = pkgs.writeShellScript "grafana-ready" ''
+            for _ in $(seq 120); do
+              ${lib.getExe pkgs.curl} -sf http://127.0.0.1:${toString grafanaBackend}/api/health >/dev/null && exit 0
+              sleep 0.5
+            done
+            exit 1
+          '';
+          TimeoutStartSec = 90;
+        };
+      };
+      # the socket's side: forwards to Grafana and lets it go after 30 idle minutes
+      grafana-proxy = {
+        Unit = {
+          Description = "Grafana on demand";
+          Requires = [ "grafana.service" ];
+          After = [ "grafana.service" ];
+        };
+        Service.ExecStart = "${pkgs.systemd}/lib/systemd/systemd-socket-proxyd --exit-idle-time=30min 127.0.0.1:${toString grafanaBackend}";
+      };
+    };
+
+    systemd.user.sockets.grafana-proxy = {
+      Unit.Description = "Grafana on demand (127.0.0.1:${toString grafanaPort})";
+      Socket.ListenStream = "127.0.0.1:${toString grafanaPort}";
+      Install.WantedBy = [ "sockets.target" ];
+    };
+  };
+}

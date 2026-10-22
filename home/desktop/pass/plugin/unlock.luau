@@ -11,7 +11,9 @@ local attempt = 0 -- a new key empties the field after a wrong code
 local render
 
 local function submit()
-  if busy or code == "" then return end
+  if busy or code == "" then
+    return
+  end
   busy = true
   failed = false
   render()
@@ -47,8 +49,12 @@ render = function()
       focus = true,
       placeholder = "Lock code",
       enabled = not busy,
-      onChange = function(value) code = value end,
-      onSubmit = function() submit() end,
+      onChange = function(value)
+        code = value
+      end,
+      onSubmit = function()
+        submit()
+      end,
     }),
     ui.label({
       text = failed and "Wrong lock code" or "It locks again with the screen",
@@ -57,8 +63,21 @@ render = function()
     }),
     ui.row({ gap = 8, align = "center" }, {
       ui.label({ text = "", flexGrow = 1 }),
-      ui.button({ text = "Cancel", variant = "ghost", onClick = function() panel.close() end }),
-      ui.button({ text = busy and "Unlocking…" or "Unlock", glyph = "lock-open", enabled = not busy, onClick = function() submit() end }),
+      ui.button({
+        text = "Cancel",
+        variant = "ghost",
+        onClick = function()
+          panel.close()
+        end,
+      }),
+      ui.button({
+        text = busy and "Unlocking…" or "Unlock",
+        glyph = "lock-open",
+        enabled = not busy,
+        onClick = function()
+          submit()
+        end,
+      }),
     }),
   }))
 end

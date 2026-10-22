@@ -1,5 +1,9 @@
 # answer.py PROMPT CMD...: runs CMD on a terminal and types stdin's first line after PROMPT
-import os, pty, select, sys, time
+import os
+import pty
+import select
+import sys
+import time
 prompt, cmd = sys.argv[1].encode(), sys.argv[2:]
 secret = sys.stdin.readline()
 pid, fd = pty.fork()

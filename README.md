@@ -166,18 +166,33 @@ The ones I use most:
 | `Super+V` | clipboard history |
 | `Super+Shift+U` | rebuild system and home |
 
+## Activity
+
+Where the time goes, kept on this machine only: [ActivityWatch](https://activitywatch.net)
+(`aw-server-rust` on `127.0.0.1:5600`, out of the backup) with a watcher for
+everything: windows and AFK ([awatcher](https://github.com/2e3s/awatcher),
+Wayland), the browsers' tabs (its extension, in all three), zmacs (buffer,
+project, mode, function, org heading, typing and commands), every shell
+command (fish), what plays (MPRIS), and the machine itself (CPU, GPU, memory,
+temperatures, disk, network, the programs using them, VPN, Wi-Fi, Bluetooth,
+audio output, generation). `Activity` in the launcher opens Grafana on
+`127.0.0.1:5610` over it, started on the first visit and stopped after 30
+idle minutes; the dashboard is `home/desktop/activity/dashboard.nix`.
+LibreWolf's extension asks for consent once.
+
 ## Editors
 
-Doom Emacs and a small Neovim, both in Nix. Doom itself comes from the flake
-and its config lives in `home/editors/doom` (edited in place, `doom sync` runs
-as a user service on change); Emacs is built with vterm, pdf-tools, mu4e and
-every tree-sitter grammar. Mail is mu4e over mbsync, Proton through its Bridge,
-the password from `secrets/mail.yaml`. `doom doctor` runs clean.
+[zmacs](https://github.com/zbioe/zmacs) and a small Neovim, both in Nix.
+zmacs is its own flake: Emacs and every package pinned by
+[twist.nix](https://github.com/emacs-twist/twist.nix), nothing fetched at
+startup, with vterm, pdf-tools, mu4e and every tree-sitter grammar. It runs as
+a daemon (`emacsclient -c`). Mail is mu4e over mbsync, Proton
+through its Bridge, the password from `secrets/mail.yaml`.
 
 Neovim (`home/editors/nvim`) is a short `init.lua`: tree-sitter, LSP, blink
 completion, mini, fzf-lua, oil and gitsigns, no framework.
 
-Both take their colours from `theme` and format on save with the very tools
+Both take their colours (and Emacs its fonts) from `theme` and format on save with the very tools
 `nix flake check` uses, so a file looks the same whichever editor wrote it:
 nixfmt for Nix, gofumpt, shfmt, black, stylua, prettier.
 

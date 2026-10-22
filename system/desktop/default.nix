@@ -18,6 +18,7 @@ in
     ./fonts.nix
     ./browsers
     ./boot-screens.nix
+    ./activity.nix
   ];
 
   options.dotnix.desktop = {

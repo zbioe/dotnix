@@ -24,7 +24,9 @@ local render
 -- "HH:MM HH:MM" from `theme auto-tick` (sunrise/sunset at the current position)
 local function sunText()
   local rise, set = current.sun:match("^(%S+)%s+(%S+)$")
-  if not rise then return "light by day · dark at night" end
+  if not rise then
+    return "light by day · dark at night"
+  end
   return `light at {rise} · dark at {set}`
 end
 
@@ -51,25 +53,37 @@ end
 
 local function modeSwitch()
   return ui.row({ gap = 4, padding = 4, radius = 12, fill = "surface_variant/0.5" }, {
-    modeButton("Light", "sun", not current.auto and current.mode == "light", function() theme("mode", "light") end),
-    modeButton("Dark", "moon", not current.auto and current.mode == "dark", function() theme("mode", "dark") end),
-    modeButton("Auto", "clock", current.auto, function() theme("auto", "on") end),
+    modeButton("Light", "sun", not current.auto and current.mode == "light", function()
+      theme("mode", "light")
+    end),
+    modeButton("Dark", "moon", not current.auto and current.mode == "dark", function()
+      theme("mode", "dark")
+    end),
+    modeButton("Auto", "clock", current.auto, function()
+      theme("auto", "on")
+    end),
   })
 end
 
 -- "catppuccin-macchiato" -> "Catppuccin Macchiato"
 local function title(name)
-  return (name:gsub("-", " "):gsub("(%a)([%w]*)", function(a, b) return a:upper() .. b end))
+  return (name:gsub("-", " "):gsub("(%a)([%w]*)", function(a, b)
+    return a:upper() .. b
+  end))
 end
 
 -- a few lines of fake code in the theme's own colors; swatches are
 -- base00 base05 base08 base0A base0B base0D base0E (home/desktop/noctalia)
 local function preview(c)
   local bg, fg, red, yellow, green, blue, magenta = c[1], c[2], c[3], c[4], c[5], c[6], c[7]
-  local function tok(w, color) return ui.box({ width = w, height = 5, radius = 2.5, fill = color }) end
+  local function tok(w, color)
+    return ui.box({ width = w, height = 5, radius = 2.5, fill = color })
+  end
   local function line(indent, tokens)
     local items = { ui.box({ width = indent, height = 5 }) }
-    for _, t in ipairs(tokens) do table.insert(items, t) end
+    for _, t in ipairs(tokens) do
+      table.insert(items, t)
+    end
     return ui.row({ gap = 4, align = "center" }, items)
   end
   return ui.column({ gap = 6, padding = 10, radius = 8, fill = bg, border = fg .. "22", borderWidth = 1 }, {
@@ -93,7 +107,9 @@ local function card(entry)
     border = active and "primary" or (hovered and "outline/0.6" or "outline/0.2"),
     borderWidth = active and 2 or 1,
     tooltip = entry.name,
-    onClick = function() theme("set", entry.name) end,
+    onClick = function()
+      theme("set", entry.name)
+    end,
     onHover = function(state)
       hover = state == "true" and entry.name or (hover ~= entry.name and hover or nil)
       render()
@@ -131,18 +147,37 @@ render = function()
     ui.glyph({ name = "palette", size = 18, color = "primary" }),
     ui.column({ gap = 0, flexGrow = 1 }, {
       ui.label({ text = "Themes", fontSize = 16, fontWeight = "bold" }),
-      ui.label({ text = current.name ~= "" and title(current.name) or "—", fontSize = 11, color = "on_surface_variant" }),
+      ui.label({
+        text = current.name ~= "" and title(current.name) or "—",
+        fontSize = 11,
+        color = "on_surface_variant",
+      }),
     }),
   }
-  table.insert(header, ui.button({
-    glyph = "typography",
-    variant = "ghost",
-    controlSize = "sm",
-    tooltip = "Fonts",
-    onClick = function() noctalia.runAsync({ "noctalia", "msg", "panel-toggle", "dotnix/theme:fonts" }, function(_r) end) end,
-  }))
+  table.insert(
+    header,
+    ui.button({
+      glyph = "typography",
+      variant = "ghost",
+      controlSize = "sm",
+      tooltip = "Fonts",
+      onClick = function()
+        noctalia.runAsync({ "noctalia", "msg", "panel-toggle", "dotnix/theme:fonts" }, function(_r) end)
+      end,
+    })
+  )
   if closeButton then
-    table.insert(header, ui.button({ glyph = "close", variant = "ghost", controlSize = "sm", onClick = function() panel.close() end }))
+    table.insert(
+      header,
+      ui.button({
+        glyph = "close",
+        variant = "ghost",
+        controlSize = "sm",
+        onClick = function()
+          panel.close()
+        end,
+      })
+    )
   end
 
   local q = query:lower()

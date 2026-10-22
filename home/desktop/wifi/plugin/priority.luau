@@ -43,30 +43,46 @@ end
 local function run(...)
   busy = true
   render()
-  noctalia.runAsync({ data.command, ... }, function(_result) refresh() end)
+  noctalia.runAsync({ data.command, ... }, function(_result)
+    refresh()
+  end)
 end
 
 -- swaps network i with its neighbour (delta -1 up, +1 down) and saves the order
 local function move(i, delta)
   local j = i + delta
-  if j < 1 or j > #networks then return end
+  if j < 1 or j > #networks then
+    return
+  end
   networks[i], networks[j] = networks[j], networks[i]
   local argv = { "order" }
-  for _, n in ipairs(networks) do table.insert(argv, n.uuid) end
+  for _, n in ipairs(networks) do
+    table.insert(argv, n.uuid)
+  end
   run(table.unpack(argv))
 end
 
 local function signalGlyph(n)
-  if n.signal <= 0 then return "wifi-off" end
-  if n.signal >= 75 then return "wifi" end
-  if n.signal >= 50 then return "wifi-2" end
-  if n.signal >= 25 then return "wifi-1" end
+  if n.signal <= 0 then
+    return "wifi-off"
+  end
+  if n.signal >= 75 then
+    return "wifi"
+  end
+  if n.signal >= 50 then
+    return "wifi-2"
+  end
+  if n.signal >= 25 then
+    return "wifi-1"
+  end
   return "wifi-0"
 end
 
 local function row(i, n)
   local detail = n.signal > 0 and `{n.signal}%` or "out of range"
-  if n.active then detail = "connected · " .. detail end
+  if n.active then
+    detail = "connected · " .. detail
+  end
   return ui.row({
     key = n.uuid,
     gap = 8,
@@ -83,10 +99,26 @@ local function row(i, n)
       ui.label({ text = n.name, fontSize = 12, fontWeight = n.active and "bold" or "medium", maxLines = 1 }),
       ui.label({ text = detail, fontSize = 10, color = "on_surface_variant", maxLines = 1 }),
     }),
-    ui.button({ glyph = "chevron-up", variant = "ghost", controlSize = "sm", tooltip = "Higher priority",
-      enabled = i > 1 and not busy, onClick = function() move(i, -1) end }),
-    ui.button({ glyph = "chevron-down", variant = "ghost", controlSize = "sm", tooltip = "Lower priority",
-      enabled = i < #networks and not busy, onClick = function() move(i, 1) end }),
+    ui.button({
+      glyph = "chevron-up",
+      variant = "ghost",
+      controlSize = "sm",
+      tooltip = "Higher priority",
+      enabled = i > 1 and not busy,
+      onClick = function()
+        move(i, -1)
+      end,
+    }),
+    ui.button({
+      glyph = "chevron-down",
+      variant = "ghost",
+      controlSize = "sm",
+      tooltip = "Lower priority",
+      enabled = i < #networks and not busy,
+      onClick = function()
+        move(i, 1)
+      end,
+    }),
   })
 end
 
@@ -96,13 +128,28 @@ render = function()
     ui.label({ text = "Wi-Fi Priority", fontSize = 16, fontWeight = "bold", flexGrow = 1 }),
   }
   if closeButton then
-    table.insert(header, ui.button({ glyph = "close", variant = "ghost", controlSize = "sm", onClick = function() panel.close() end }))
+    table.insert(
+      header,
+      ui.button({
+        glyph = "close",
+        variant = "ghost",
+        controlSize = "sm",
+        onClick = function()
+          panel.close()
+        end,
+      })
+    )
   end
 
   local rows = {}
-  for i, n in ipairs(networks) do table.insert(rows, row(i, n)) end
+  for i, n in ipairs(networks) do
+    table.insert(rows, row(i, n))
+  end
   if #rows == 0 then
-    table.insert(rows, ui.label({ text = "No saved Wi-Fi networks", color = "on_surface_variant", textAlign = "center" }))
+    table.insert(
+      rows,
+      ui.label({ text = "No saved Wi-Fi networks", color = "on_surface_variant", textAlign = "center" })
+    )
   end
 
   panel.render(ui.column({ flexGrow = 1, gap = 12 }, {
@@ -112,7 +159,13 @@ render = function()
         ui.label({ text = "Prefer higher networks", fontSize = 12, fontWeight = "medium" }),
         ui.label({ text = "switches when one above is in range", fontSize = 10, color = "on_surface_variant" }),
       }),
-      ui.toggle({ checked = enabled, enabled = not busy, onChange = function(v) run((v == true or v == "true") and "on" or "off") end }),
+      ui.toggle({
+        checked = enabled,
+        enabled = not busy,
+        onChange = function(v)
+          run((v == true or v == "true") and "on" or "off")
+        end,
+      }),
     }),
     ui.label({ text = "Top of the list wins", fontSize = 11, color = "on_surface_variant", paddingH = 4 }),
     ui.scroll({ flexGrow = 1, gap = 6 }, rows),
@@ -130,5 +183,7 @@ end
 local ticks = 0
 function update()
   ticks += 1
-  if ticks % 5 == 0 and not busy then refresh() end
+  if ticks % 5 == 0 and not busy then
+    refresh()
+  end
 end

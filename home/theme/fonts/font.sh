@@ -77,14 +77,13 @@ font_write() {
   printf 'font_family %s\nfont_size %s\n' "$term" "$term_size" | font_file "$fstate/kitty.conf"
   printf 'font-family = ""\nfont-family = "%s"\nfont-size = %s\n' "$term" "$term_size" | font_file "$fstate/ghostty"
   printf '[font]\nsize = %s\n[font.normal]\nfamily = "%s"\n' "$(font_dec "$term_size")" "$term" | font_file "$fstate/alacritty.toml"
-  editor_size=$(font_dec "$editor_size")
+  # Emacs' face heights are tenths of a point; this applies live too
   font_file "$fstate/emacs.el" <<EOF
-(setq doom-font (font-spec :family "$mono" :size $editor_size)
-      doom-variable-pitch-font (font-spec :family "$ui" :size $editor_size)
-      doom-serif-font (font-spec :family "$serif" :size $editor_size))
-(when (boundp 'doom-emoji-font) (setq doom-emoji-font (font-spec :family "$emoji")))
-;; already running: switch now
-(when (and after-init-time (fboundp 'doom/reload-font)) (doom/reload-font))
+(set-face-attribute 'default nil :family "$mono" :height $(awk -v p="$editor_size" 'BEGIN { printf "%d", p * 10 + 0.5 }'))
+(set-face-attribute 'fixed-pitch nil :family "$mono")
+(set-face-attribute 'fixed-pitch-serif nil :family "$serif")
+(set-face-attribute 'variable-pitch nil :family "$ui")
+(ignore-errors (set-fontset-font t 'emoji (font-spec :family "$emoji") nil 'prepend))
 EOF
   # Chromium's fixed size keeps its default ratio to the normal one (13/16)
   printf '{"font":{"ui":"%s","serif":"%s","mono":"%s","size":%s,"fixedSize":%s}}\n' \

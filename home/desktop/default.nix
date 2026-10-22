@@ -19,6 +19,7 @@
     ./updates
     ./insightful
     ./kdeconnect.nix
+    ./activity
   ];
 
   options.dotnix.desktop.enable = lib.mkEnableOption "the desktop (cursor, icons, GTK, apps)" // {

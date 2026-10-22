@@ -21,7 +21,7 @@ jobs:
         with:
           extra_nix_config: system-features = nixos-test benchmark big-parallel kvm
       - name: Format, dead code, lint, Go tests, shellcheck
-        run: nix build -L .#checks.x86_64-linux.{format,deadnix,statix,dotnix-key,usb-stick}
+        run: nix build -L .#checks.x86_64-linux.{format,deadnix,statix,stylua,ruff,dotnix-key,usb-stick}
       - name: Evaluate the minimal ISO
         run: nix eval --raw .#nixosConfigurations.minimal-iso.config.system.build.toplevel.drvPath
       - name: USB key VM test

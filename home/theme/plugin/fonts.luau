@@ -15,15 +15,29 @@ local newName = "" -- name for the next saved preset
 local samples = {
   sans = "Ação rápida: você já configurou o pen drive?",
   serif = "O tipo serifado conduz o olho pela linha.",
-  mono = "if x != 0O1lI { return \"ok\" } // => <=",
+  mono = 'if x != 0O1lI { return "ok" } // => <=',
   emoji = "😀 🫠 🪿 👍🏽 🇧🇷 ❤️ ✨",
 }
 
 local tabs = {
   { key = "presets", glyph = "layout-grid", tooltip = "Presets and every size" },
   { key = "ui", label = "UI", list = "ui", sample = samples.sans, title = "Interface", sizes = { { "ui", "Size" } } },
-  { key = "term", label = "Term", list = "mono", sample = samples.mono, title = "Terminal", sizes = { { "term", "Size" } } },
-  { key = "mono", label = "Code", list = "mono", sample = samples.mono, title = "Code in apps", sizes = { { "mono", "Apps" }, { "editor", "Emacs" } } },
+  {
+    key = "term",
+    label = "Term",
+    list = "mono",
+    sample = samples.mono,
+    title = "Terminal",
+    sizes = { { "term", "Size" } },
+  },
+  {
+    key = "mono",
+    label = "Code",
+    list = "mono",
+    sample = samples.mono,
+    title = "Code in apps",
+    sizes = { { "mono", "Apps" }, { "editor", "Emacs" } },
+  },
   { key = "serif", label = "Serif", list = "serif", sample = samples.serif, title = "Serif" },
   { key = "emoji", label = "Emoji", list = "emoji", sample = samples.emoji, title = "Emoji" },
   { key = "icons", label = "Icons", title = "Icons" },
@@ -36,11 +50,17 @@ local render
 -- the state file over the defaults ("key=value" lines)
 local function refresh()
   current = {}
-  for k, v in pairs(data.default or {}) do current[k] = v end
+  for k, v in pairs(data.default or {}) do
+    current[k] = v
+  end
   local raw = noctalia.readFile(data.state .. "/font/state") or ""
-  for k, v in raw:gmatch("([%w_]+)=([^\n]*)") do current[k] = v end
+  for k, v in raw:gmatch("([%w_]+)=([^\n]*)") do
+    current[k] = v
+  end
   iconState = {}
-  for k, v in (noctalia.readFile(data.state .. "/icons") or ""):gmatch("([%w_.-]+)=([^\n]*)") do iconState[k] = v end
+  for k, v in (noctalia.readFile(data.state .. "/icons") or ""):gmatch("([%w_.-]+)=([^\n]*)") do
+    iconState[k] = v
+  end
   slots = {}
   local byName = {}
   for name, k, v in (noctalia.readFile(data.state .. "/font/slots") or ""):gmatch("([^\t\n]+)\t([%w_.-]+)=([^\n]*)") do
@@ -58,12 +78,18 @@ local function refresh()
 end
 
 local function same(a, b)
-  if not a or not b then return false end
+  if not a or not b then
+    return false
+  end
   for k, v in pairs(a) do
-    if b[k] ~= v then return false end
+    if b[k] ~= v then
+      return false
+    end
   end
   for k in pairs(b) do
-    if a[k] == nil then return false end
+    if a[k] == nil then
+      return false
+    end
   end
   return true
 end
@@ -71,18 +97,24 @@ end
 -- a snapshot (`theme font save`/`default`) is in use when its fonts, sizes
 -- and icons all are
 local function snapshotOn(snap)
-  if not snap then return false end
+  if not snap then
+    return false
+  end
   local icons = 0
   for k, v in pairs(snap) do
     local name = k:match("^icons%.(.+)")
     if name then
       icons += 1
-      if iconState[name] ~= v then return false end
+      if iconState[name] ~= v then
+        return false
+      end
     elseif current[k] ~= v then
       return false
     end
   end
-  for _ in pairs(iconState) do icons -= 1 end
+  for _ in pairs(iconState) do
+    icons -= 1
+  end
   return icons == 0
 end
 
@@ -96,7 +128,9 @@ end
 
 local function tabOf(key)
   for _, t in ipairs(tabs) do
-    if t.key == key then return t end
+    if t.key == key then
+      return t
+    end
   end
   return tabs[2]
 end
@@ -105,7 +139,12 @@ end
 -- previews are images drawn at build time (home/desktop/noctalia)
 local function emojiImage(name, height)
   return ui.row({ justify = "start" }, {
-    ui.image({ path = data.emojiPreviews .. "/" .. (name:gsub(" ", "-")) .. ".png", height = height, width = height * 10, fit = "contain" }),
+    ui.image({
+      path = data.emojiPreviews .. "/" .. (name:gsub(" ", "-")) .. ".png",
+      height = height,
+      width = height * 10,
+      fit = "contain",
+    }),
     ui.spacer({ flexGrow = 1 }),
   })
 end
@@ -135,7 +174,9 @@ local function card(id, on, onClick, children, extra)
     onClick = onClick,
     onHover = hoverable(id),
   }
-  for k, v in pairs(extra or {}) do props[k] = v end
+  for k, v in pairs(extra or {}) do
+    props[k] = v
+  end
   return ui.column(props, children)
 end
 
@@ -147,19 +188,22 @@ end
 local function tabBar()
   local buttons = {}
   for _, t in ipairs(tabs) do
-    table.insert(buttons, ui.button({
-      text = t.label,
-      glyph = t.glyph,
-      tooltip = t.tooltip,
-      variant = tab == t.key and "primary" or "ghost",
-      controlSize = "sm",
-      flexGrow = t.label and 1 or 0,
-      onClick = function()
-        tab = t.key
-        query = ""
-        render()
-      end,
-    }))
+    table.insert(
+      buttons,
+      ui.button({
+        text = t.label,
+        glyph = t.glyph,
+        tooltip = t.tooltip,
+        variant = tab == t.key and "primary" or "ghost",
+        controlSize = "sm",
+        flexGrow = t.label and 1 or 0,
+        onClick = function()
+          tab = t.key
+          query = ""
+          render()
+        end,
+      })
+    )
   end
   return ui.row({ gap = 2, padding = 4, radius = 12, fill = "surface_variant/0.5" }, buttons)
 end
@@ -168,11 +212,25 @@ end
 local function stepper(label, key)
   return ui.row({ gap = 2, align = "center" }, {
     caption(label),
-    ui.button({ glyph = "minus", variant = "ghost", controlSize = "sm", onClick = function() font("size", key, "-1") end }),
+    ui.button({
+      glyph = "minus",
+      variant = "ghost",
+      controlSize = "sm",
+      onClick = function()
+        font("size", key, "-1")
+      end,
+    }),
     ui.row({ width = 34, justify = "center" }, {
       ui.label({ text = current[key .. "_size"] or "", fontSize = 13, fontWeight = "bold" }),
     }),
-    ui.button({ glyph = "plus", variant = "ghost", controlSize = "sm", onClick = function() font("size", key, "+1") end }),
+    ui.button({
+      glyph = "plus",
+      variant = "ghost",
+      controlSize = "sm",
+      onClick = function()
+        font("size", key, "+1")
+      end,
+    }),
   })
 end
 
@@ -181,17 +239,22 @@ local function preview(t)
   local family = current[t.key]
   local size = tonumber(current[(t.sizes and t.sizes[1][1] or "ui") .. "_size"]) or 12
   local controls = {}
-  for _, s in ipairs(t.sizes or {}) do table.insert(controls, stepper(s[2], s[1])) end
-  return ui.column({ gap = 8, padding = 14, radius = 12, fill = "primary/0.08", border = "primary/0.4", borderWidth = 1 }, {
-    ui.row({ gap = 6, align = "center" }, {
-      ui.label({ text = t.title, fontSize = 11, color = "primary", fontWeight = "medium", flexGrow = 1 }),
-      ui.label({ text = family, fontSize = 11, color = "on_surface_variant", maxLines = 1 }),
-    }),
-    ui.label({ text = family, fontSize = 22, fontFamily = family, maxLines = 1 }),
-    t.key == "emoji" and emojiImage(family, 30)
-      or ui.label({ text = t.sample, fontSize = math.max(size * 1.15, 12), fontFamily = family, maxLines = 2 }),
-    ui.row({ gap = 12, align = "center", visible = #controls > 0 }, controls),
-  })
+  for _, s in ipairs(t.sizes or {}) do
+    table.insert(controls, stepper(s[2], s[1]))
+  end
+  return ui.column(
+    { gap = 8, padding = 14, radius = 12, fill = "primary/0.08", border = "primary/0.4", borderWidth = 1 },
+    {
+      ui.row({ gap = 6, align = "center" }, {
+        ui.label({ text = t.title, fontSize = 11, color = "primary", fontWeight = "medium", flexGrow = 1 }),
+        ui.label({ text = family, fontSize = 11, color = "on_surface_variant", maxLines = 1 }),
+      }),
+      ui.label({ text = family, fontSize = 22, fontFamily = family, maxLines = 1 }),
+      t.key == "emoji" and emojiImage(family, 30)
+        or ui.label({ text = t.sample, fontSize = math.max(size * 1.15, 12), fontFamily = family, maxLines = 2 }),
+      ui.row({ gap = 12, align = "center", visible = #controls > 0 }, controls),
+    }
+  )
 end
 
 -- every family of the role, each written in itself
@@ -201,13 +264,26 @@ local function familyCards(t)
   for _, name in ipairs(data.roles[t.list] or {}) do
     if q == "" or name:lower():find(q, 1, true) then
       local on = name == current[t.key]
-      table.insert(cards, card("family-" .. t.key .. name, on, function() font(t.key, name) end, {
-        ui.row({ gap = 6, align = "center" }, {
-          ui.label({ text = name, fontSize = 15, fontFamily = name, fontWeight = on and "bold" or "normal", color = on and "primary" or "on_surface", flexGrow = 1, maxLines = 1 }),
-          check(on),
-        }),
-        t.key == "emoji" and emojiImage(name, 20) or caption(t.sample, name),
-      }))
+      table.insert(
+        cards,
+        card("family-" .. t.key .. name, on, function()
+          font(t.key, name)
+        end, {
+          ui.row({ gap = 6, align = "center" }, {
+            ui.label({
+              text = name,
+              fontSize = 15,
+              fontFamily = name,
+              fontWeight = on and "bold" or "normal",
+              color = on and "primary" or "on_surface",
+              flexGrow = 1,
+              maxLines = 1,
+            }),
+            check(on),
+          }),
+          t.key == "emoji" and emojiImage(name, 20) or caption(t.sample, name),
+        })
+      )
     end
   end
   if #cards == 0 then
@@ -219,7 +295,9 @@ end
 -- a preset is active when every family it sets is the one in use
 local function presetOn(p)
   for _, k in ipairs(families) do
-    if p[k] and p[k] ~= current[k] then return false end
+    if p[k] and p[k] ~= current[k] then
+      return false
+    end
   end
   return true
 end
@@ -227,14 +305,27 @@ end
 local function presetCards()
   local list = {}
   for _, p in ipairs(data.presets or {}) do
-    if p.name == "default" then table.insert(list, 1, p) else table.insert(list, p) end
+    if p.name == "default" then
+      table.insert(list, 1, p)
+    else
+      table.insert(list, p)
+    end
   end
   local rows = {}
   local function one(p)
     local on = presetOn(p)
-    return card("preset-" .. p.name, on, function() font("preset", p.name) end, {
+    return card("preset-" .. p.name, on, function()
+      font("preset", p.name)
+    end, {
       ui.row({ gap = 6, align = "center" }, {
-        ui.label({ text = p.name:sub(1, 1):upper() .. p.name:sub(2), fontSize = 16, fontFamily = p.ui, fontWeight = "bold", color = on and "primary" or "on_surface", flexGrow = 1 }),
+        ui.label({
+          text = p.name:sub(1, 1):upper() .. p.name:sub(2),
+          fontSize = 16,
+          fontFamily = p.ui,
+          fontWeight = "bold",
+          color = on and "primary" or "on_surface",
+          flexGrow = 1,
+        }),
         check(on),
       }),
       caption(p.ui, p.ui),
@@ -242,47 +333,108 @@ local function presetCards()
     })
   end
   for i = 1, #list, 2 do
-    table.insert(rows, ui.row({ gap = 8 }, { one(list[i]), list[i + 1] and one(list[i + 1]) or ui.spacer({ flexGrow = 1 }) }))
+    table.insert(
+      rows,
+      ui.row({ gap = 8 }, { one(list[i]), list[i + 1] and one(list[i + 1]) or ui.spacer({ flexGrow = 1 }) })
+    )
   end
   table.insert(rows, ui.label({ text = "Yours", fontSize = 13, fontWeight = "medium" }))
   table.insert(rows, caption("Fonts, sizes and icons as they are now, under a name"))
-  table.insert(rows, ui.row({ gap = 6, align = "center" }, {
-    ui.input({
-      key = "slot-name",
-      placeholder = "Name…",
-      controlSize = "sm",
-      flexGrow = 1,
-      onChange = function(value) newName = value end,
-    }),
-    ui.button({
-      text = "Save",
-      glyph = "device-floppy",
-      variant = "primary",
-      controlSize = "sm",
-      onClick = function()
-        if newName:match("%S") then font("save", (newName:gsub("^%s+", ""):gsub("%s+$", ""))) end
-      end,
-    }),
-  }))
+  table.insert(
+    rows,
+    ui.row({ gap = 6, align = "center" }, {
+      ui.input({
+        key = "slot-name",
+        placeholder = "Name…",
+        controlSize = "sm",
+        flexGrow = 1,
+        onChange = function(value)
+          newName = value
+        end,
+      }),
+      ui.button({
+        text = "Save",
+        glyph = "device-floppy",
+        variant = "primary",
+        controlSize = "sm",
+        onClick = function()
+          if newName:match("%S") then
+            font("save", (newName:gsub("^%s+", ""):gsub("%s+$", "")))
+          end
+        end,
+      }),
+    })
+  )
   for _, slot in ipairs(slots) do
     local on = snapshotOn(slot.keys)
     local k = slot.keys
     local pack = k["icons.pack"] or "nerd"
-    table.insert(rows, card("slot-" .. slot.name, on, function() font("preset", slot.name) end, {
-      ui.row({ gap = 6, align = "center" }, {
-        ui.label({ text = slot.name, fontSize = 15, fontFamily = k.ui, fontWeight = "bold", color = on and "primary" or "on_surface", flexGrow = 1, maxLines = 1 }),
-        ui.label({ text = "default", fontSize = 10, color = "primary", visible = same(k, saved) }),
-        check(on),
-        ui.button({ glyph = "trash", variant = "ghost", controlSize = "sm", tooltip = "Delete", onClick = function() font("delete", slot.name) end }),
-      }),
-      caption((k.ui or "") .. " " .. (k.ui_size or "") .. " · " .. (k.term or "") .. " " .. (k.term_size or "") .. " · icons: " .. pack, k.ui),
-    }))
+    table.insert(
+      rows,
+      card("slot-" .. slot.name, on, function()
+        font("preset", slot.name)
+      end, {
+        ui.row({ gap = 6, align = "center" }, {
+          ui.label({
+            text = slot.name,
+            fontSize = 15,
+            fontFamily = k.ui,
+            fontWeight = "bold",
+            color = on and "primary" or "on_surface",
+            flexGrow = 1,
+            maxLines = 1,
+          }),
+          ui.label({ text = "default", fontSize = 10, color = "primary", visible = same(k, saved) }),
+          check(on),
+          ui.button({
+            glyph = "trash",
+            variant = "ghost",
+            controlSize = "sm",
+            tooltip = "Delete",
+            onClick = function()
+              font("delete", slot.name)
+            end,
+          }),
+        }),
+        caption(
+          (k.ui or "")
+            .. " "
+            .. (k.ui_size or "")
+            .. " · "
+            .. (k.term or "")
+            .. " "
+            .. (k.term_size or "")
+            .. " · icons: "
+            .. pack,
+          k.ui
+        ),
+      })
+    )
   end
-  table.insert(rows, ui.row({ gap = 6, align = "center", padding = 6 }, {
-    ui.label({ text = "Every size", fontSize = 12, color = "on_surface_variant", flexGrow = 1 }),
-    ui.button({ text = "Smaller", glyph = "minus", variant = "outline", controlSize = "sm", onClick = function() font("size", "-1") end }),
-    ui.button({ text = "Larger", glyph = "plus", variant = "outline", controlSize = "sm", onClick = function() font("size", "+1") end }),
-  }))
+  table.insert(
+    rows,
+    ui.row({ gap = 6, align = "center", padding = 6 }, {
+      ui.label({ text = "Every size", fontSize = 12, color = "on_surface_variant", flexGrow = 1 }),
+      ui.button({
+        text = "Smaller",
+        glyph = "minus",
+        variant = "outline",
+        controlSize = "sm",
+        onClick = function()
+          font("size", "-1")
+        end,
+      }),
+      ui.button({
+        text = "Larger",
+        glyph = "plus",
+        variant = "outline",
+        controlSize = "sm",
+        onClick = function()
+          font("size", "+1")
+        end,
+      }),
+    })
+  )
   return rows
 end
 
@@ -291,20 +443,29 @@ end
 local icons = { index = nil, pack = "", own = {}, editing = nil, query = "" }
 
 -- glyphs a pack card shows besides the tags
-local sampleBar = { "bluetooth", "memory", "cpu-usage", "storage", "volume-high", "wifi", "palette", "keyboard", "clipboard", "bell" }
+local sampleBar =
+  { "bluetooth", "memory", "cpu-usage", "storage", "volume-high", "wifi", "palette", "keyboard", "clipboard", "bell" }
 
 local function iconsRefresh()
   if not icons.index then
     icons.index = noctalia.json.decode(noctalia.readFile(data.iconIndex) or "{}") or {}
     icons.bar = {}
-    for _, b in ipairs(icons.index.bar or {}) do icons.bar[b.name] = b end
+    for _, b in ipairs(icons.index.bar or {}) do
+      icons.bar[b.name] = b
+    end
   end
   icons.pack, icons.own = "", {}
   local raw = noctalia.readFile(data.state .. "/icons") or ""
   for k, v in raw:gmatch("([%w_.-]+)=([^\n]*)") do
-    if k == "pack" then icons.pack = v else icons.own[k] = v end
+    if k == "pack" then
+      icons.pack = v
+    else
+      icons.own[k] = v
+    end
   end
-  if not icons.index.packs[icons.pack] then icons.pack = "nerd" end
+  if not icons.index.packs[icons.pack] then
+    icons.pack = "nerd"
+  end
 end
 
 local function iconTheme(...)
@@ -331,7 +492,13 @@ local function iconOf(pack, kind, key)
 end
 
 local function glyph(icon, size, color)
-  return ui.label({ text = icon.char, fontSize = size, fontFamily = icon.family, fontWeight = icon.weight >= 800 and "heavy" or "normal", color = color })
+  return ui.label({
+    text = icon.char,
+    fontSize = size,
+    fontFamily = icon.family,
+    fontWeight = icon.weight >= 800 and "heavy" or "normal",
+    color = color,
+  })
 end
 
 local function packCard(pack)
@@ -339,9 +506,15 @@ local function packCard(pack)
   local on = pack == icons.pack
   local color = on and "primary" or "on_surface"
   local tags, bar = {}, {}
-  for t = 1, 10 do table.insert(tags, glyph(iconOf(pack, "tag", tostring(t)), 14, color)) end
-  for _, b in ipairs(sampleBar) do table.insert(bar, glyph(iconOf(pack, "bar", b), 14, "on_surface_variant")) end
-  return card("pack-" .. pack, on, function() iconTheme("pack", pack) end, {
+  for t = 1, 10 do
+    table.insert(tags, glyph(iconOf(pack, "tag", tostring(t)), 14, color))
+  end
+  for _, b in ipairs(sampleBar) do
+    table.insert(bar, glyph(iconOf(pack, "bar", b), 14, "on_surface_variant"))
+  end
+  return card("pack-" .. pack, on, function()
+    iconTheme("pack", pack)
+  end, {
     ui.row({ gap = 6, align = "center" }, {
       ui.label({ text = p.title, fontSize = 13, fontWeight = on and "bold" or "medium", color = color, flexGrow = 1 }),
       check(on),
@@ -357,36 +530,47 @@ local function iconGrid(kind, key)
   local q = icons.query:lower()
   local names = {}
   for name in pairs(p.glyphs) do
-    if q == "" or name:lower():find(q, 1, true) then table.insert(names, name) end
+    if q == "" or name:lower():find(q, 1, true) then
+      table.insert(names, name)
+    end
   end
   table.sort(names)
   local rows, row = {}, {}
   for i = 1, math.min(#names, 48) do
     local name = names[i]
     local id = "icon-" .. name
-    table.insert(row, ui.column({
-      key = id,
-      width = 40,
-      height = 40,
-      align = "center",
-      justify = "center",
-      radius = 8,
-      fill = hover == id and "primary/0.2" or "surface/0.4",
-      tooltip = name,
-      onHover = hoverable(id),
-      onClick = function()
-        icons.editing = nil
-        iconTheme(kind, key, name)
-      end,
-    }, { glyph({ char = utf8.char(p.glyphs[name]), family = p.family, weight = p.weight }, 20, "on_surface") }))
+    table.insert(
+      row,
+      ui.column({
+        key = id,
+        width = 40,
+        height = 40,
+        align = "center",
+        justify = "center",
+        radius = 8,
+        fill = hover == id and "primary/0.2" or "surface/0.4",
+        tooltip = name,
+        onHover = hoverable(id),
+        onClick = function()
+          icons.editing = nil
+          iconTheme(kind, key, name)
+        end,
+      }, { glyph({ char = utf8.char(p.glyphs[name]), family = p.family, weight = p.weight }, 20, "on_surface") })
+    )
     if #row == 8 then
       table.insert(rows, ui.row({ gap = 2 }, row))
       row = {}
     end
   end
-  if #row > 0 then table.insert(rows, ui.row({ gap = 2 }, row)) end
-  if #names == 0 then table.insert(rows, caption("No icon has that in its name")) end
-  if #names > 48 then table.insert(rows, caption(#names .. " icons: type more to narrow them")) end
+  if #row > 0 then
+    table.insert(rows, ui.row({ gap = 2 }, row))
+  end
+  if #names == 0 then
+    table.insert(rows, caption("No icon has that in its name"))
+  end
+  if #names > 48 then
+    table.insert(rows, caption(#names .. " icons: type more to narrow them"))
+  end
   return rows
 end
 
@@ -409,7 +593,9 @@ local function iconRow(kind, key, title)
         controlSize = "sm",
         tooltip = "The pack's icon",
         visible = own,
-        onClick = function() iconTheme("reset", key) end,
+        onClick = function()
+          iconTheme("reset", key)
+        end,
       }),
       ui.button({
         text = editing and "Close" or "Change",
@@ -424,33 +610,53 @@ local function iconRow(kind, key, title)
     }),
   }
   if editing then
-    table.insert(children, ui.input({
-      key = "icon-search-" .. id,
-      placeholder = "Search icons…",
-      controlSize = "sm",
-      onChange = function(value)
-        icons.query = value
-        render()
-      end,
-    }))
-    for _, r in ipairs(iconGrid(kind, key)) do table.insert(children, r) end
+    table.insert(
+      children,
+      ui.input({
+        key = "icon-search-" .. id,
+        placeholder = "Search icons…",
+        controlSize = "sm",
+        onChange = function(value)
+          icons.query = value
+          render()
+        end,
+      })
+    )
+    for _, r in ipairs(iconGrid(kind, key)) do
+      table.insert(children, r)
+    end
   end
-  return ui.column({ gap = 6, padding = 8, radius = 10, fill = editing and "surface_variant/0.4" or "surface_variant/0.15" }, children)
+  return ui.column(
+    { gap = 6, padding = 8, radius = 10, fill = editing and "surface_variant/0.4" or "surface_variant/0.15" },
+    children
+  )
 end
 
 local function iconsBody()
   iconsRefresh()
   local packs = {}
-  for name in pairs(icons.index.packs) do table.insert(packs, name) end
+  for name in pairs(icons.index.packs) do
+    table.insert(packs, name)
+  end
   table.sort(packs)
   local list = {}
   for i = 1, #packs, 2 do
-    table.insert(list, ui.row({ gap = 8 }, { packCard(packs[i]), packs[i + 1] and packCard(packs[i + 1]) or ui.spacer({ flexGrow = 1 }) }))
+    table.insert(
+      list,
+      ui.row(
+        { gap = 8 },
+        { packCard(packs[i]), packs[i + 1] and packCard(packs[i + 1]) or ui.spacer({ flexGrow = 1 }) }
+      )
+    )
   end
   table.insert(list, ui.label({ text = "Tags", fontSize = 13, fontWeight = "medium" }))
-  for t = 1, 10 do table.insert(list, iconRow("tag", tostring(t), "Tag " .. t)) end
+  for t = 1, 10 do
+    table.insert(list, iconRow("tag", tostring(t), "Tag " .. t))
+  end
   table.insert(list, ui.label({ text = "Bar", fontSize = 13, fontWeight = "medium" }))
-  for _, b in ipairs(icons.index.bar) do table.insert(list, iconRow("bar", b.name, b.title)) end
+  for _, b in ipairs(icons.index.bar) do
+    table.insert(list, iconRow("bar", b.name, b.title))
+  end
   return { ui.scroll({ flexGrow = 1, gap = 8 }, list) }
 end
 
@@ -467,23 +673,44 @@ local function appsBody()
         ui.label({ text = "Tint app icons", fontSize = 13 }),
         caption("Bar, tray and launcher icons in the theme's color"),
       }),
-      ui.toggle({ checked = tint, onChange = function(value) iconTheme("tint", value == "true" and "on" or "off") end }),
+      ui.toggle({
+        checked = tint,
+        onChange = function(value)
+          iconTheme("tint", value == "true" and "on" or "off")
+        end,
+      }),
     }),
   }
   local function one(a)
     local on = a.name == currentApps
     local row = {}
-    for _, path in ipairs(icons.previews[a.name] or {}) do table.insert(row, ui.image({ path = path, width = 28, height = 28, fit = "contain" })) end
-    return card("apps-" .. a.name, on, function() iconTheme("apps", a.name) end, {
+    for _, path in ipairs(icons.previews[a.name] or {}) do
+      table.insert(row, ui.image({ path = path, width = 28, height = 28, fit = "contain" }))
+    end
+    return card("apps-" .. a.name, on, function()
+      iconTheme("apps", a.name)
+    end, {
       ui.row({ gap = 6, align = "center" }, {
-        ui.label({ text = a.title, fontSize = 13, fontWeight = on and "bold" or "medium", color = on and "primary" or "on_surface", flexGrow = 1 }),
+        ui.label({
+          text = a.title,
+          fontSize = 13,
+          fontWeight = on and "bold" or "medium",
+          color = on and "primary" or "on_surface",
+          flexGrow = 1,
+        }),
         check(on),
       }),
       ui.row({ gap = 6, align = "center" }, row),
     })
   end
   for i = 1, #data.apps, 2 do
-    table.insert(list, ui.row({ gap = 8 }, { one(data.apps[i]), data.apps[i + 1] and one(data.apps[i + 1]) or ui.spacer({ flexGrow = 1 }) }))
+    table.insert(
+      list,
+      ui.row(
+        { gap = 8 },
+        { one(data.apps[i]), data.apps[i + 1] and one(data.apps[i + 1]) or ui.spacer({ flexGrow = 1 }) }
+      )
+    )
   end
   return { ui.scroll({ flexGrow = 1, gap = 8 }, list) }
 end
@@ -493,19 +720,45 @@ render = function()
     ui.glyph({ name = "typography", size = 18, color = "primary" }),
     ui.column({ gap = 0, flexGrow = 1 }, {
       ui.label({ text = "Fonts", fontSize = 16, fontWeight = "bold" }),
-      ui.label({ text = (current.ui or "") .. " · " .. (current.term or "") .. (snapshotOn(saved) and " · default" or ""), fontSize = 11, color = "on_surface_variant", maxLines = 1 }),
+      ui.label({
+        text = (current.ui or "") .. " · " .. (current.term or "") .. (snapshotOn(saved) and " · default" or ""),
+        fontSize = 11,
+        color = "on_surface_variant",
+        maxLines = 1,
+      }),
     }),
     ui.button({
       glyph = snapshotOn(saved) and "pinned" or "pin",
       variant = "ghost",
       controlSize = "sm",
-      tooltip = snapshotOn(saved) and "This is the default" or "Make fonts, sizes and icons as they are now the default",
-      onClick = function() font("default") end,
+      tooltip = snapshotOn(saved) and "This is the default"
+        or "Make fonts, sizes and icons as they are now the default",
+      onClick = function()
+        font("default")
+      end,
     }),
-    ui.button({ glyph = "restore", variant = "ghost", controlSize = "sm", tooltip = "Back to the default", onClick = function() font("reset") end }),
+    ui.button({
+      glyph = "restore",
+      variant = "ghost",
+      controlSize = "sm",
+      tooltip = "Back to the default",
+      onClick = function()
+        font("reset")
+      end,
+    }),
   }
   if closeButton then
-    table.insert(header, ui.button({ glyph = "close", variant = "ghost", controlSize = "sm", onClick = function() panel.close() end }))
+    table.insert(
+      header,
+      ui.button({
+        glyph = "close",
+        variant = "ghost",
+        controlSize = "sm",
+        onClick = function()
+          panel.close()
+        end,
+      })
+    )
   end
 
   local t = tabOf(tab)
@@ -533,7 +786,9 @@ render = function()
   end
 
   local children = { ui.row({ align = "center", gap = 10 }, header), tabBar() }
-  for _, b in ipairs(body) do table.insert(children, b) end
+  for _, b in ipairs(body) do
+    table.insert(children, b)
+  end
   table.insert(children, caption("Everything switches live; LibreWolf takes it when started again."))
   panel.render(ui.column({ flexGrow = 1, gap = 12 }, children))
 end
@@ -547,8 +802,12 @@ function onOpen(_context)
 end
 
 function update()
-  local function now() return noctalia.json.encode({ current, iconState, slots, saved }) end
+  local function now()
+    return noctalia.json.encode({ current, iconState, slots, saved })
+  end
   local before = now()
   refresh()
-  if before ~= now() then render() end
+  if before ~= now() then
+    render()
+  end
 end

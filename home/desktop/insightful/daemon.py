@@ -19,7 +19,15 @@ SHM layout (must match insightful-proxy.c):
   char    window_class[256]
 Total: 528 bytes
 """
-import fcntl, json, os, signal, struct, subprocess, sys, threading, time
+import fcntl
+import json
+import os
+import signal
+import struct
+import subprocess
+import sys
+import threading
+import time
 
 # mango's IPC client (store path from home/desktop/insightful)
 MMSG = os.environ.get("MMSG", "mmsg")
@@ -91,7 +99,9 @@ UI_DEV_DESTROY= 0x5502
 UI_SET_EVBIT  = 0x40045564
 UI_SET_RELBIT = 0x40045566
 UI_DEV_SETUP  = 0x405c5503
-EV_SYN=0; EV_REL=2; REL_X=0
+EV_SYN = 0
+EV_REL = 2
+REL_X = 0
 
 _uinput_fd = None
 _uinput_lock = threading.Lock()
@@ -193,8 +203,10 @@ def evdev_monitor():
             else:
                 os.close(fd)
         except Exception:
-            try: os.close(fd)
-            except: pass
+            try:
+                os.close(fd)
+            except OSError:
+                pass
 
     if not fds:
         print("[evdev] No suitable input devices found", file=sys.stderr)
@@ -224,8 +236,10 @@ def evdev_monitor():
             time.sleep(1)
 
     for fd in fds:
-        try: os.close(fd)
-        except: pass
+        try:
+            os.close(fd)
+        except OSError:
+            pass
 
 def cursor_monitor():
     """Poll `mmsg get cursorpos` every 500ms. Update activity on change.

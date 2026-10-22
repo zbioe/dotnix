@@ -19,7 +19,9 @@ end
 
 local function refresh()
   noctalia.runAsync({ data.command, "status", "--json" }, function(result)
-    if not busy then show(noctalia.json.decode(result.stdout or "")) end
+    if not busy then
+      show(noctalia.json.decode(result.stdout or ""))
+    end
   end)
 end
 
@@ -29,7 +31,9 @@ function update()
 end
 
 function onRightClick()
-  if busy then return end
+  if busy then
+    return
+  end
   busy = true
   barWidget.setGlyph("loader-2")
   noctalia.runAsync({ data.command, "toggle" }, function(_result)

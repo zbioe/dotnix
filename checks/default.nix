@@ -1,5 +1,5 @@
 # nix flake check: every host and home evaluates (nothing is built), the Go
-# tests, fonts, formatting and dead code
+# tests, fonts, formatting, dead code and the Lua and Python linters
 {
   self,
   pkgs,
@@ -8,10 +8,18 @@
 let
   evaluates =
     name: drv: pkgs.writeText "evaluates-${name}" (builtins.unsafeDiscardStringContext drv.drvPath);
-  src = lib.fileset.toSource {
-    root = ../.;
-    fileset = lib.fileset.fileFilter (f: f.hasExt "nix") ../.;
-  };
+  sources =
+    exts:
+    lib.fileset.toSource {
+      root = ../.;
+      fileset = lib.fileset.fileFilter (f: lib.any f.hasExt exts) ../.;
+    };
+  src = sources [ "nix" ];
+  luaSrc = sources [
+    "lua"
+    "luau"
+  ];
+  pySrc = sources [ "py" ];
 in
 lib.mapAttrs' (
   name: host: lib.nameValuePair "system-${name}" (evaluates name host.config.system.build.toplevel)
@@ -34,6 +42,16 @@ lib.mapAttrs' (
   statix = pkgs.runCommand "statix-check" { nativeBuildInputs = [ pkgs.statix ]; } ''
     cd ${src}
     statix check --config ${../statix.toml} .
+    touch $out
+  '';
+  stylua = pkgs.runCommand "stylua-check" { nativeBuildInputs = [ pkgs.stylua ]; } ''
+    cd ${luaSrc}
+    stylua --check --config-path ${../stylua.toml} .
+    touch $out
+  '';
+  ruff = pkgs.runCommand "ruff-check" { nativeBuildInputs = [ pkgs.ruff ]; } ''
+    cd ${pySrc}
+    ruff check --no-cache .
     touch $out
   '';
 }

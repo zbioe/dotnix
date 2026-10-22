@@ -28,7 +28,9 @@ local publish
 
 -- the session state, and the index once unlocked (built in the background)
 local function refresh()
-  if loading then return end
+  if loading then
+    return
+  end
   loading = true
   noctalia.runAsync({ data.command, "state" }, function(result)
     state = (result.stdout or ""):match("%S+")
@@ -54,7 +56,10 @@ end
 
 publish = function(text)
   if state == "logged-out" then
-    launcher.setResults(text, { action("none", "Proton Pass: not logged in", "run `pass-cli login` in a terminal", "key-off") })
+    launcher.setResults(
+      text,
+      { action("none", "Proton Pass: not logged in", "run `pass-cli login` in a terminal", "key-off") }
+    )
     return
   end
   if state == "locked" then
@@ -74,28 +79,46 @@ publish = function(text)
   for _, item in ipairs(items) do
     if glyphs[item.type] then
       local score = text == "" and 0 or noctalia.fuzzyScore(text, item.title)
-      if score then table.insert(matches, { item = item, score = score }) end
+      if score then
+        table.insert(matches, { item = item, score = score })
+      end
     end
   end
-  table.sort(matches, function(a, b) return a.score > b.score end)
+  table.sort(matches, function(a, b)
+    return a.score > b.score
+  end)
 
   local results = {}
   for i, m in ipairs(matches) do
-    if i > 40 then break end
+    if i > 40 then
+      break
+    end
     local item = m.item
     local base = 1000 - i * 10
     local where = (item.user ~= nil and item.user ~= "") and (item.user .. " · " .. item.vault) or item.vault
     if item.type == "note" then
-      table.insert(results, action("copy\t" .. item.uri .. "\tnote", item.title, "copy the note · " .. item.vault, "note", base))
+      table.insert(
+        results,
+        action("copy\t" .. item.uri .. "\tnote", item.title, "copy the note · " .. item.vault, "note", base)
+      )
     else
-      table.insert(results, action("copy\t" .. item.uri .. "\tpassword", item.title, "password · " .. where, "key", base))
+      table.insert(
+        results,
+        action("copy\t" .. item.uri .. "\tpassword", item.title, "password · " .. where, "key", base)
+      )
       if item.totp then
         table.insert(results, action("totp\t" .. item.uri, "    one-time code", item.title, "clock", base - 1))
       end
       if #matches <= 3 then
-        table.insert(results, action("copy\t" .. item.uri .. "\tusername", "    username", item.title, "user", base - 2))
+        table.insert(
+          results,
+          action("copy\t" .. item.uri .. "\tusername", "    username", item.title, "user", base - 2)
+        )
         table.insert(results, action("copy\t" .. item.uri .. "\temail", "    e-mail", item.title, "mail", base - 3))
-        table.insert(results, action("open\t" .. item.uri, "    open the website", item.title, "external-link", base - 4))
+        table.insert(
+          results,
+          action("open\t" .. item.uri, "    open the website", item.title, "external-link", base - 4)
+        )
       end
     end
   end
@@ -110,7 +133,9 @@ function onQuery(text)
   -- where the lock code panel brings the launcher back to
   noctalia.writeFile(dir .. "/query", text)
   publish(text)
-  if text == "" or state ~= "unlocked" or items == nil then refresh() end
+  if text == "" or state ~= "unlocked" or items == nil then
+    refresh()
+  end
 end
 
 function onActivate(id)
@@ -125,14 +150,20 @@ function onActivate(id)
     return
   end
   local verb, uri, field = id:match("^(%a+)\t([^\t]+)\t?(.*)$")
-  if not verb then return end
+  if not verb then
+    return
+  end
   local argv = { data.command, verb, uri }
-  if field and field ~= "" then table.insert(argv, field) end
+  if field and field ~= "" then
+    table.insert(argv, field)
+  end
   noctalia.runAsync(argv, function(result)
     if result.exitCode ~= 0 then
       -- locked by its own idle timeout since the list was read
       noctalia.runAsync({ data.command, "state" }, function(r)
-        if (r.stdout or ""):match("locked") then noctalia.togglePanel("dotnix/pass:unlock") end
+        if (r.stdout or ""):match("locked") then
+          noctalia.togglePanel("dotnix/pass:unlock")
+        end
       end, 30000)
     end
   end, 30000)

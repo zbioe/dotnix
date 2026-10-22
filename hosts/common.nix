@@ -75,6 +75,8 @@
         default = "brave";
         protonPass.enable = true;
       };
+      # what the time goes to, local only (home/desktop/activity)
+      activity.enable = true;
     };
 
     services = {

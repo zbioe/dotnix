@@ -3,6 +3,7 @@
 {
   lib,
   pkgs,
+  username,
   ...
 }:
 let
@@ -92,7 +93,7 @@ let
         echo "''${red}empty or different, again''${off}"
       done
       while :; do
-        read -rsp "Password of zbioe (empty keeps the default, weakPass): " upw; echo
+        read -rsp "Password of ${username} (empty keeps the default, weakPass): " upw; echo
         [ -z "$upw" ] && break
         read -rsp "Again: " upw2; echo
         [ "$upw" = "$upw2" ] && break
@@ -142,7 +143,7 @@ let
       mount_all
 
       # the flake, with a host for this machine, in the user's home
-      flake=/mnt/home/zbioe/dotnix
+      flake=/mnt/home/${username}/dotnix
       mkdir -p "$flake"
       cp -r /etc/dotnix/. "$flake"
       chmod -R u+w "$flake"
@@ -152,8 +153,8 @@ let
       password="core.user.passwordFile = null;"
       if [ -n "$upw" ]; then
         mkdir -p /mnt/persist/secrets
-        printf '%s' "$upw" | mkpasswd -m yescrypt -s > /mnt/persist/secrets/zbioe.passwd
-        chmod 600 /mnt/persist/secrets/zbioe.passwd
+        printf '%s' "$upw" | mkpasswd -m yescrypt -s > /mnt/persist/secrets/${username}.passwd
+        chmod 600 /mnt/persist/secrets/${username}.passwd
         password=""
       fi
       unset upw upw2
@@ -188,7 +189,7 @@ let
         system.stateVersion = "${lib.trivial.release}";
       }
       EOF
-      chown -R 1000:100 /mnt/home/zbioe
+      chown -R 1000:100 /mnt/home/${username}
 
       # everything is already in this ISO's store: no download needed
       nixos-install --flake "path:$flake#$host" --no-root-passwd --no-channel-copy

@@ -5,7 +5,6 @@ inputs@{
   nixpkgs,
   nixpkgs-unstable,
   home,
-  emacs-overlay,
   ...
 }:
 let
@@ -16,7 +15,6 @@ let
   unstable = import nixpkgs-unstable {
     inherit system;
     config.allowUnfree = true;
-    overlays = [ emacs-overlay.overlays.default ];
   };
   noctalia = inputs.noctalia.packages.${system}.default;
   dotlib = import ./options.nix { inherit lib; };
@@ -41,17 +39,19 @@ let
     homeActivation = self.homeConfigurations.bx.activationPackage;
   };
 
+  # the desktop: every host and the full ISO
+  baseModules = [
+    ../system
+    inputs.programsdb.nixosModules.programs-sqlite
+    inputs.mango.nixosModules.mango
+    inputs.impermanence.nixosModules.impermanence
+  ];
+
   mkHost =
     modules:
     lib.nixosSystem {
       inherit system specialArgs;
-      modules = [
-        ../system
-        inputs.programsdb.nixosModules.programs-sqlite
-        inputs.mango.nixosModules.mango
-        inputs.impermanence.nixosModules.impermanence
-      ]
-      ++ modules;
+      modules = baseModules ++ modules;
     };
 
   mkHome =
@@ -59,11 +59,9 @@ let
     let
       homePkgs = import nixpkgs {
         inherit system;
-        overlays = [
-          emacs-overlay.overlays.default
-          (import ../overlays { inherit noctalia; })
-        ];
+        overlays = [ (import ../overlays { inherit noctalia; }) ];
       };
+      osConfig = self.nixosConfigurations.${name}.config;
       hm = home.lib.homeManagerConfiguration {
         pkgs = homePkgs;
         extraSpecialArgs = {
@@ -73,16 +71,18 @@ let
             unstable
             dotlib
             ;
-          inherit (inputs) base16 doomemacs;
-          stateVersion = "25.11";
-          ai-memory = inputs.ai-memory.packages.${system}.default;
+          inherit (inputs) base16 zmacs;
           # the host's choices, as home-manager names them inside NixOS
-          osConfig = self.nixosConfigurations.${name}.config;
+          inherit osConfig;
+          # the home starts with its host: same release
+          inherit (osConfig.system) stateVersion;
+          ai-memory = inputs.ai-memory.packages.${system}.default;
         };
         modules = [
           inputs.mango.hmModules.mango
           inputs.noctalia.homeModules.default
           inputs.sops.homeManagerModules.sops
+          inputs.zmacs.homeModules.default
           ../home
         ];
       };
@@ -116,13 +116,7 @@ in
       specialArgs = specialArgs // {
         dotnix = self;
       };
-      modules = [
-        ../system
-        inputs.programsdb.nixosModules.programs-sqlite
-        inputs.mango.nixosModules.mango
-        inputs.impermanence.nixosModules.impermanence
-        ../iso/full.nix
-      ];
+      modules = baseModules ++ [ ../iso/full.nix ];
     };
   };
 

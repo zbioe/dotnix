@@ -43,6 +43,9 @@ let
   // lib.optionalAttrs cfg.protonPass.enable {
     "78272b6fa58f4a1abaac99321d503a20@proton.me" = amo "proton-pass";
   }
+  // lib.optionalAttrs config.dotnix.desktop.activity.enable {
+    "{ef87d84c-2127-493f-b952-5b4e744245bc}" = amo "aw-watcher-web";
+  }
   // {
     # anything else: unsigned add-ons are allowed (for the two above)
     "*".installation_mode = "blocked";
