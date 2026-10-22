@@ -568,6 +568,16 @@ let
     standard_dialogs=xdgdesktopportal
     style=Fusion
   '';
+  # mini.base16 paints the whole UI from the palette; a running nvim reruns it
+  nvimTheme = ''
+    require("mini.base16").setup({
+      palette = {
+        ${lib.concatMapStringsSep "\n        " (b: "${b} = \"${c.${b}}\",") bases}
+      },
+    })
+    vim.o.background = "${mode}"
+    vim.g.colors_name = "base16-nix-${id}"
+  '';
   emacsBase16 = ''
     (require 'base16-theme)
     (defvar base16-nix-${id}-theme-colors
@@ -610,6 +620,9 @@ pkgs.runCommandLocal "theme-${id}" { } ''
   EOF
   cat > $out/emacs/base16-nix-${id}-theme.el <<'EOF'
   ${emacsBase16}
+  EOF
+  cat > $out/nvim.lua <<'EOF'
+  ${nvimTheme}
   EOF
 
   cp ${browserJson} $out/browser.json

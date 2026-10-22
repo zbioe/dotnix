@@ -93,6 +93,8 @@ let
   ];
 in
 {
+  imports = [ ./nvim.nix ];
+
   options.dotnix.editors.emacs.enable = lib.mkEnableOption "Doom Emacs (daemon and client)";
 
   config = lib.mkIf cfg.enable (

@@ -154,6 +154,12 @@ apply() {
     timeout 5 emacsclient --eval "(load \"$v/emacs.el\" nil t)" >/dev/null 2>&1 || true
   fi
 
+  # running neovims listen on $XDG_RUNTIME_DIR/nvim.*.0
+  for sock in "${XDG_RUNTIME_DIR:-/run/user/$UID}"/nvim.*.0; do
+    [ -S "$sock" ] || continue
+    timeout 2 nvim --server "$sock" --remote-send "<Cmd>luafile $v/nvim.lua<CR>" >/dev/null 2>&1 || true
+  done
+
   qt_conf
   discord_css
   reload_terminals

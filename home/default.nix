@@ -46,6 +46,7 @@
       cli.enable = true;
     };
     editors.emacs.enable = true;
+    editors.nvim.enable = true;
     dev = {
       node.enable = true;
       opencode.enable = true;
