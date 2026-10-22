@@ -59,6 +59,16 @@ in
     };
 
     services.gnome.gnome-keyring.enable = cfg.secrets == "gnome-keyring";
+    # its keyrings without a password broke on secrets holding a newline (Proton VPN's)
+    nixpkgs.overlays = lib.optional (cfg.secrets == "gnome-keyring") (
+      _: prev: {
+        gnome-keyring = prev.gnome-keyring.overrideAttrs (old: {
+          patches = (old.patches or [ ]) ++ [
+            ../../overlays/patches/gnome-keyring-textual-secret-escape.patch
+          ];
+        });
+      }
+    );
 
     services.displayManager.defaultSession = mkIf (cfg.default != null) sessions.${cfg.default};
     services.displayManager.autoLogin = mkIf cfg.autoLogin {
