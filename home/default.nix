@@ -51,6 +51,7 @@
     dev = {
       node.enable = true;
       opencode.enable = true;
+      aiMemory.enable = true;
     };
     desktop = {
       terminals = {

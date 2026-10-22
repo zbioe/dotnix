@@ -75,6 +75,7 @@ let
             ;
           inherit (inputs) base16;
           stateVersion = "25.11";
+          ai-memory = inputs.ai-memory.packages.${system}.default;
           # the host's choices, as home-manager names them inside NixOS
           osConfig = self.nixosConfigurations.${name}.config;
         };

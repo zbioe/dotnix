@@ -65,6 +65,8 @@
       url = "github:Mic92/sops-nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    # long-term memory shared by the coding agents (home/dev)
+    ai-memory.url = "github:akitaonrails/ai-memory";
     # Proton's own build of the newest stable Proton Pass (pkgs/proton-pass)
     proton-pass = {
       url = "file+https://proton.me/download/PassDesktop/linux/x64/ProtonPass.deb";

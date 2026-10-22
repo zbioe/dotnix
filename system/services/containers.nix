@@ -25,6 +25,7 @@ in
       enable = dotlib.mkItem cfg "Docker";
       rootless = lib.mkEnableOption "Docker as your user (images in ~/.local/share/docker)";
     };
+    podman.enable = dotlib.mkItem cfg "Podman (rootless by design; distrobox's engine)";
     distrobox.enable = dotlib.mkItem cfg "Distrobox";
   };
 
@@ -53,8 +54,15 @@ in
         daemon.settings = daemon;
       };
     })
+    (lib.mkIf cfg.podman.enable {
+      virtualisation.podman.enable = true;
+    })
     (lib.mkIf cfg.distrobox.enable {
       environment.systemPackages = [ pkgs.distrobox ];
+      # rootless docker can't remount what distrobox needs; podman can
+      environment.etc."distrobox/distrobox.conf".text = lib.mkIf cfg.podman.enable ''
+        container_manager="podman"
+      '';
     })
   ];
 }

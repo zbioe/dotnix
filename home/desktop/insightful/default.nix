@@ -1,7 +1,6 @@
 {
   config,
   pkgs,
-  unstable,
   lib,
   ...
 }:
@@ -62,11 +61,12 @@ in
         APPIMAGE="${appImagePath}"
         APPDIR="${appDir}"
         USERNAME="${username}"
-        DOCKER="${unstable.docker}/bin/docker"
+        DOCKER=podman
         DISTROBOX="${pkgs.distrobox}/bin/distrobox"
         CURL="${pkgs.curl}/bin/curl"
         # distrobox needs standard utils (awk, rev, sed, grep, etc.)
-        export PATH="${unstable.docker}/bin:${pkgs.gawk}/bin:${pkgs.util-linux}/bin:${pkgs.gnused}/bin:${pkgs.gnugrep}/bin:${pkgs.coreutils}/bin:${pkgs.findutils}/bin:/run/current-system/sw/bin:''$PATH"
+        export DBX_CONTAINER_MANAGER=podman
+        export PATH="/run/wrappers/bin:${pkgs.gawk}/bin:${pkgs.util-linux}/bin:${pkgs.gnused}/bin:${pkgs.gnugrep}/bin:${pkgs.coreutils}/bin:${pkgs.findutils}/bin:/run/current-system/sw/bin:''$PATH"
 
         # 1. Create and initialize the distrobox container if it doesn't exist
         if ! ''$DOCKER ps -a --format '{{.Names}}' 2>/dev/null | grep -qx "''$CONTAINER"; then
@@ -131,8 +131,9 @@ in
         set -euo pipefail
 
         # Ensure the distrobox container is running
-        export PATH="${pkgs.gawk}/bin:${pkgs.util-linux}/bin:/run/current-system/sw/bin:$PATH"
-        if ! docker ps --format '{{.Names}}' 2>/dev/null | grep -qx '${containerName}'; then
+        export DBX_CONTAINER_MANAGER=podman
+        export PATH="/run/wrappers/bin:${pkgs.gawk}/bin:${pkgs.util-linux}/bin:/run/current-system/sw/bin:$PATH"
+        if ! podman ps --format '{{.Names}}' 2>/dev/null | grep -qx '${containerName}'; then
             echo "[Insightful] Starting container ${containerName}..."
             distrobox enter ${containerName} -- true
         fi

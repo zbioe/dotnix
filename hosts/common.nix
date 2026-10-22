@@ -85,6 +85,7 @@
           enable = true;
           rootless = true;
         };
+        podman.enable = true;
         distrobox.enable = true;
       };
       vms = {

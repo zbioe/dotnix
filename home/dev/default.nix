@@ -10,6 +10,8 @@ let
   cfg = config.dotnix.dev;
 in
 {
+  imports = [ ./ai-memory.nix ];
+
   options.dotnix.dev = {
     enable = lib.mkEnableOption "the user's dev tools";
     node.enable = dotlib.mkItem cfg "node, bun and playwright, with global npm packages in ~/.npm-global";
