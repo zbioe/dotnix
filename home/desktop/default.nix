@@ -9,6 +9,7 @@
   imports = [
     ./terminals.nix
     ./browsers.nix
+    ./librewolf
     ./mango
     ./noctalia
     ./rebuild.nix

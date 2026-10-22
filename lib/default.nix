@@ -81,6 +81,7 @@ let
         modules = [
           inputs.mango.hmModules.mango
           inputs.noctalia.homeModules.default
+          inputs.sops.homeManagerModules.sops
           ../home
         ];
       };

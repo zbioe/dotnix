@@ -7,6 +7,7 @@
 
 {
   imports = [
+    ./secrets.nix
     ./shell
     ./editors
     ./desktop
