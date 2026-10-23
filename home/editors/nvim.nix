@@ -15,7 +15,7 @@
       enable = true;
       viAlias = true;
       vimAlias = true;
-      extraLuaConfig = builtins.readFile ./nvim/init.lua;
+      initLua = builtins.readFile ./nvim/init.lua;
       plugins = with pkgs.vimPlugins; [
         nvim-treesitter.withAllGrammars # parsers for every language
         mini-nvim # base16 colors, statusline, pairs, surround, text objects
