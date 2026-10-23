@@ -16,6 +16,9 @@
       viAlias = true;
       vimAlias = true;
       initLua = builtins.readFile ./nvim/init.lua;
+      # every plugin is Lua: no Python or Ruby providers
+      withPython3 = false;
+      withRuby = false;
       plugins = with pkgs.vimPlugins; [
         nvim-treesitter.withAllGrammars # parsers for every language
         mini-nvim # base16 colors, statusline, pairs, surround, text objects
