@@ -49,6 +49,11 @@ let
 
   # every bind with what it does: mango's binds and the noctalia "Shortcuts"
   # panel (Super+/, home/desktop/noctalia) both come from this list
+  # an org capture over whatever is open, in its own Emacs frame
+  capture = pkgs.writeShellScript "org-capture" ''
+    exec emacsclient -c -F '((name . "capture"))' -e '(zmacs/capture-frame)'
+  '';
+
   keys =
     let
       k = group: key: action: desc: {
@@ -66,6 +71,7 @@ let
       (k "Apps" "SUPER+SHIFT,b" "spawn,uwsm app -- librewolf" "Browser (LibreWolf)")
       (k "Apps" "SUPER+ALT,n" "spawn,uwsm app -- nautilus" "Files (Nautilus)")
       (k "Apps" "SUPER,y" "spawn,${term} yazi" "Files in the terminal (yazi)")
+      (k "Apps" "SUPER,c" "spawn,${capture}" "Capture a task, note or link (org)")
       (k "Apps" "SUPER+SHIFT,p" "spawn_shell,hyprpicker | wl-copy"
         "Color picker: copy a color from the screen"
       )
@@ -209,7 +215,9 @@ in
           (onTag 6 "^gimp" "")
           (onTag 8 "^workpuls-agent$" "is_open_silent:1,")
           (onTag 9 "^(alacritty|foot)$" "")
-          (onTag 10 "^emacs$" "")
+          # every Emacs frame but the capture one (zmacs/capture-frame)
+          "tags:10,app_id:^emacs$,title:^(?!capture$)"
+          "is_floating:1,width:900,height:520,app_id:^emacs$,title:^capture$"
           "is_floating:1,app_id:^org.pulseaudio.pavucontrol$"
           "is_floating:1,app_id:^nm-connection-editor$"
           "is_floating:1,app_id:^.blueman-manager-wrapped$"

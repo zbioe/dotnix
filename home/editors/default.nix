@@ -45,6 +45,12 @@ let
     lua-language-server # lua language server
     rust-analyzer # rust language server
     clang-tools # clangd
+    languagetool # grammar (langtool)
+    plantuml # uml diagrams
+    graphviz # dot, plantuml's layouts
+    gdb # C debugger (dape)
+    lldb # C, C++ and Rust debugger (dape)
+    python3Packages.debugpy # python debugger (dape)
   ];
 in
 {

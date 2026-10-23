@@ -79,6 +79,7 @@ font_write() {
   printf '[font]\nsize = %s\n[font.normal]\nfamily = "%s"\n' "$(font_dec "$term_size")" "$term" | font_file "$fstate/alacritty.toml"
   # Emacs' face heights are tenths of a point; this applies live too
   font_file "$fstate/emacs.el" <<EOF
+;;; emacs.el -*- lexical-binding: t; -*-
 (set-face-attribute 'default nil :family "$mono" :height $(awk -v p="$editor_size" 'BEGIN { printf "%d", p * 10 + 0.5 }'))
 (set-face-attribute 'fixed-pitch nil :family "$mono")
 (set-face-attribute 'fixed-pitch-serif nil :family "$serif")
