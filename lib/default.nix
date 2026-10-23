@@ -42,7 +42,8 @@ let
   # the desktop: every host and the full ISO
   baseModules = [
     ../system
-    inputs.programsdb.nixosModules.programs-sqlite
+    inputs.nix-index-database.nixosModules.nix-index
+    inputs.disko.nixosModules.disko
     inputs.mango.nixosModules.mango
     inputs.impermanence.nixosModules.impermanence
   ];
@@ -129,6 +130,31 @@ in
     usb-stick = pkgs.callPackage ../pkgs/usb-stick { };
     usb-key-test = pkgs.testers.runNixOSTest ../checks/vm/usb-key.nix;
     usb-stick-test = pkgs.testers.runNixOSTest ../checks/vm/usb-stick.nix;
+    disk-test = pkgs.testers.runNixOSTest (
+      import ../checks/vm/disk.nix {
+        # the layout on a VM's empty disk, with impermanence
+        format =
+          (lib.nixosSystem {
+            inherit system;
+            modules = [
+              inputs.disko.nixosModules.disko
+              inputs.impermanence.nixosModules.impermanence
+              ../system/storage/disk.nix
+              ../system/storage/impermanence.nix
+              {
+                dotnix.storage = {
+                  disk = {
+                    enable = true;
+                    device = "/dev/vdb";
+                    swapSize = "256M";
+                  };
+                  impermanence.enable = true;
+                };
+              }
+            ];
+          }).config.system.build.destroyFormatMount;
+      }
+    );
   };
 
   checks.${system} = import ../checks { inherit self pkgs lib; };

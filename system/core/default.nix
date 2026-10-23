@@ -20,7 +20,8 @@
     enableNotifications = true;
   };
 
-  programs.command-not-found.enable = true;
+  # command-not-found from a prebuilt nix-index, and `, cmd` runs what isn't installed
+  programs.nix-index-database.comma.enable = true;
   environment.variables.EDITOR = "nvim";
 
   systemd.tmpfiles.rules = [

@@ -15,8 +15,14 @@
       url = "github:nix-community/home-manager/release-26.05";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    programsdb = {
-      url = "github:wamserma/flake-programs-sqlite";
+    # prebuilt nix-index database: command-not-found and comma (system/core)
+    nix-index-database = {
+      url = "github:nix-community/nix-index-database";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    # the disk layout, declared once for the hosts and dotnix-install (system/storage/disk.nix)
+    disko = {
+      url = "github:nix-community/disko";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     # base16 scheme loader of the themes (home/theme)

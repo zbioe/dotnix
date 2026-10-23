@@ -166,6 +166,11 @@ The ones I use most:
 | `Super+V` | clipboard history |
 | `Super+Shift+U` | rebuild system and home |
 
+A command that isn't installed says which package has it, and `, cowsay hi`
+runs it without installing ([comma](https://github.com/nix-community/comma),
+over a prebuilt [nix-index](https://github.com/nix-community/nix-index-database)
+database).
+
 ## Activity
 
 Where the time goes, kept on this machine only: [ActivityWatch](https://activitywatch.net)
@@ -252,8 +257,10 @@ nix build .#iso-minimal   # or .#iso-full: this whole setup, live
 dd if=result/iso/*.iso of=/dev/sdX bs=4M conv=fsync
 ```
 
-Boot from it and run `dotnix-install`: it partitions and encrypts a disk,
-adds `hosts/<host>` to the flake and installs it. `dotnix-mount` opens an
+Boot from it and run `dotnix-install`: it adds `hosts/<host>` to the flake,
+formats its disk with the layout of `system/storage/disk.nix` (declared with
+[disko](https://github.com/nix-community/disko), the same one the hosts mount)
+and installs it. `dotnix-mount` opens an
 installed disk on `/mnt` for recovery.
 
 Then `rebuild` (or `Super+Shift+U`) rebuilds system and home.
@@ -266,6 +273,7 @@ nix run .#options -- bx    # every dotnix.* option of a host and its value
 nix fmt                    # format
 nix build .#usb-key-test   # boots VMs: unlock from a stick, PIN, password fallback
 nix build .#usb-stick-test # boots a VM from a multiboot stick
+nix build .#disk-test      # formats a VM's disk as dotnix-install does
 ```
 
 ## USB key

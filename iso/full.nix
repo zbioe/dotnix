@@ -61,7 +61,9 @@
           lib.attrValues (lib.filterAttrs (_: i: i ? outPath) (flake.inputs or { }))
         );
     in
-    lib.unique (sources dotnix);
+    lib.unique (sources dotnix)
+    # and the disk tools of the format script it builds for the new host
+    ++ [ dotnix.nixosConfigurations.bx.config.system.build.destroyFormatMount ];
 
   # the installer in the launcher (iso/tools.nix)
   environment.systemPackages = [

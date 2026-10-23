@@ -7,15 +7,6 @@
   ...
 }:
 let
-  # the directories bind-mounted from the nodatacow subvolume
-  nodatacowDirs = [
-    "docker"
-    "flatpak"
-    "waydroid"
-    "cloudflare-warp"
-    "bitcoind"
-  ];
-
   mountAll = ''
     # subvolumes of system/storage/disk.nix on /mnt
     mount_all() {
@@ -36,15 +27,10 @@ let
     runtimeInputs = with pkgs; [
       coreutils
       util-linux
-      gptfdisk
       cryptsetup
-      btrfs-progs
-      dosfstools
-      e2fsprogs # chattr
       gnugrep
       gnused
       gawk
-      systemd # udevadm
       nixos-install-tools
       nix
       mkpasswd
@@ -108,56 +94,32 @@ let
       # system lives in RAM; evaluating the flake alone takes some GB)
       systemctl stop ollama open-webui docker.socket docker waydroid-container 2>/dev/null || true
 
+      # the flake, with a host for this machine (its disk: system/storage/disk.nix)
+      flake=/tmp/dotnix
+      rm -rf "$flake"
+      cp -r /etc/dotnix/. "$flake"
+      chmod -R u+w "$flake"
+      mkdir -p "$flake/hosts/$host"
+      # a stable name for the disk, as the host will know it
+      for id in /dev/disk/by-id/*; do
+        [[ $id == *-part* || $id == */nvme-eui.* || $id == */wwn-* ]] && continue
+        [ "$(readlink -f "$id")" = "$(readlink -f "$disk")" ] && { disk=$id; break; }
+      done
+
       set -x
       swapoff /dev/disk/by-partlabel/dotnix-swap 2>/dev/null || true
       umount -R /mnt 2>/dev/null || true
       cryptsetup close enc 2>/dev/null || true
 
-      sgdisk --zap-all "$disk"
-      sgdisk --new=1::+1G --typecode=1:ef00 --change-name=1:dotnix-efi \
-        --new=2::+"$swap"G --typecode=2:8200 --change-name=2:dotnix-swap \
-        --new=3::0 --typecode=3:8309 --change-name=3:dotnix-luks "$disk"
-      udevadm settle
-      sleep 1
-      efi=/dev/disk/by-partlabel/dotnix-efi
-      luks=/dev/disk/by-partlabel/dotnix-luks
-
-      mkfs.vfat -F 32 -n BOOT "$efi"
-      mkswap -L swap /dev/disk/by-partlabel/dotnix-swap
-      # room for the install: the live system runs from RAM
-      swapon /dev/disk/by-partlabel/dotnix-swap
-      printf '%s' "$pw" | cryptsetup -q luksFormat --type luks2 --label dotnix "$luks" --key-file=-
-      printf '%s' "$pw" | cryptsetup open "$luks" enc --key-file=-
-      unset pw pw2
-      mkfs.btrfs -f -L dotnix /dev/mapper/enc
-
-      mkdir -p /mnt
-      mount /dev/mapper/enc /mnt
-      for sub in root home nix persist log nodatacow; do btrfs subvolume create "/mnt/$sub"; done
-      chattr +C /mnt/nodatacow
-      mkdir -p ${lib.concatMapStringsSep " " (d: "/mnt/nodatacow/${d}") nodatacowDirs}
-      if [ "$impermanence" = true ]; then btrfs subvolume snapshot -r /mnt/root /mnt/root-blank; fi
-      umount /mnt
-
-      ${mountAll}
-      mount_all
-
-      # the flake, with a host for this machine, in the user's home
-      flake=/mnt/home/${username}/dotnix
-      mkdir -p "$flake"
-      cp -r /etc/dotnix/. "$flake"
-      chmod -R u+w "$flake"
-      mkdir -p "$flake/hosts/$host"
-      nixos-generate-config --root /mnt --no-filesystems --show-hardware-config 2>/dev/null > "$flake/hosts/$host/hardware-configuration.nix"
       # the login password as a hash in /persist, outside the flake; none keeps weakPass
-      password="core.user.passwordFile = null;"
+      password="core.user.passwordFile = null;" passwd=""
       if [ -n "$upw" ]; then
-        mkdir -p /mnt/persist/secrets
-        printf '%s' "$upw" | mkpasswd -m yescrypt -s > /mnt/persist/secrets/${username}.passwd
-        chmod 600 /mnt/persist/secrets/${username}.passwd
+        passwd=$(printf '%s' "$upw" | mkpasswd -m yescrypt -s)
         password=""
       fi
       unset upw upw2
+      # generated once the disk is mounted
+      echo "{ }" > "$flake/hosts/$host/hardware-configuration.nix"
       cat > "$flake/hosts/$host/default.nix" <<EOF
       # $host: installed by dotnix-install on $(date +%F)
       {
@@ -174,7 +136,11 @@ let
           core.homeActivation.enable = true;
           hardware.keyboard.layout = "br";
           storage = {
-            disk.enable = true;
+            disk = {
+              enable = true;
+              device = "$disk";
+              swapSize = "''${swap}G";
+            };
             impermanence.enable = $impermanence;
             snapshots.enable = true;
             # Proton Drive: \`backup setup\` once
@@ -189,6 +155,26 @@ let
         system.stateVersion = "${lib.trivial.release}";
       }
       EOF
+
+      # erase, partition, encrypt and mount on /mnt
+      ( umask 077; printf '%s' "$pw" > /tmp/dotnix-luks.key )
+      unset pw pw2
+      format=$(nix build --no-link --print-out-paths "path:$flake#nixosConfigurations.$host.config.system.build.destroyFormatMount")
+      "$format/bin/disko-destroy-format-mount" --yes-wipe-all-disks
+      shred -u /tmp/dotnix-luks.key
+      # room for the install: the live system runs from RAM
+      mkswap /dev/disk/by-partlabel/dotnix-swap
+      swapon /dev/disk/by-partlabel/dotnix-swap
+
+      nixos-generate-config --root /mnt --no-filesystems --show-hardware-config 2>/dev/null > "$flake/hosts/$host/hardware-configuration.nix"
+      if [ -n "$passwd" ]; then
+        mkdir -p /mnt/persist/secrets
+        printf '%s\n' "$passwd" > /mnt/persist/secrets/${username}.passwd
+        chmod 600 /mnt/persist/secrets/${username}.passwd
+      fi
+      mkdir -p /mnt/home/${username}
+      mv "$flake" /mnt/home/${username}/dotnix
+      flake=/mnt/home/${username}/dotnix
       chown -R 1000:100 /mnt/home/${username}
 
       # everything is already in this ISO's store: no download needed
