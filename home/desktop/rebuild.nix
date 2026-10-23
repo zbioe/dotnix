@@ -31,6 +31,7 @@ let
     name = "rebuild";
     runtimeInputs = with pkgs; [
       coreutils
+      curl
       gnused
       util-linux # flock, script
       libnotify
@@ -87,6 +88,12 @@ let
           ok=1
         fi
         took=$(( $(date +%s) - start ))
+        ${lib.optionalString config.dotnix.desktop.activity.enable ''
+          # into ActivityWatch (home/desktop/activity): the Rebuilds panel
+          curl -sf -m 3 -X POST -H 'Content-Type: application/json' \
+            -d "[{\"timestamp\":\"$(date -u -d "@$start" +%FT%TZ)\",\"duration\":$took,\"data\":{\"kind\":\"rebuild\",\"ok\":$ok}}]" \
+            "http://127.0.0.1:5600/api/0/buckets/aw-watcher-events_$host/events" >/dev/null || true
+        ''}
         took="$((took / 60))min $((took % 60))s"
         echo "done" > "$state/status"
         # the result in a unit of its own: this one ends with nh, so a new

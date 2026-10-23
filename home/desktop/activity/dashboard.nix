@@ -1,5 +1,4 @@
-# The Activity dashboard: SQL over aw-server-rust's SQLite (events.data is the
-# event's JSON, start and end in nanoseconds), through frser-sqlite-datasource
+# The Activity dashboard, through frser-sqlite-datasource (the SQL: sql.nix)
 { lib }:
 let
   ds = {
@@ -7,45 +6,42 @@ let
     uid = "activitywatch";
   };
 
-  # the dashboard's time range, in the events' nanoseconds
-  from = "\${__from}000000";
-  to = "\${__to}000000";
+  q = import ./sql.nix {
+    inherit lib;
+    # the dashboard's time range, in the events' nanoseconds
+    from = "\${__from}000000";
+    to = "\${__to}000000";
+  };
+  # FMT (strftime) of a nanosecond column in local time, as UTC ISO: a
+  # day's or an hour's bar where it belongs
+  local =
+    fmt: col:
+    "strftime('%Y-%m-%dT%H:%M:%SZ', strftime('${fmt}', ${col} / 1e9, 'unixepoch', 'localtime'), 'utc')";
 
-  bucket = prefix: "(SELECT id FROM buckets WHERE name LIKE '${prefix}%')";
+  # one column per category (a long table the plugin can't turn into series)
+  perCategory =
+    lib.concatMapStringsSep ",\n  "
+      (c: "sum(CASE WHEN category = '${c}' THEN e - s END) / 1e9 AS \"${c}\"")
+      (
+        (map (r: r.name) (import ./categories.nix).rules)
+        ++ [
+          "Browsing"
+          "Other"
+        ]
+      );
 
-  # events of a bucket inside the range, cut at its edges: s, e and data
-  inRange = prefix: ''
-    SELECT max(starttime, ${from}) AS s, min(endtime, ${to}) AS e, data
-    FROM events
-    WHERE bucketrow = ${bucket prefix} AND endtime > ${from} AND starttime < ${to}
-  '';
-
-  # the stretches at the keyboard (awatcher's afk bucket says not-afk)
-  active = ''
-    active AS (
-      SELECT s, e FROM (${inRange "aw-watcher-afk_"})
-      WHERE json_extract(data, '$.status') = 'not-afk'
-    )
-  '';
-
-  # seconds of KEY (an SQL expression over data) from a bucket, counting only
-  # the time at the keyboard
-  activeBy = prefix: key: limit: ''
-    WITH ${active},
-    ev AS (SELECT s, e, ${key} AS k FROM (${inRange prefix}))
-    SELECT ev.k AS name, sum(min(ev.e, active.e) - max(ev.s, active.s)) / 1e9 AS seconds
-    FROM ev JOIN active ON ev.s < active.e AND active.s < ev.e
-    WHERE ev.k IS NOT NULL AND ev.k != '''
-    GROUP BY ev.k ORDER BY seconds DESC LIMIT ${toString limit}
-  '';
-
-  # the host part of a URL
-  domain = col: ''
-    substr(substr(${col}, instr(${col}, '://') + 3), 1,
-      instr(substr(${col}, instr(${col}, '://') + 3) || '/', '/') - 1)
-  '';
-
-  iso = col: "strftime('%Y-%m-%dT%H:%M:%SZ', ${col} / 1e9, 'unixepoch')";
+  inherit (q)
+    from
+    to
+    bucket
+    inRange
+    active
+    activeBy
+    domain
+    iso
+    categorized
+    byCategory
+    ;
 
   target = kind: sql: {
     refId = "A";
@@ -161,6 +157,23 @@ let
     ORDER BY starttime
   '';
 
+  # the newest health sample, and a value of it (EXPR over its data)
+  latestRow = "SELECT data FROM events WHERE bucketrow = ${bucket "aw-watcher-health_"} ORDER BY starttime DESC LIMIT 1";
+  latest =
+    expr:
+    if lib.hasInfix "(" expr then
+      "SELECT ${expr} AS value FROM (${latestRow})"
+    else
+      "SELECT json_extract(data, '$.${expr}') AS value FROM (${latestRow})";
+
+  # the health samples in range, with a time column
+  health = cols: ''
+    SELECT ${iso "starttime"} AS time, ${cols}
+    FROM events
+    WHERE bucketrow = ${bucket "aw-watcher-health_"} AND endtime > ${from} AND starttime < ${to}
+    ORDER BY starttime
+  '';
+
   # a process list of the metrics samples (apps_cpu, apps_mem...), averaged
   processes = list: field: ''
     SELECT json_extract(p.value, '$.name') AS name,
@@ -230,6 +243,62 @@ let
       sql = "SELECT coalesce(sum(e - s), 0) / 1e9 AS seconds FROM (${inRange "aw-watcher-media_"})";
     })
 
+    # what the time went to (categories.nix)
+    (panel {
+      title = "Categories";
+      type = "bargauge";
+      unit = "s";
+      options = rows;
+      x = 0;
+      y = 4;
+      w = 8;
+      h = 9;
+      sql = byCategory;
+    })
+    (panel {
+      title = "Categories, day by day";
+      type = "timeseries";
+      kind = "time series";
+      unit = "s";
+      custom = bars // {
+        stacking.mode = "normal";
+      };
+      options = tooltip;
+      x = 8;
+      y = 4;
+      w = 16;
+      h = 9;
+      sql = ''
+        WITH ${categorized}
+        SELECT ${local "%Y-%m-%d 12:00:00" "s"} AS time,
+          ${perCategory}
+        FROM categorized GROUP BY 1 ORDER BY 1
+      '';
+    })
+    (panel {
+      title = "Category timeline";
+      type = "state-timeline";
+      options = {
+        showValue = "never";
+        mergeValues = true;
+        rowHeight = 0.9;
+        legend.showLegend = true;
+      };
+      x = 0;
+      y = 13;
+      w = 24;
+      h = 5;
+      sql = ''
+        WITH ${categorized}
+        SELECT time, category FROM (
+          SELECT ${iso "s"} AS time, s, category FROM categorized
+          UNION ALL
+          SELECT ${iso "s"} AS time, s, 'away' FROM (${inRange "aw-watcher-afk_"})
+          WHERE json_extract(data, '$.status') = 'afk'
+        ) ORDER BY s
+      '';
+    })
+
     # where the time goes
     (panel {
       title = "Apps";
@@ -237,7 +306,7 @@ let
       unit = "s";
       options = rows;
       x = 0;
-      y = 4;
+      y = 22;
       w = 12;
       h = 10;
       sql = activeBy "aw-watcher-window_" (metric "app") 15;
@@ -248,7 +317,7 @@ let
       unit = "s";
       options = rows;
       x = 12;
-      y = 4;
+      y = 22;
       w = 12;
       h = 10;
       description = "Active tab of every browser, counting only the time at the keyboard";
@@ -264,7 +333,7 @@ let
         barWidth = 0.8;
       };
       x = 0;
-      y = 14;
+      y = 32;
       w = 12;
       h = 8;
       sql = ''
@@ -281,13 +350,13 @@ let
       custom = bars;
       options = tooltip;
       x = 12;
-      y = 14;
+      y = 32;
       w = 12;
       h = 8;
       sql = ''
         WITH ${active}
-        SELECT date(s / 1e9, 'unixepoch', 'localtime') || 'T12:00:00' AS time, sum(e - s) / 1e9 AS active
-        FROM active GROUP BY date(s / 1e9, 'unixepoch', 'localtime') ORDER BY time
+        SELECT ${local "%Y-%m-%d 12:00:00" "s"} AS time, sum(e - s) / 1e9 AS active
+        FROM active GROUP BY time ORDER BY time
       '';
     })
 
@@ -298,7 +367,7 @@ let
       unit = "s";
       options = rows;
       x = 0;
-      y = 22;
+      y = 40;
       w = 8;
       h = 9;
       sql = activeBy "aw-watcher-emacs_" (metric "project") 12;
@@ -309,7 +378,7 @@ let
       unit = "s";
       options = donut;
       x = 8;
-      y = 22;
+      y = 40;
       w = 8;
       h = 9;
       sql = activeBy "aw-watcher-emacs_" (metric "language") 10;
@@ -319,7 +388,7 @@ let
       type = "table";
       unit = "s";
       x = 16;
-      y = 22;
+      y = 40;
       w = 8;
       h = 9;
       sql =
@@ -333,7 +402,7 @@ let
       unit = "s";
       options = rows;
       x = 0;
-      y = 31;
+      y = 49;
       w = 12;
       h = 9;
       description = "Emacs time at the keyboard plus the time commands ran inside each git project";
@@ -350,7 +419,7 @@ let
       title = "Terminal: commands";
       type = "table";
       x = 12;
-      y = 31;
+      y = 49;
       w = 12;
       h = 9;
       sql = ''
@@ -368,7 +437,7 @@ let
       type = "table";
       unit = "s";
       x = 0;
-      y = 40;
+      y = 58;
       w = 12;
       h = 10;
       sql = activeBy "aw-watcher-window_" "${metric "app"} || ' › ' || ${metric "title"}" 100;
@@ -378,7 +447,7 @@ let
       type = "table";
       unit = "s";
       x = 12;
-      y = 40;
+      y = 58;
       w = 12;
       h = 10;
       sql = activeBy "aw-watcher-web-" "coalesce(${metric "title"}, '') || ' › ' || ${metric "url"}" 100;
@@ -388,7 +457,7 @@ let
       type = "table";
       unit = "s";
       x = 0;
-      y = 50;
+      y = 68;
       w = 12;
       h = 9;
       sql = ''
@@ -404,7 +473,7 @@ let
       unit = "s";
       options = rows;
       x = 12;
-      y = 50;
+      y = 68;
       w = 12;
       h = 9;
       sql = ''
@@ -422,7 +491,7 @@ let
       custom = lines;
       options = tooltip;
       x = 0;
-      y = 59;
+      y = 77;
       w = 12;
       h = 8;
       sql = samples ''
@@ -438,7 +507,7 @@ let
       custom = lines;
       options = tooltip;
       x = 12;
-      y = 59;
+      y = 77;
       w = 12;
       h = 8;
       sql = samples ''
@@ -453,7 +522,7 @@ let
       custom = lines;
       options = tooltip;
       x = 0;
-      y = 67;
+      y = 85;
       w = 12;
       h = 8;
       sql = samples ''
@@ -471,7 +540,7 @@ let
       custom = lines;
       options = tooltip;
       x = 12;
-      y = 67;
+      y = 85;
       w = 12;
       h = 8;
       sql = samples ''
@@ -486,7 +555,7 @@ let
       custom = lines;
       options = tooltip;
       x = 0;
-      y = 75;
+      y = 93;
       w = 12;
       h = 8;
       sql = samples ''
@@ -501,7 +570,7 @@ let
       custom = lines;
       options = tooltip;
       x = 12;
-      y = 75;
+      y = 93;
       w = 12;
       h = 8;
       sql = samples "${metric "battery"} AS battery";
@@ -511,7 +580,7 @@ let
       type = "table";
       unit = "percent";
       x = 0;
-      y = 83;
+      y = 101;
       w = 12;
       h = 10;
       description = "Every process with the same name summed, foreground or background";
@@ -522,7 +591,7 @@ let
       type = "table";
       unit = "bytes";
       x = 12;
-      y = 83;
+      y = 101;
       w = 12;
       h = 10;
       sql = processes "apps_mem" "rss";
@@ -537,7 +606,7 @@ let
         legend.showLegend = false;
       };
       x = 0;
-      y = 93;
+      y = 111;
       w = 24;
       h = 9;
       sql = ''
@@ -561,7 +630,7 @@ let
         legend.showLegend = false;
       };
       x = 0;
-      y = 102;
+      y = 120;
       w = 24;
       h = 5;
       sql = ''
@@ -577,7 +646,7 @@ let
       type = "table";
       unit = "s";
       x = 0;
-      y = 107;
+      y = 125;
       w = 8;
       h = 10;
       description = "Stretches at the keyboard without going away, longest first, with what filled them";
@@ -606,12 +675,12 @@ let
       custom = bars;
       options = tooltip;
       x = 8;
-      y = 107;
+      y = 125;
       w = 16;
       h = 10;
       description = "Window changes per hour: the higher, the more scattered";
       sql = ''
-        SELECT strftime('%Y-%m-%dT%H:30:00', s / 1e9, 'unixepoch', 'localtime') AS time, count(*) AS switches
+        SELECT ${local "%Y-%m-%d %H:30:00" "s"} AS time, count(*) AS switches
         FROM (${inRange "aw-watcher-window_"}) GROUP BY time ORDER BY time
       '';
     })
@@ -624,7 +693,7 @@ let
       custom = bars;
       options = tooltip;
       x = 0;
-      y = 117;
+      y = 135;
       w = 12;
       h = 8;
       sql = ''
@@ -639,7 +708,7 @@ let
       type = "bargauge";
       options = rows;
       x = 12;
-      y = 117;
+      y = 135;
       w = 12;
       h = 8;
       sql = ''
@@ -655,7 +724,7 @@ let
       unit = "s";
       options = rows;
       x = 0;
-      y = 125;
+      y = 143;
       w = 8;
       h = 9;
       description = "Major modes: code, magit, org, mail, vterm, dired...";
@@ -667,7 +736,7 @@ let
       unit = "s";
       options = donut;
       x = 8;
-      y = 125;
+      y = 143;
       w = 8;
       h = 9;
       sql = activeBy "aw-watcher-emacs_" (metric "evil") 10;
@@ -677,7 +746,7 @@ let
       type = "table";
       unit = "s";
       x = 16;
-      y = 125;
+      y = 143;
       w = 8;
       h = 9;
       sql = ''
@@ -697,7 +766,7 @@ let
       title = "Terminal: failures";
       type = "table";
       x = 0;
-      y = 134;
+      y = 152;
       w = 12;
       h = 9;
       sql = ''
@@ -712,7 +781,7 @@ let
       type = "table";
       unit = "s";
       x = 12;
-      y = 134;
+      y = 152;
       w = 12;
       h = 9;
       sql = ''
@@ -728,7 +797,7 @@ let
       unit = "s";
       options = donut;
       x = 0;
-      y = 143;
+      y = 161;
       w = 8;
       h = 8;
       sql = ''
@@ -750,7 +819,7 @@ let
       unit = "s";
       options = rows;
       x = 8;
-      y = 143;
+      y = 161;
       w = 8;
       h = 8;
       sql = ''
@@ -766,12 +835,148 @@ let
       custom = lines;
       options = tooltip;
       x = 16;
-      y = 143;
+      y = 161;
       w = 8;
       h = 8;
       sql = ''
         SELECT ${iso "s"} AS time, max(${metric "tabCount"}) AS tabs
         FROM (${inRange "aw-watcher-web-"}) GROUP BY time ORDER BY time
+      '';
+    })
+
+    # the setup itself (aw-watcher-system's health, every 15 minutes)
+    (panel {
+      title = "Last backup";
+      type = "stat";
+      unit = "s";
+      description = "Time since the last successful backup";
+      options = stat;
+      x = 0;
+      y = 169;
+      w = 4;
+      h = 4;
+      sql = latest "json_extract(data, '$.backup_age_h') * 3600";
+    })
+    (panel {
+      title = "Backup verified";
+      type = "stat";
+      unit = "s";
+      description = "Time since the last restore test (backup verify)";
+      options = stat;
+      x = 4;
+      y = 169;
+      w = 4;
+      h = 4;
+      sql = latest "json_extract(data, '$.verify_age_h') * 3600";
+    })
+    (panel {
+      title = "Verify result";
+      type = "stat";
+      options = stat;
+      x = 8;
+      y = 169;
+      w = 3;
+      h = 4;
+      sql = latest "verify";
+    })
+    (panel {
+      title = "Failed units";
+      type = "stat";
+      options = stat;
+      x = 11;
+      y = 169;
+      w = 3;
+      h = 4;
+      sql = latest "json_array_length(data, '$.failed_system') + json_array_length(data, '$.failed_user')";
+    })
+    (panel {
+      title = "Updates";
+      type = "stat";
+      options = stat;
+      x = 14;
+      y = 169;
+      w = 3;
+      h = 4;
+      sql = latest "updates";
+    })
+    (panel {
+      title = "Firmware updates";
+      type = "stat";
+      options = stat;
+      x = 17;
+      y = 169;
+      w = 3;
+      h = 4;
+      sql = latest "firmware_updates";
+    })
+    (panel {
+      title = "Errors in the journal";
+      type = "stat";
+      description = "Since this boot";
+      options = stat;
+      x = 20;
+      y = 169;
+      w = 4;
+      h = 4;
+      sql = latest "journal_errors_boot";
+    })
+    (panel {
+      title = "Store, generations and snapshots";
+      type = "timeseries";
+      kind = "time series";
+      custom = lines;
+      options = tooltip;
+      x = 0;
+      y = 173;
+      w = 12;
+      h = 8;
+      sql = health ''
+        ${metric "store_paths"} AS "store paths", ${metric "system_generations"} AS "system generations",
+        ${metric "home_generations"} AS "home generations", ${metric "snapshots_home"} AS snapshots
+      '';
+    })
+    (panel {
+      title = "Nix disk and journal errors";
+      type = "timeseries";
+      kind = "time series";
+      custom = lines;
+      options = tooltip;
+      x = 12;
+      y = 173;
+      w = 12;
+      h = 8;
+      sql = health ''
+        ${metric "nix_disk_percent"} AS "nix disk %", ${metric "journal_errors_boot"} AS "journal errors"
+      '';
+    })
+    (panel {
+      title = "Rebuilds";
+      type = "table";
+      unit = "s";
+      x = 0;
+      y = 181;
+      w = 12;
+      h = 8;
+      sql = ''
+        SELECT strftime('%d/%m %H:%M', starttime / 1e9, 'unixepoch', 'localtime') AS at,
+          CASE ${metric "ok"} WHEN 1 THEN 'ok' ELSE 'failed' END AS result,
+          (endtime - starttime) / 1e9 AS seconds
+        FROM events WHERE bucketrow = ${bucket "aw-watcher-events_"} AND ${metric "kind"} = 'rebuild'
+          AND endtime > ${from} AND starttime < ${to}
+        ORDER BY starttime DESC LIMIT 50
+      '';
+    })
+    (panel {
+      title = "Failed units now";
+      type = "table";
+      x = 12;
+      y = 181;
+      w = 12;
+      h = 8;
+      sql = ''
+        SELECT 'system' AS scope, u.value AS unit FROM (${latestRow}), json_each(data, '$.failed_system') AS u
+        UNION ALL
+        SELECT 'user', u.value FROM (${latestRow}), json_each(data, '$.failed_user') AS u
       '';
     })
   ];

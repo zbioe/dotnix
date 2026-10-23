@@ -1,9 +1,10 @@
 # ActivityWatch, everything on this machine only: aw-server-rust on
 # 127.0.0.1:5600 with watchers for windows and AFK (awatcher, Wayland), the
-# system (load, processes, state), media (MPRIS) and the shell; the browsers'
-# extension (system/desktop/activity.nix) and zmacs send their own. Grafana
-# draws it all at 127.0.0.1:5610, started on the first visit and stopped when
-# left alone.
+# system (load, processes, state, the setup's health), media (MPRIS) and the
+# shell; the browsers' extension (system/desktop/activity.nix), zmacs and
+# `rebuild` send their own. Grafana draws it all at 127.0.0.1:5610, started on
+# the first visit and stopped when left alone; `activity report` sums up a day
+# or a week (a notification every evening, and on Sundays for the week).
 {
   config,
   lib,
@@ -36,6 +37,9 @@ let
       wireplumber # wpctl: audio output
       networkmanager # nmcli: Wi-Fi
       bluez # bluetoothctl: connected devices
+      systemd # systemctl, journalctl: failed units, errors
+      snapper # snapshot count
+      fwupd # fwupdmgr: firmware updates
     ]
   );
   mediaWatcher = watcher "aw-watcher-media" ./media.py [ pkgs.playerctl ];
@@ -57,15 +61,64 @@ let
     '';
   };
 
-  # buckets the shell writes to with plain events
+  # buckets written to with plain events: the shell's and the setup's own
+  # (rebuilds)
   buckets = pkgs.writeShellScript "aw-buckets" ''
     for _ in $(seq 60); do
       ${lib.getExe pkgs.curl} -sf ${api}/info >/dev/null && break
       sleep 0.5
     done
-    ${lib.getExe pkgs.curl} -sf -X POST -H 'Content-Type: application/json' \
-      -d '{"client":"aw-term","type":"app.terminal.command","hostname":"${host}"}' \
-      ${api}/buckets/aw-watcher-terminal_${host} >/dev/null || true
+    bucket() {
+      ${lib.getExe pkgs.curl} -sf -X POST -H 'Content-Type: application/json' \
+        -d "{\"client\":\"$2\",\"type\":\"$3\",\"hostname\":\"${host}\"}" \
+        "${api}/buckets/$1_${host}" >/dev/null || true
+    }
+    bucket aw-watcher-terminal aw-term app.terminal.command
+    bucket aw-watcher-events dotnix os.events
+  '';
+
+  # `activity report`: the dashboard's own queries, with :from and :to
+  queries =
+    let
+      q = import ./sql.nix {
+        inherit lib;
+        from = ":from";
+        to = ":to";
+      };
+      field = f: "json_extract(data, '$.${f}')";
+    in
+    pkgs.writeText "activity-queries.json" (
+      builtins.toJSON {
+        active = "WITH ${q.active} SELECT coalesce(sum(e - s), 0) / 1e9 FROM active";
+        focus = "WITH ${q.active} SELECT coalesce(max(e - s), 0) / 1e9 FROM active";
+        categories = q.byCategory;
+        apps = q.activeBy "aw-watcher-window_" (field "app") 5;
+        sites = q.activeBy "aw-watcher-web-" (q.domain (field "url")) 5;
+        projects = ''
+          SELECT name, sum(seconds) FROM (
+            SELECT * FROM (${q.activeBy "aw-watcher-emacs_" (field "project") 1000})
+            UNION ALL
+            SELECT ${field "project"} AS name, sum(e - s) / 1e9 AS seconds
+            FROM (${q.inRange "aw-watcher-terminal_"}) GROUP BY name
+          ) WHERE name IS NOT NULL GROUP BY name ORDER BY 2 DESC LIMIT 5
+        '';
+        switches = "SELECT count(*) FROM (${q.inRange "aw-watcher-window_"})";
+        commands = "SELECT count(*), coalesce(sum(${field "status"} != 0), 0) FROM (${q.inRange "aw-watcher-terminal_"})";
+        typed = "SELECT coalesce(sum(${field "chars"}), 0) FROM (${q.inRange "aw-watcher-emacs-input_"})";
+        media = ''
+          SELECT coalesce(${field "artist"} || ' - ', ''') || ${field "title"}, sum(e - s) / 1e9
+          FROM (${q.inRange "aw-watcher-media_"}) GROUP BY 1 ORDER BY 2 DESC LIMIT 5
+        '';
+      }
+    );
+
+  # the database's own: machine samples thinned after 90 days, then compacted
+  retention = pkgs.writeShellScript "aw-retention" ''
+    systemctl --user stop aw-server.service
+    AW_DB=${db} ${python}/bin/python3 ${./retention.py}
+    status=$?
+    systemctl --user start aw-server.service
+    exit $status
   '';
 
   grafanaIni = pkgs.writeText "grafana.ini" (
@@ -153,16 +206,36 @@ let
     }
   ];
 
-  # the launcher entry: the socket starts Grafana on the first request
-  activity = pkgs.writeShellScriptBin "activity" ''
-    exec ${pkgs.xdg-utils}/bin/xdg-open http://127.0.0.1:${toString grafanaPort}/d/activity
-  '';
+  # `activity`: the dashboard (the socket starts Grafana on the first
+  # request); `activity report [today|yesterday|week] [--notify] [--save]`
+  activity = pkgs.writeShellApplication {
+    name = "activity";
+    runtimeInputs = [
+      pkgs.xdg-utils
+      pkgs.libnotify
+    ];
+    text = ''
+      if [ "''${1:-}" = report ]; then
+        shift
+        AW_DB=${db} AW_REPORT_QUERIES=${queries} exec ${python}/bin/python3 ${./report.py} "$@"
+      fi
+      exec xdg-open http://127.0.0.1:${toString grafanaPort}/d/activity
+    '';
+  };
+
+  timer = calendar: {
+    Timer = {
+      OnCalendar = calendar;
+      Persistent = true;
+    };
+    Install.WantedBy = [ "timers.target" ];
+  };
 
   service = description: exec: extra: {
     Unit = {
       Description = description;
       After = [ "aw-server.service" ];
-      Requires = [ "aw-server.service" ];
+      Wants = [ "aw-server.service" ];
     }
     // extra.Unit or { };
     Service = {
@@ -229,9 +302,16 @@ in
               ];
             };
           };
-      aw-watcher-system = service "ActivityWatch: load, processes and state" (lib.getExe systemWatcher) {
-        wantedBy = [ "default.target" ];
-      };
+      aw-watcher-system =
+        lib.recursiveUpdate
+          (service "ActivityWatch: load, processes, state and health" (lib.getExe systemWatcher) {
+            wantedBy = [ "default.target" ];
+          })
+          {
+            Service.Environment = [
+              "AW_BACKUP_DIR=${osConfig.dotnix.storage.backup.cacheDir or "/var/cache/backup"}"
+            ];
+          };
       aw-watcher-media = service "ActivityWatch: what plays (MPRIS)" (lib.getExe mediaWatcher) {
         Unit.PartOf = [ "graphical-session.target" ];
       };
@@ -255,6 +335,28 @@ in
           TimeoutStartSec = 90;
         };
       };
+      activity-report = {
+        Unit.Description = "Today's activity, as a notification and in ~/org/activity";
+        Service = {
+          Type = "oneshot";
+          ExecStart = "${lib.getExe activity} report today --notify --save";
+        };
+      };
+      activity-report-week = {
+        Unit.Description = "The week's activity, as a notification and in ~/org/activity";
+        Service = {
+          Type = "oneshot";
+          ExecStart = "${lib.getExe activity} report week --notify --save";
+        };
+      };
+      aw-retention = {
+        Unit.Description = "ActivityWatch: thin old machine samples, compact the database";
+        Service = {
+          Type = "oneshot";
+          ExecStart = retention;
+        };
+      };
+
       # the socket's side: forwards to Grafana and lets it go after 30 idle minutes
       grafana-proxy = {
         Unit = {
@@ -264,6 +366,12 @@ in
         };
         Service.ExecStart = "${pkgs.systemd}/lib/systemd/systemd-socket-proxyd --exit-idle-time=30min 127.0.0.1:${toString grafanaBackend}";
       };
+    };
+
+    systemd.user.timers = {
+      activity-report = timer "*-*-* 21:30";
+      activity-report-week = timer "Sun *-*-* 21:35";
+      aw-retention = timer "monthly";
     };
 
     systemd.user.sockets.grafana-proxy = {
