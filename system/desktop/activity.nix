@@ -8,24 +8,14 @@
 }:
 let
   cfg = config.dotnix.desktop.activity;
-  browsers = config.dotnix.desktop.browsers;
-  policy = builtins.toJSON {
-    ExtensionInstallForcelist = [
-      "nglaklhklhcoonedhgnpgddginnjdadi;https://clients2.google.com/service/update2/crx"
-    ];
-  };
 in
 {
   options.dotnix.desktop.activity.enable =
     lib.mkEnableOption "ActivityWatch (local only) and Grafana over it";
 
   config = lib.mkIf cfg.enable {
-    environment.etc = {
-      "chromium/policies/managed/activitywatch.json" = lib.mkIf browsers.chromium.enable {
-        text = policy;
-      };
-      "brave/policies/managed/activitywatch.json" = lib.mkIf browsers.brave.enable { text = policy; };
-    };
+    # the watcher extension in Chromium and Brave (LibreWolf: its own policies)
+    dotnix.desktop.browsers.chromiumExtensions = [ "nglaklhklhcoonedhgnpgddginnjdadi" ];
 
     dotnix.storage.backup.exclude = [
       ".local/share/activitywatch"
