@@ -18,7 +18,6 @@ in
       [
         unstable.harbor-cli # local AI stacks
         unstable.claude-code # coding agent
-        unstable.aider-chat # coding agent
         unstable.zed-editor # editor with AI
         unstable.code-cursor # editor with AI
         unstable.antigravity-ide # editor with AI

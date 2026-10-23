@@ -3,6 +3,7 @@
   lib,
   pkgs,
   dotlib,
+  unstable,
   ...
 }:
 let
@@ -21,7 +22,7 @@ in
         tetex # LaTeX distribution
         ghostscript # PostScript and PDF
         poppler-utils # PDF utilities
-        mermaid-cli # diagrams from text
+        (mermaid-cli.override { inherit (unstable) chromium; }) # diagrams from text, on the browser's chromium
         haskellPackages.commonmark-cli # markdown formatter
       ]
     );
