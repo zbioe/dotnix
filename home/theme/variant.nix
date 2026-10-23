@@ -300,20 +300,11 @@ let
   # Discord itself is set to.
   discordCss =
     let
-      # past the background: darker sidebars on dark palettes, the
-      # palette's own tints on light ones
+      # past the background: the palette's own tints on light palettes; dark
+      # ones stay on base00 so every surface matches the desktop
       beyond =
         if mode == "dark" then
-          [
-            [
-              78
-              "color-mix(in oklab, ${c.base00}, #000 35%)"
-            ]
-            [
-              100
-              "color-mix(in oklab, ${c.base00}, #000 70%)"
-            ]
-          ]
+          [ ]
         else
           [
             [
