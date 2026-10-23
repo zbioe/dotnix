@@ -273,7 +273,7 @@ nix run .#options -- bx    # every dotnix.* option of a host and its value
 nix fmt                    # format
 nix build .#usb-key-test   # boots VMs: unlock from a stick, PIN, password fallback
 nix build .#usb-stick-test # boots a VM from a multiboot stick
-nix build .#disk-test      # formats a VM's disk as dotnix-install does
+nix build .#disk-test      # installs on a VM as dotnix-install does, boots it
 ```
 
 ## USB key
