@@ -6,6 +6,7 @@
     ./keyboard.nix
     ./ddc.nix
     ./webcam.nix
+    ./firmware.nix
   ];
 
   hardware.enableAllFirmware = true;

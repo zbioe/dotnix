@@ -41,6 +41,7 @@
       };
       ddc.enable = true;
       webcam.enable = true;
+      firmware.enable = true;
     };
 
     network = {

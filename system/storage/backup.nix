@@ -1,5 +1,7 @@
 # Daily restic backup of /home and /persist (from read-only snapshots) through
 # rclone; the secrets live in the user's keyring. Start with `backup setup`.
+# Once a month a restore test: restic reads 1% of the data back and restores a
+# sample of files from the last snapshot, checking their content.
 {
   config,
   lib,
@@ -59,6 +61,8 @@ let
   '';
 
   stamp = "${cfg.cacheDir}/last-success";
+  verified = "${cfg.cacheDir}/last-verify";
+  verifyResult = "${cfg.cacheDir}/last-verify-result";
   # where the home directory is inside the snapshot being backed up
   backupHome = "/home/.backup/${lib.removePrefix "/home/" home}";
 
@@ -70,6 +74,8 @@ let
     export PATH=${
       lib.makeBinPath [
         pkgs.coreutils
+        pkgs.findutils
+        pkgs.jq
         pkgs.btrfs-progs
         pkgs.networkmanager
         pkgs.util-linux
@@ -83,8 +89,14 @@ let
       echo "backup: another one is running"
       exit 0
     fi
-    if [ "$mode" = auto ]; then
-      if [ -e ${stamp} ] && [ $(( $(date +%s) - $(stat -c %Y ${stamp}) )) -lt 72000 ]; then exit 0; fi
+    # the timers' runs: only when the last one is old enough
+    case "$mode" in
+      auto) last=${stamp} every=72000 ;;
+      verify) last=${verified} every=2592000 ;;
+      *) last="" ;;
+    esac
+    if [ -n "$last" ]; then
+      if [ -e "$last" ] && [ $(( $(date +%s) - $(stat -c %Y "$last") )) -lt $every ]; then exit 0; fi
       [ -S "/run/user/$(id -u ${user})/bus" ] || exit 0
       nm-online -q -t 30 || exit 0
       # not set up yet (`backup setup`)
@@ -95,6 +107,29 @@ let
     restic() {
       ${pkgs.restic}/bin/restic ${rcloneProgram asUser} --cache-dir ${cfg.cacheDir}/restic "$@"
     }
+
+    if [ "$mode" = verify ] || [ "$mode" = verify-now ]; then
+      tmp=$(mktemp -d /var/tmp/backup-verify.XXXXXX)
+      trap 'rm -rf "$tmp"' EXIT
+      fail() { echo "failed $1 $(date +%F)" > ${verifyResult}; exit 1; }
+      echo "running $(date +%F)" > ${verifyResult}
+      restic check --retry-lock 10m --read-data-subset 1% || fail check
+      # up to 200 files under 20 MB, without glob characters (--include-file
+      # reads patterns)
+      restic ls --json --host ${host} latest \
+        | jq -r 'select(.type == "file" and .size < 20000000) | .path | select(test("[][*?\\\\]") | not)' \
+        | shuf -n 200 > "$tmp/files" || fail list
+      expected=$(wc -l < "$tmp/files")
+      restic restore --host ${host} --target "$tmp/out" --include-file "$tmp/files" --verify latest || fail restore
+      restored=$(find "$tmp/out" -type f | wc -l)
+      [ "$restored" -eq "$expected" ] || fail "missing:$((expected - restored))"
+      echo "ok $restored files, $(date +%F)" > ${verifyResult}
+      touch ${verified}
+      if [ "$mode" = verify-now ]; then
+        ${notify "low" "Backup verified" "\"$restored files restored and checked\""}
+      fi
+      exit 0
+    fi
 
     # read-only snapshots at a fixed path, so each backup compares with
     # the previous one instead of rereading everything
@@ -182,6 +217,10 @@ let
           systemctl start --no-block backup@now.service
           echo "backup running (backup status)"
           ;;
+        verify)
+          systemctl start --no-block backup@verify-now.service
+          echo "restore test running (backup status)"
+          ;;
         status)
           running=$(systemctl list-units --no-legend --plain --state=activating,active 'backup@*' 'backup-*' 2>/dev/null | awk '$1 ~ /service$/ { print $1 }')
           for unit in $running; do
@@ -189,6 +228,7 @@ let
           done
           [ -n "$running" ] || echo "not running"
           if [ -e ${stamp} ]; then echo "last backup: $(date -r ${stamp} '+%F %R')"; else echo "no backup yet"; fi
+          if [ -e ${verifyResult} ]; then echo "last restore test: $(cat ${verifyResult})"; else echo "no restore test yet"; fi
           ;;
         log) journalctl -u 'backup@*' -n 100 --no-pager ;;
         snapshots) restic snapshots --host ${host} ;;
@@ -208,7 +248,7 @@ let
         password) ${secret "restic"}; echo ;;
         restic) shift; restic "$@" ;;
         *)
-          echo "usage: backup [setup | login | now | status | log | snapshots | mount [DIR] | password | restic ARGS...]"
+          echo "usage: backup [setup | login | now | verify | status | log | snapshots | mount [DIR] | password | restic ARGS...]"
           exit 1
           ;;
       esac
@@ -291,6 +331,16 @@ in
       };
     };
 
+    # the restore test: tried hourly, run once a month
+    systemd.timers.backup-verify = {
+      wantedBy = [ "timers.target" ];
+      timerConfig = {
+        OnBootSec = "45min";
+        OnUnitActiveSec = "1h";
+        Unit = "backup@verify.service";
+      };
+    };
+
     # readable: `backup status` (the user) reads the timestamps; the restic
     # cache inside stays root's
     systemd.tmpfiles.rules = [
@@ -302,7 +352,8 @@ in
     security.polkit.extraConfig = ''
       polkit.addRule(function(action, subject) {
         if (action.id == "org.freedesktop.systemd1.manage-units" &&
-            action.lookup("unit") == "backup@now.service" &&
+            (action.lookup("unit") == "backup@now.service" ||
+             action.lookup("unit") == "backup@verify-now.service") &&
             action.lookup("verb") == "start" && subject.user == "${user}") {
           return polkit.Result.YES;
         }
