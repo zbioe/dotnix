@@ -285,6 +285,7 @@ nix fmt                    # format
 nix build .#usb-key-test   # boots VMs: unlock from a stick, PIN, password fallback
 nix build .#usb-stick-test # boots a VM from a multiboot stick
 nix build .#disk-test      # installs on a VM as dotnix-install does, boots it
+nix build .#secure-boot-test # Limine, Secure Boot keys, then the TPM and its PIN, on a VM
 nix build .#install-test   # dotnix-install itself from the full ISO, offline (~1h)
 ```
 
@@ -310,6 +311,32 @@ and revokes the old one. No stick, a stick for another machine or a wrong PIN
 (three times): the password is asked.
 
 Enable it on a host with `dotnix.storage.usbKey.enable = true;`.
+
+## Secure Boot and TPM
+
+`/boot` is not encrypted: with GRUB, whoever gets the machine for a while can
+swap the initrd for one that keeps the disk password. With Secure Boot the
+host boots Limine signed with its own keys (sbctl, made on the host, kept in
+`/persist/var/lib/sbctl`), and Limine's signed config holds the hashes of every
+kernel and initrd: anything changed doesn't boot. The TPM then opens the disk
+with a short PIN, but only after that boot chain (PCR 7); the password and the
+USB key still work.
+
+Once per host, in this order:
+
+1. `dotnix.core.boot.loader = "limine";`, rebuild and reboot (the boot menu
+   is Limine's from now on).
+2. In the firmware setup, clear the Secure Boot keys (Setup Mode).
+3. `dotnix.core.boot.secureBoot.enable = true;` and `rebuild`: it makes the
+   keys, enrolls them next to Microsoft's (GPU firmware needs those) and signs.
+4. Reboot, turn Secure Boot on in the firmware; `sbctl status` shows it.
+5. `dotnix.core.boot.tpm2.enable = true;`, rebuild, `dotnix-tpm2-enroll` (asks
+   the disk password and the new PIN).
+
+The boot starts with the default theme: the kernel command line is sealed, so
+it can't follow `theme` as with GRUB (the session and SDDM still do). The ISOs
+and the multiboot stick keep GRUB, unsigned: Secure Boot off to boot them.
+`nix build .#secure-boot-test` goes through these steps on a VM.
 
 ## Multiboot stick
 

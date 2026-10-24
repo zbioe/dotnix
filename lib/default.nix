@@ -135,6 +135,9 @@ in
     usb-key-test = pkgs.testers.runNixOSTest ../checks/vm/usb-key.nix;
     usb-stick-test = pkgs.testers.runNixOSTest ../checks/vm/usb-stick.nix;
     disk-test = pkgs.testers.runNixOSTest (import ../checks/vm/disk.nix { inherit inputs dotlib; });
+    secure-boot-test = pkgs.testers.runNixOSTest (
+      import ../checks/vm/secure-boot.nix { inherit inputs dotlib; }
+    );
     install-test = pkgs.testers.runNixOSTest (
       import ../checks/vm/install.nix {
         inherit nixpkgs;

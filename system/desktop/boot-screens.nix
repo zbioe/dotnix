@@ -1,5 +1,7 @@
 # GRUB, Plymouth, the console and SDDM follow `theme`: every theme is prebuilt,
 # and theme-boot hands the choice over through grubenv and /var/lib/theme.
+# With Limine (Secure Boot) the kernel command line is sealed: the boot starts
+# with the default theme, the rest follows `theme` as with GRUB.
 {
   config,
   lib,
@@ -9,6 +11,7 @@
 }:
 let
   default = "gruvbox-dark";
+  grub = config.dotnix.core.boot.loader == "grub";
 
   themes = import ../../home/theme/themes.nix { inherit pkgs; };
   # boot screens can't follow `theme font`: the catalog's defaults
@@ -249,7 +252,6 @@ let
     name = "theme-boot";
     runtimeInputs = with pkgs; [
       coreutils
-      grub2
       kbd
     ];
     text = ''
@@ -274,9 +276,11 @@ let
             ;;
         esac
 
-        # shellcheck disable=SC2046 # one name=value per line
-        grub-editenv /boot/grub/grubenv set $(cat ${index}/"$id"/grubenv)
-        sync -f /boot/grub/grubenv
+        ${lib.optionalString grub ''
+          # shellcheck disable=SC2046 # one name=value per line
+          ${lib.getExe' pkgs.grub2 "grub-editenv"} /boot/grub/grubenv set $(cat ${index}/"$id"/grubenv)
+          sync -f /boot/grub/grubenv
+        ''}
 
         mkdir -p /var/lib/theme
         ln -sfn ${index}/"$id" /var/lib/theme/current.tmp
@@ -321,7 +325,7 @@ in
     lib.mkEnableOption "boot screens (GRUB, Plymouth, console, SDDM) following `theme`";
 
   config = lib.mkIf config.dotnix.desktop.bootScreens.enable {
-    boot.loader.grub = {
+    boot.loader.grub = lib.mkIf grub {
       theme = grubThemes;
       splashImage = pixel defaultVariant.colors.withHashtag.base00;
       backgroundColor = defaultVariant.colors.withHashtag.base00;
@@ -354,12 +358,27 @@ in
     # after the plain "splash": plymouth checks for it with strstr() and gives
     # up at the first hit, so a "plymouth.splash=" before it means no splash
     # at all (boot messages as text instead)
-    boot.kernelParams = lib.mkAfter [
-      "plymouth.splash=nix-\${nix_theme}"
-      "vt.default_red=\${nix_vt_red}"
-      "vt.default_grn=\${nix_vt_grn}"
-      "vt.default_blu=\${nix_vt_blu}"
-    ];
+    boot.kernelParams = lib.mkAfter (
+      if grub then
+        [
+          "plymouth.splash=nix-\${nix_theme}"
+          "vt.default_red=\${nix_vt_red}"
+          "vt.default_grn=\${nix_vt_grn}"
+          "vt.default_blu=\${nix_vt_blu}"
+        ]
+      else
+        [
+          "plymouth.splash=nix-${default}"
+          "vt.default_red=${vtKernel defaultVariant "r"}"
+          "vt.default_grn=${vtKernel defaultVariant "g"}"
+          "vt.default_blu=${vtKernel defaultVariant "b"}"
+        ]
+    );
+    # Limine's menu in the default theme's colors
+    boot.loader.limine.style = {
+      wallpapers = [ ];
+      backdrop = defaultVariant.colors.base00;
+    };
 
     # NixOS puts only the default plymouth theme in the initrd; ship them all so
     # plymouth.splash=nix-<theme> finds any of them (same path fixup as NixOS)
