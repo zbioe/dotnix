@@ -1,0 +1,132 @@
+# dotnix-install itself, as the full ISO runs it: the live system
+# (iso/live.nix) offline, the answers typed in, the whole desktop installed on
+# an empty disk, and that disk booted.
+{
+  modules,
+  specialArgs,
+  nixpkgs,
+}:
+{ pkgs, lib, ... }:
+let
+  instrumentation = "${nixpkgs}/nixos/modules/testing/test-instrumentation.nix";
+  answers = lib.concatStringsSep "\\n" [
+    "/dev/vda" # disk
+    "vmtest" # host
+    "1" # impermanence
+    "16" # swap in GiB: room for nix copying from the ISO
+    "secret" # disk password
+    "secret"
+    "login" # user password
+    "login"
+    "/dev/vda" # confirm
+  ];
+in
+{
+  name = "dotnix-install";
+
+  node = {
+    inherit specialArgs;
+    # the live system sets nixpkgs.config and overlays, as the hosts do
+    pkgsReadOnly = false;
+  };
+
+  nodes = {
+    installer = {
+      imports = modules ++ [ ../../iso/live.nix ];
+      virtualisation = {
+        # the target's disk is vda; the live system runs from vdb
+        diskImage = "./target.qcow2";
+        diskSize = 160 * 1024;
+        emptyDiskImages = [ (16 * 1024) ];
+        rootDevice = "/dev/vdb";
+        fileSystems."/".autoFormat = true;
+        useEFIBoot = true;
+        memorySize = 8 * 1024;
+        cores = 6;
+      };
+      # a disk with a serial, as real ones have
+      services.udev.extraRules = ''
+        KERNEL=="vda", SYMLINK+="disk/by-id/virtio-dotnix-target"
+      '';
+      nix.settings.substituters = lib.mkForce [ ];
+      networking.useDHCP = lib.mkForce false;
+    };
+    target = {
+      virtualisation = {
+        diskImage = "./target.qcow2";
+        memorySize = 4096;
+        cores = 4;
+        useBootLoader = true;
+        useEFIBoot = true;
+        useDefaultFilesystems = false;
+        efi.keepVariables = false;
+        fileSystems."/" = {
+          device = "/dev/disk/by-label/unused";
+          fsType = "ext4";
+        };
+      };
+    };
+  };
+
+  testScript = ''
+    installer.start()
+    installer.wait_for_unit("multi-user.target")
+    installer.succeed("udevadm settle")
+    installer.succeed("test -d /sys/firmware/efi")
+
+    with subtest("dotnix-install, offline"):
+        status, _ = installer.execute("printf '${answers}\\n' | dotnix-install >&2", timeout=None)
+        # what it wrote, to rebuild the same host when it fails
+        installer.execute("cat /mnt/home/zbioe/dotnix/hosts/vmtest/*.nix >&2")
+        assert status == 0, "dotnix-install failed"
+
+    with subtest("the host and the flake it wrote"):
+        flake = "/mnt/home/zbioe/dotnix"
+        host = installer.succeed(f"cat {flake}/hosts/vmtest/default.nix")
+        print(host)
+        assert 'device = "/dev/disk/by-id/virtio-dotnix-target"' in host
+        assert 'swapSize = "16G"' in host
+        assert "impermanence.enable = true" in host
+        assert 'passwordFile = "/persist/secrets/zbioe.passwd"' in host
+        installer.succeed(f"grep -q qemu-guest {flake}/hosts/vmtest/hardware-configuration.nix")
+        installer.succeed(f"test $(stat -c %u {flake}/flake.nix) = 1000")
+        installer.succeed("grep -q '^\\$y\\$' /mnt/persist/secrets/zbioe.passwd")
+        installer.succeed("test ! -e /tmp/dotnix-luks.key")
+        installer.succeed("test -e /mnt/boot/EFI/BOOT/BOOTX64.EFI")
+
+    with subtest("the test driver in the installed system"):
+        # the same host, plus what lets this test talk to it
+        installer.succeed(
+            f"sed -i 's|./hardware-configuration.nix|./hardware-configuration.nix ${instrumentation} ./vmtest.nix|' {flake}/hosts/vmtest/default.nix",
+            "echo '{ lib, ... }: { boot.kernelParams = [ \"console=ttyS0\" ]; boot.consoleLogLevel = lib.mkForce 7; dotnix.core.boot.plymouth.enable = false; }' > " + flake + "/hosts/vmtest/vmtest.nix",
+        )
+        installer.succeed(f"nixos-install --flake path:{flake}#vmtest --no-root-passwd --no-channel-copy --option always-allow-substitutes true >&2", timeout=None)
+        installer.succeed("umount -R /mnt && cryptsetup close enc && sync")
+        installer.shutdown()
+
+    target.state_dir = installer.state_dir
+
+    def boot():
+        target.start()
+        target.wait_for_console_text("passphrase for")
+        target.send_console("secret\n")
+        target.wait_for_unit("multi-user.target")
+
+    with subtest("boots the installed disk"):
+        boot()
+        assert target.succeed("hostname").strip() == "vmtest"
+        target.succeed("findmnt -no OPTIONS / | grep -q subvol=/root")
+        target.succeed("test -d /home/zbioe/dotnix/hosts/vmtest")
+        # the hash dotnix-install saved, not weakPass
+        target.succeed('cut -d: -f1,2 /etc/shadow | grep -qxF "zbioe:$(cat /persist/secrets/zbioe.passwd)"')
+        target.wait_for_unit("display-manager.service")
+        target.succeed("touch /gone /persist/kept && sync")
+        target.shutdown()
+
+    with subtest("/ is wiped, /persist is kept"):
+        boot()
+        target.fail("test -e /gone")
+        target.succeed("test -e /persist/kept")
+        target.shutdown()
+  '';
+}

@@ -115,7 +115,8 @@ let
       password="core.user.passwordFile = null;" passwd=""
       if [ -n "$upw" ]; then
         passwd=$(printf '%s' "$upw" | mkpasswd -m yescrypt -s)
-        password=""
+        # over the secrets/ one, which a new host can't decrypt yet
+        password="core.user.passwordFile = \"/persist/secrets/${username}.passwd\";"
       fi
       unset upw upw2
       # generated once the disk is mounted
@@ -177,8 +178,10 @@ let
       flake=/mnt/home/${username}/dotnix
       chown -R 1000:100 /mnt/home/${username}
 
-      # everything is already in this ISO's store: no download needed
-      nixos-install --flake "path:$flake#$host" --no-root-passwd --no-channel-copy
+      # offline: what the host needs is in this ISO's store (iso/live.nix), even
+      # what's marked to be built locally (wrappers, small files)
+      nixos-install --flake "path:$flake#$host" --no-root-passwd --no-channel-copy \
+        --option always-allow-substitutes true
       set +x
 
       echo

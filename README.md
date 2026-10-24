@@ -260,8 +260,9 @@ dd if=result/iso/*.iso of=/dev/sdX bs=4M conv=fsync
 Boot from it and run `dotnix-install`: it adds `hosts/<host>` to the flake,
 formats its disk with the layout of `system/storage/disk.nix` (declared with
 [disko](https://github.com/nix-community/disko), the same one the hosts mount)
-and installs it. `dotnix-mount` opens an
-installed disk on `/mnt` for recovery.
+and installs it. From the full ISO it needs no network: the ISO carries what
+building a new host takes. `dotnix-mount` opens an installed disk on `/mnt`
+for recovery.
 
 Then `rebuild` (or `Super+Shift+U`) rebuilds system and home.
 
@@ -274,6 +275,7 @@ nix fmt                    # format
 nix build .#usb-key-test   # boots VMs: unlock from a stick, PIN, password fallback
 nix build .#usb-stick-test # boots a VM from a multiboot stick
 nix build .#disk-test      # installs on a VM as dotnix-install does, boots it
+nix build .#install-test   # dotnix-install itself from the full ISO, offline (~1h)
 ```
 
 ## USB key

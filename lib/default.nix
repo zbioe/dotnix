@@ -99,6 +99,12 @@ let
         ];
       };
     };
+
+  # the live system of the full ISO and of install-test (iso/live.nix)
+  liveArgs = specialArgs // {
+    dotnix = self;
+    installReference = mkHost [ ../iso/reference.nix ];
+  };
 in
 {
   nixosConfigurations = lib.genAttrs hostNames (name: mkHost [ ../hosts/${name} ]) // {
@@ -114,9 +120,7 @@ in
     # this whole setup, live from USB and installable
     full-iso = lib.nixosSystem {
       inherit system;
-      specialArgs = specialArgs // {
-        dotnix = self;
-      };
+      specialArgs = liveArgs;
       modules = baseModules ++ [ ../iso/full.nix ];
     };
   };
@@ -131,6 +135,13 @@ in
     usb-key-test = pkgs.testers.runNixOSTest ../checks/vm/usb-key.nix;
     usb-stick-test = pkgs.testers.runNixOSTest ../checks/vm/usb-stick.nix;
     disk-test = pkgs.testers.runNixOSTest (import ../checks/vm/disk.nix { inherit inputs dotlib; });
+    install-test = pkgs.testers.runNixOSTest (
+      import ../checks/vm/install.nix {
+        inherit nixpkgs;
+        modules = baseModules;
+        specialArgs = liveArgs;
+      }
+    );
   };
 
   checks.${system} = import ../checks { inherit self pkgs lib; };
