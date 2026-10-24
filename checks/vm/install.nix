@@ -90,6 +90,7 @@ in
         assert 'passwordFile = "/persist/secrets/zbioe.passwd"' in host
         installer.succeed(f"grep -q qemu-guest {flake}/hosts/vmtest/hardware-configuration.nix")
         installer.succeed(f"test $(stat -c %u {flake}/flake.nix) = 1000")
+        installer.succeed(f"git -c safe.directory='*' -C {flake} ls-files --error-unmatch hosts/vmtest/default.nix")
         installer.succeed("grep -q '^\\$y\\$' /mnt/persist/secrets/zbioe.passwd")
         installer.succeed("test ! -e /tmp/dotnix-luks.key")
         installer.succeed("test -e /mnt/boot/EFI/BOOT/BOOTX64.EFI")
@@ -117,6 +118,7 @@ in
         assert target.succeed("hostname").strip() == "vmtest"
         target.succeed("findmnt -no OPTIONS / | grep -q subvol=/root")
         target.succeed("test -d /home/zbioe/dotnix/hosts/vmtest")
+        target.succeed("command -v dotnix-enroll")
         # the hash dotnix-install saved, not weakPass
         target.succeed('cut -d: -f1,2 /etc/shadow | grep -qxF "zbioe:$(cat /persist/secrets/zbioe.passwd)"')
         target.wait_for_unit("display-manager.service")

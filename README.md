@@ -138,8 +138,9 @@ everything.
 ```sh
 sops secrets/common.yaml                # edit (opens decrypted, saves encrypted)
 mkpasswd -m yescrypt                    # a new user-password hash
-ssh-to-age < /etc/ssh/ssh_host_ed25519_key.pub   # a new host's key, for .sops.yaml
-sops updatekeys secrets/common.yaml     # after changing .sops.yaml
+dotnix-enroll                           # this host opens it: .sops.yaml and updatekeys
+dotnix-enroll <host> <address>          # another one, through its SSH host key
+sops updatekeys secrets/common.yaml     # after changing .sops.yaml by hand
 ```
 
 Only what can be changed if it ever leaks goes here (it is public for good);

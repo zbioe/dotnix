@@ -34,6 +34,7 @@ let
       nixos-install-tools
       nix
       mkpasswd
+      git
     ];
     text = ''
       bold=$'\e[1m' red=$'\e[31m' off=$'\e[0m'
@@ -176,18 +177,24 @@ let
       mkdir -p /mnt/home/${username}
       mv "$flake" /mnt/home/${username}/dotnix
       flake=/mnt/home/${username}/dotnix
-      chown -R 1000:100 /mnt/home/${username}
 
       # offline: what the host needs is in this ISO's store (iso/live.nix), even
       # what's marked to be built locally (wrappers, small files)
       nixos-install --flake "path:$flake#$host" --no-root-passwd --no-channel-copy \
         --option always-allow-substitutes true
+
+      # a checkout again (/etc/dotnix is a store copy): offline, nothing fetched yet
+      git -C "$flake" init -q -b main
+      git -C "$flake" remote add origin https://github.com/zbioe/dotnix.git
+      git -C "$flake" add -A
+      chown -R 1000:100 /mnt/home/${username}
       set +x
 
       echo
       echo "''${bold}Done.''${off} Remove the USB and reboot. The flake is in ~/dotnix (hosts/$host);"
-      echo "make it a git checkout again with: git -C ~/dotnix init && git -C ~/dotnix add -A"
-      echo "Then: backup setup (and restore your files from it), nh home switch -c $host."
+      echo "online, its history: git -C ~/dotnix fetch && git -C ~/dotnix reset origin/main"
+      echo "Then: backup setup (and restore your files from it), nh home switch -c $host,"
+      echo "and from a machine with your age key: dotnix-enroll $host <its address>."
     '';
   };
 
