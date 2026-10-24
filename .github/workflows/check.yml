@@ -21,6 +21,10 @@ jobs:
       - uses: cachix/install-nix-action@v31
         with:
           extra_nix_config: system-features = nixos-test benchmark big-parallel kvm
+      # what bx built (system/services/cache.nix): read only
+      - uses: cachix/cachix-action@v16
+        with:
+          name: zbioe
       - name: Format, dead code, lint, Go tests, shellcheck
         run: nix build -L .#checks.x86_64-linux.{format,deadnix,statix,stylua,ruff,dotnix-key,usb-stick}
       - name: Evaluate the hosts, homes and the minimal ISO

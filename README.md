@@ -271,6 +271,11 @@ impermanence, `dotnix-diff` lists what was written to `/` since boot and goes
 away on the next one (`-a` with caches and `/tmp`): what may need a place in
 `/persist`.
 
+What bx builds (zmacs, the GTK4 swap, this flake's packages) goes to
+[zbioe.cachix.org](https://zbioe.cachix.org) after each switch, so the other
+hosts and CI download it instead of building; unfree packages stay out
+(`system/services/cache.nix`).
+
 ## Checks
 
 ```sh

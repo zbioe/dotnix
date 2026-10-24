@@ -9,5 +9,6 @@
     ./kdeconnect.nix
     ./localsend.nix
     ./bitcoin.nix
+    ./cache.nix
   ];
 }

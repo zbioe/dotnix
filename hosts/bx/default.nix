@@ -58,7 +58,11 @@
         cacheDir = "/var/lib/nodatacow/backup";
       };
     };
-    services.ai.ollama.rocm = "11.0.0";
+    services = {
+      ai.ollama.rocm = "11.0.0";
+      # what it builds, for the other hosts (zbioe.cachix.org)
+      cache.push.enable = true;
+    };
   };
 
   # a desktop (no battery): full speed always; amd-pstate is already active
