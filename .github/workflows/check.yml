@@ -1,4 +1,5 @@
-# bx, te, full-iso and home need their whole closure to evaluate (IFD): `nix flake check` covers them locally
+# hosts and homes evaluate without the GTK4 swap (checks/default.nix); full-iso
+# needs the whole closure to evaluate (IFD): `nix flake check` covers it locally
 name: check
 
 on:
@@ -22,8 +23,8 @@ jobs:
           extra_nix_config: system-features = nixos-test benchmark big-parallel kvm
       - name: Format, dead code, lint, Go tests, shellcheck
         run: nix build -L .#checks.x86_64-linux.{format,deadnix,statix,stylua,ruff,dotnix-key,usb-stick}
-      - name: Evaluate the minimal ISO
-        run: nix eval --raw .#nixosConfigurations.minimal-iso.config.system.build.toplevel.drvPath
+      - name: Evaluate the hosts, homes and the minimal ISO
+        run: nix build -L .#checks.x86_64-linux.{system-bx,system-te,system-minimal-iso,home-bx,home-te}
       - name: USB key VM test
         run: nix build -L .#usb-key-test
       - name: Multiboot stick VM test

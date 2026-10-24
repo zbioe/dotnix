@@ -6,7 +6,7 @@
   specialArgs,
   nixpkgs,
 }:
-{ pkgs, lib, ... }:
+{ lib, ... }:
 let
   instrumentation = "${nixpkgs}/nixos/modules/testing/test-instrumentation.nix";
   answers = lib.concatStringsSep "\\n" [
