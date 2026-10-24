@@ -3,12 +3,46 @@
 {
   config,
   lib,
+  pkgs,
   ...
 }:
+let
+  # what was written to / since boot (newer than root-blank): lost on the next
+  # one; caches and temporary files only with -a
+  diff = pkgs.writeShellApplication {
+    name = "dotnix-diff";
+    runtimeInputs = with pkgs; [
+      coreutils
+      util-linux
+      btrfs-progs
+      gnugrep
+      gawk
+    ];
+    text = ''
+      [ "$(id -u)" = 0 ] || exec sudo "$0" "$@"
+      skip='^(tmp|var/tmp|var/cache)/'
+      [ "''${1:-}" = -a ] && skip='^$'
+      mnt=$(mktemp -d)
+      trap 'umount "$mnt"; rmdir "$mnt"' EXIT
+      mount -o subvolid=5,ro /dev/mapper/enc "$mnt"
+      gen=$(btrfs subvolume find-new "$mnt/root-blank" 9999999 | awk '{ print $NF }')
+      # inode N file offset N len N disk start N offset N gen N flags F <path>
+      btrfs subvolume find-new "$mnt/root" "$gen" | grep '^inode' | cut -d' ' -f17- |
+        grep -Ev "$skip" | sort -u | while read -r path; do
+          # (still there, and not what NixOS links again at boot)
+          [ -e "/$path" ] || continue
+          [[ $(readlink "/$path") =~ ^/(nix/store|etc/static)/ ]] && continue
+          echo "/$path"
+        done || true
+    '';
+  };
+in
 {
   options.dotnix.storage.impermanence.enable = lib.mkEnableOption "a root reset at every boot";
 
   config = lib.mkIf config.dotnix.storage.impermanence.enable {
+    environment.systemPackages = [ diff ];
+
     boot.initrd.systemd.services.rollback = {
       description = "Reset the btrfs root subvolume to root-blank";
       wantedBy = [ "initrd.target" ];

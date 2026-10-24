@@ -266,7 +266,10 @@ building a new host takes. The nixos-hardware modules of the CPU, GPU and disk
 it finds go to `hosts/<host>/hardware.nix`, from the first `rebuild` on.
 `dotnix-mount` opens an installed disk on `/mnt` for recovery.
 
-Then `rebuild` (or `Super+Shift+U`) rebuilds system and home.
+Then `rebuild` (or `Super+Shift+U`) rebuilds system and home. With
+impermanence, `dotnix-diff` lists what was written to `/` since boot and goes
+away on the next one (`-a` with caches and `/tmp`): what may need a place in
+`/persist`.
 
 ## Checks
 
