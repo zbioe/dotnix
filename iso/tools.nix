@@ -87,7 +87,40 @@ let
         echo "''${red}different, again''${off}"
       done
 
+      # nixos-hardware for what this machine has, in hosts/<host>/hardware.nix
+      # from the first rebuild on: the ISO carries a host without it
+      hw=() graphics="" nvidia=""
+      case $(grep -m1 vendor_id /proc/cpuinfo) in
+        *AuthenticAMD) hw+=(common-cpu-amd common-cpu-amd-pstate) ;;
+        *GenuineIntel) hw+=(common-cpu-intel) ;;
+      esac
+      for dev in /sys/bus/pci/devices/*; do
+        [[ $(<"$dev/class") == 0x03* ]] || continue
+        case $(<"$dev/vendor") in
+          0x1002)
+            hw+=(common-gpu-amd)
+            graphics="dotnix.hardware.graphics.amd.enable = true;"
+            ;;
+          # (common-cpu-intel brings it too)
+          0x8086) [[ " ''${hw[*]} " == *" common-cpu-intel "* ]] || hw+=(common-gpu-intel) ;;
+          0x10de) nvidia="# an NVIDIA GPU: dotnix.hardware.graphics.nvidia" ;;
+        esac
+      done
+      [ "$(cat "/sys/block/$(basename "$(readlink -f "$disk")")/queue/rotational")" = 0 ] && hw+=(common-pc-ssd)
+      if compgen -G "/sys/class/power_supply/BAT*" >/dev/null; then hw+=(common-pc-laptop); else hw+=(common-pc); fi
+      imports=$(printf '    inputs.hardware.nixosModules.%s\n' "''${hw[@]}")
+      hardware="# what dotnix-install found here
+      { inputs, ... }:
+      {
+        imports = [
+      $imports
+        ];
+        $graphics
+        $nvidia
+      }"
+
       echo
+      echo "Hardware: ''${hw[*]}"
       echo "''${bold}$disk''${off} ($(lsblk -dno SIZE "$disk")) will be ''${red}erased''${off}: host $host, impermanence $impermanence, swap ''${swap}G"
       [ "$(ask "Type the disk path again to go on:" "")" = "$disk" ] || die "cancelled"
 
@@ -122,12 +155,14 @@ let
       unset upw upw2
       # generated once the disk is mounted
       echo "{ }" > "$flake/hosts/$host/hardware-configuration.nix"
+      echo "{ }" > "$flake/hosts/$host/hardware.nix"
       cat > "$flake/hosts/$host/default.nix" <<EOF
       # $host: installed by dotnix-install on $(date +%F)
       {
         imports = [
           ../common.nix
           ./hardware-configuration.nix
+          ./hardware.nix
         ];
 
         networking.hostName = "$host";
@@ -183,6 +218,7 @@ let
       nixos-install --flake "path:$flake#$host" --no-root-passwd --no-channel-copy \
         --option always-allow-substitutes true
 
+      printf '%s\n' "$hardware" > "$flake/hosts/$host/hardware.nix"
       # a checkout again (/etc/dotnix is a store copy): offline, nothing fetched yet
       git -C "$flake" init -q -b main
       git -C "$flake" remote add origin https://github.com/zbioe/dotnix.git
@@ -193,7 +229,8 @@ let
       echo
       echo "''${bold}Done.''${off} Remove the USB and reboot. The flake is in ~/dotnix (hosts/$host);"
       echo "online, its history: git -C ~/dotnix fetch && git -C ~/dotnix reset origin/main"
-      echo "Then: backup setup (and restore your files from it), nh home switch -c $host,"
+      echo "Then rebuild (hosts/$host/hardware.nix: ''${hw[*]}), backup setup (and restore"
+      echo "your files from it), nh home switch -c $host,"
       echo "and from a machine with your age key: dotnix-enroll $host <its address>."
     '';
   };

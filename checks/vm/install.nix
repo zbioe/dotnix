@@ -88,6 +88,12 @@ in
         assert 'swapSize = "16G"' in host
         assert "impermanence.enable = true" in host
         assert 'passwordFile = "/persist/secrets/zbioe.passwd"' in host
+        # nixos-hardware from what it found (a VM, no battery), for the first
+        # rebuild online: out of the offline reinstall below
+        hardware = installer.succeed(f"cat {flake}/hosts/vmtest/hardware.nix")
+        print(hardware)
+        assert "inputs.hardware.nixosModules.common-pc\n" in hardware
+        installer.succeed(f"echo '{{ }}' > {flake}/hosts/vmtest/hardware.nix")
         installer.succeed(f"grep -q qemu-guest {flake}/hosts/vmtest/hardware-configuration.nix")
         installer.succeed(f"test $(stat -c %u {flake}/flake.nix) = 1000")
         installer.succeed(f"git -c safe.directory='*' -C {flake} ls-files --error-unmatch hosts/vmtest/default.nix")

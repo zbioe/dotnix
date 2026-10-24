@@ -262,8 +262,9 @@ Boot from it and run `dotnix-install`: it adds `hosts/<host>` to the flake,
 formats its disk with the layout of `system/storage/disk.nix` (declared with
 [disko](https://github.com/nix-community/disko), the same one the hosts mount)
 and installs it. From the full ISO it needs no network: the ISO carries what
-building a new host takes. `dotnix-mount` opens an installed disk on `/mnt`
-for recovery.
+building a new host takes. The nixos-hardware modules of the CPU, GPU and disk
+it finds go to `hosts/<host>/hardware.nix`, from the first `rebuild` on.
+`dotnix-mount` opens an installed disk on `/mnt` for recovery.
 
 Then `rebuild` (or `Super+Shift+U`) rebuilds system and home.
 
