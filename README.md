@@ -335,9 +335,9 @@ Once per host, in this order:
 
 The kernel command line is sealed, so the boot theme can't go through it as
 with GRUB: `theme` leaves its name in `/boot/dotnix-theme` and the initrd takes
-it from there, only if it is one of the themes built in. The ISOs and the
-multiboot stick keep GRUB, unsigned: Secure Boot off to boot them.
-`nix build .#secure-boot-test` goes through these steps on a VM.
+it from there, only if it is one of the themes built in. A multiboot stick
+made on a host with these keys boots its NixOS ISOs with Secure Boot on (see
+below). `nix build .#secure-boot-test` goes through these steps on a VM.
 
 ## Multiboot stick
 
@@ -351,6 +351,13 @@ nix run .#usb-stick -- add /dev/sdX ~/Downloads/other.iso   # or replace one
 nix run .#usb-stick -- remove /dev/sdX other.iso
 nix run .#usb-stick -- list /dev/sdX
 ```
+
+On a host with Secure Boot keys (`dotnix.core.boot.secureBoot`), `create`,
+`add` and `remove` also sign the stick for it: it boots systemd-boot, signed,
+with a signed UKI of each NixOS ISO (its kernel, initrd and command line), and
+GRUB becomes its "Other ISOs" entry, for Secure Boot off. Only machines with
+the same keys trust it: give the hosts one set (copy `/persist/var/lib/sbctl`
+before step 3 above) to boot it on all of them.
 
 GRUB lists `isos/*.iso` of the ISOS partition at every boot, so copying or
 deleting files there by hand works too; `add` also checks that the ISO boots

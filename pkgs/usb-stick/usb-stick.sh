@@ -1,4 +1,7 @@
 # usb-stick: files (FAT32, readable anywhere), Linux ISOs booted from files by GRUB, and the dotnix-key.
+# With this machine's Secure Boot keys (sbctl) the stick boots systemd-boot,
+# signed, with a signed UKI of each NixOS ISO: those boot with Secure Boot on.
+# GRUB (the other ISOs) is an entry of it, for Secure Boot off.
 
 FILES_SIZE_MIB=4096
 ESP_SIZE_MIB=512
@@ -106,6 +109,78 @@ iso_name() {
   *) name="$name.iso" ;;
   esac
   echo "$name"
+}
+
+# signing: this machine has sbctl keys (dotnix.core.boot.secureBoot)
+signing() {
+  local keys=/var/lib/sbctl/keys
+  if [ -f /etc/sbctl/sbctl.conf ]; then
+    keys=$(sed -n 's/.*"keydir": *"\([^"]*\)".*/\1/p' /etc/sbctl/sbctl.conf)
+  fi
+  as_root test -f "$keys/db/db.key"
+}
+
+# secure_front: systemd-boot, signed, in front of GRUB (which moves aside): with
+# Secure Boot GRUB can't hand over to anything it didn't verify itself
+secure_front() {
+  local esp=$1
+  if ! as_root test -f "$esp/EFI/grub/grubx64.efi"; then
+    as_root mkdir -p "$esp/EFI/grub"
+    as_root mv "$esp/EFI/BOOT/BOOTX64.EFI" "$esp/EFI/grub/grubx64.efi"
+  fi
+  as_root cp "$SYSTEMD_BOOT" "$esp/EFI/BOOT/BOOTX64.EFI"
+  as_root sbctl sign "$esp/EFI/BOOT/BOOTX64.EFI" >/dev/null
+  as_root mkdir -p "$esp/loader/entries"
+  printf 'timeout 10\ndefault *.iso.efi\n' | as_root tee "$esp/loader/loader.conf" >/dev/null
+  printf 'title Other ISOs (GRUB, Secure Boot off)\nefi /EFI/grub/grubx64.efi\n' |
+    as_root tee "$esp/loader/entries/grub.conf" >/dev/null
+  say "systemd-boot: signed for Secure Boot"
+}
+
+# sync_ukis: for each NixOS ISO named, a UKI (its kernel, initrd and command
+# line, plus findiso=) in the ESP's EFI/Linux, signed: systemd-boot lists it
+# and the firmware checks it. UKIs whose ISO is gone are dropped.
+sync_ukis() {
+  local esp=$1 dir=$work/isos/isos name f cfg kernel initrd params
+  as_root mkdir -p "$esp/EFI/Linux"
+  for f in "$esp"/EFI/Linux/*.efi; do
+    [ -f "$f" ] || continue
+    name=${f##*/}
+    as_root test -f "$dir/${name%.efi}" || as_root rm "$f"
+  done
+  for name in "${@:2}"; do
+    [ "$(iso_kind "$dir/$name")" = nixos ] || continue
+    mkdir -p "$work/uki"
+    as_root mount -o loop,ro "$dir/$name" "$work/uki"
+    cfg=$work/uki/EFI/BOOT/grub.cfg
+    # the first entry: linux KERNEL ${isoboot} PARAMS, then initrd INITRD
+    kernel=$(awk '$1 == "linux" { print $2; exit }' "$cfg")
+    params=$(awk '$1 == "linux" { for (i = 3; i <= NF; i++) if ($i != "${isoboot}") printf " %s", $i; exit }' "$cfg")
+    initrd=$(awk '$1 == "initrd" { print $2; exit }' "$cfg")
+    [ -n "$kernel" ] && [ -n "$initrd" ] || die "$name: no kernel in its grub.cfg"
+    printf 'NAME=NixOS\nID=nixos\nPRETTY_NAME="%s"\n' "$name" >"$work/os-release"
+    ukify build --linux="$work/uki$kernel" --initrd="$work/uki$initrd" --os-release="@$work/os-release" \
+      --cmdline="findiso=/isos/$name$params" --output="$work/$name.efi" >/dev/null
+    as_root umount "$work/uki"
+    as_root cp "$work/$name.efi" "$esp/EFI/Linux/$name.efi"
+    rm "$work/$name.efi"
+    as_root sbctl sign "$esp/EFI/Linux/$name.efi" >/dev/null
+    say "$name: signed for Secure Boot"
+  done
+}
+
+# signed_isos: with keys, the signed front and the UKIs of these ISOs (and
+# none of ISOs gone)
+signed_isos() {
+  local esp
+  signing || return 0
+  esp=$(part_of ESP) || die "$disk has no ESP partition"
+  mount_at "$esp" "$work/esp"
+  mount_isos ro
+  secure_front "$work/esp"
+  sync_ukis "$work/esp" "$@"
+  umount_at "$work/isos"
+  umount_at "$work/esp"
 }
 
 # check_isos fills srcs/names/sizes, refusing what GRUB can't boot.
@@ -341,6 +416,7 @@ create() {
     umount_at "$work/esp"
     mount_isos
     copy_isos
+    signed_isos "${names[@]}"
   fi
 
   as_root sfdisk --verify --quiet "$disk" || die "the partition table does not verify"
@@ -361,6 +437,7 @@ add() {
   check_isos "$@"
   mount_isos
   copy_isos
+  signed_isos "${names[@]}"
   list_open
 }
 
@@ -379,6 +456,7 @@ remove() {
   done
   sync
   umount_at "$work/isos"
+  signed_isos
   list_open
 }
 

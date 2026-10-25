@@ -24,7 +24,11 @@ let
         systemd.services.booted = {
           wantedBy = [ "multi-user.target" ];
           serviceConfig.Type = "oneshot";
-          script = "echo BOOTED-${name} > /dev/ttyS0";
+          # and whether that was a Secure Boot one
+          script = ''
+            sb=$(od -An -t u1 /sys/firmware/efi/efivars/SecureBoot-* 2>/dev/null || true)
+            echo "BOOTED-${name} SB=''${sb##* }" > /dev/ttyS0
+          '';
         };
         documentation.enable = false;
         system.stateVersion = "26.05";
@@ -48,6 +52,8 @@ let
   winIso = fakeIso "windows" "echo setup > root/setup.txt";
 
   ovmf = "${pkgs.OVMF.fd}/FV/OVMF.fd";
+  # with Secure Boot: its keys go into a copy of the variables
+  ovmfSecure = pkgs.OVMFFull.fd;
 in
 {
   name = "dotnix-usb-stick";
@@ -61,11 +67,12 @@ in
     environment.systemPackages = [
       usbStick
       pkgs.cryptsetup
+      pkgs.sbctl
     ];
   };
 
   testScript = ''
-    import queue, re, time
+    import queue, re, subprocess, time
 
     pending = {}
 
@@ -171,6 +178,49 @@ in
         stick.send_key("down")
         stick.send_key("ret")
         console(stick, markers[entries[1]], timeout=600)
+        stick.crash()
+
+    with subtest("signed: systemd-boot and the NixOS ISO's UKI, with this machine's sbctl keys"):
+        machine.start()
+        machine.wait_for_unit("multi-user.target")
+        machine.succeed("sbctl create-keys >&2")
+        machine.send_monitor_command(f"drive_add 0 if=none,id=stick,file={image},format=raw")
+        machine.send_monitor_command("device_add usb-storage,id=dev-stick,drive=stick,bus=xhci.0")
+        machine.wait_until_succeeds("test -b /dev/sda")
+        out = machine.succeed("usb-stick add /dev/sda ${oursIso} 2>&1")
+        assert "systemd-boot: signed" in out and "ours.iso: signed" in out, out
+        for k in ["PK/PK.pem", "KEK/KEK.pem", "db/db.pem", "../GUID"]:
+            machine.copy_from_vm(f"/var/lib/sbctl/keys/{k}", "sbctl")
+        machine.succeed("sync")
+        machine.send_monitor_command("device_del dev-stick")
+        machine.shutdown()
+
+    with subtest("the NixOS ISO boots with Secure Boot on"):
+        keys = machine.out_dir / "sbctl"
+        guid = (keys / "GUID").read_text().strip()
+        vars = machine.state_dir / "vars.fd"
+        subprocess.run(
+            ["${pkgs.python3Packages.virt-firmware}/bin/virt-fw-vars",
+             "-i", "${ovmfSecure}/FV/OVMF_VARS.fd", "-o", str(vars),
+             "--set-pk", guid, str(keys / "PK.pem"),
+             "--add-kek", guid, str(keys / "KEK.pem"),
+             "--add-db", guid, str(keys / "db.pem"),
+             "--secure-boot"],
+            check=True,
+        )
+        stick = create_machine(
+            "${pkgs.qemu_kvm}/bin/qemu-kvm -m 1536 -cpu max -machine q35,smm=on"
+            " -global driver=cfi.pflash01,property=secure,value=on"
+            " -drive if=pflash,format=raw,unit=0,readonly=on,file=${ovmfSecure}/FV/OVMF_CODE.fd"
+            f" -drive if=pflash,format=raw,unit=1,file={vars}"
+            " -device qemu-xhci,id=xhci"
+            f" -drive if=none,id=stick,format=raw,file={image}"
+            " -device usb-storage,drive=stick,bus=xhci.0,bootindex=1",
+            name="secure",
+        )
+        # systemd-boot's default: the first UKI
+        stick.start()
+        console(stick, "BOOTED-ours SB=1", timeout=600)
         stick.crash()
   '';
 }
