@@ -77,6 +77,10 @@ in
         "/var/lib/systemd/coredump"
         "/var/lib/systemd/resolved"
         "/etc/NetworkManager/system-connections"
+        # its secret key (stable per-network addresses), leases, networks seen
+        "/var/lib/NetworkManager"
+        # firmware updates waiting for the next boot
+        "/var/lib/fwupd"
       ];
       files = [
         "/etc/hosts"

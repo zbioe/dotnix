@@ -7,6 +7,12 @@
 }:
 let
   cfg = config.dotnix.services.ai;
+  impermanence = config.dotnix.storage.impermanence.enable;
+  # DynamicUser state lives in /var/lib/private (systemd wants it 0700)
+  private = dir: {
+    directory = "/var/lib/private/${dir}";
+    mode = "0700";
+  };
 in
 {
   options.dotnix.services.ai = {
@@ -45,6 +51,17 @@ in
           WEBUI_AUTH = "False";
         };
       };
+    })
+    # the models, gigabytes each: kept, outside the snapshots and the backup
+    (lib.mkIf (cfg.ollama.enable && impermanence) {
+      environment.persistence."/var/lib/nodatacow".directories = [ (private "ollama") ];
+    })
+    # the chats, settings and documents: kept and in the backup
+    (lib.mkIf (cfg.openWebui.enable && impermanence) {
+      environment.persistence."/persist".directories = [ (private "open-webui") ];
+    })
+    (lib.mkIf ((cfg.ollama.enable || cfg.openWebui.enable) && impermanence) {
+      systemd.tmpfiles.rules = [ "z /var/lib/private 0700 root root -" ];
     })
   ];
 }

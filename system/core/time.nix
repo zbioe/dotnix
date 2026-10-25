@@ -24,5 +24,15 @@
         minsources 2
       '';
     };
+    # the clock's drift and the NTS cookies
+    environment.persistence."/persist".directories =
+      lib.mkIf config.dotnix.storage.impermanence.enable
+        [
+          {
+            directory = "/var/lib/chrony";
+            user = "chrony";
+            group = "chrony";
+          }
+        ];
   };
 }

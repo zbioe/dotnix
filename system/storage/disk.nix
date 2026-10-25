@@ -150,6 +150,8 @@ in
     fileSystems = {
       "/persist".neededForBoot = true;
       "/var/log".neededForBoot = true;
+      # impermanence binds from it too (big state, outside snapshots and backup)
+      "/var/lib/nodatacow".neededForBoot = true;
     };
   };
 }

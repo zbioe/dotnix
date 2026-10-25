@@ -23,6 +23,10 @@ in
         qemu.swtpm.enable = true;
       };
       virtualisation.spiceUSBRedirection.enable = true;
+      # the VMs' disks and libvirt's own key: kept, outside snapshots and backup
+      environment.persistence."/var/lib/nodatacow".directories =
+        lib.mkIf config.dotnix.storage.impermanence.enable
+          [ "/var/lib/libvirt" ];
       programs.virt-manager.enable = true;
       users.users.${config.dotnix.core.user.name}.extraGroups = [
         "libvirtd"
