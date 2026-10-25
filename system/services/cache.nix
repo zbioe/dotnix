@@ -4,6 +4,7 @@
   config,
   lib,
   pkgs,
+  homes,
   ...
 }:
 let
@@ -16,10 +17,11 @@ let
   ];
   # unfree packages stay out (licenses, and the 5 GB of the free plan), with
   # what refers to them (cachix pushes closures); by name, so their GTK4-swapped
-  # copies and parts go too. The home has none of its own.
-  unfree = lib.filter (
-    p: !lib.all (l: l.free or true) (lib.toList (p.meta.license or [ ]))
-  ) config.environment.systemPackages;
+  # copies and parts go too. The system's and this host's home's.
+  hostHome = homes.${config.networking.hostName} or null;
+  unfree = lib.filter (p: !lib.all (l: l.free or true) (lib.toList (p.meta.license or [ ]))) (
+    config.environment.systemPackages ++ lib.optionals (hostHome != null) hostHome.config.home.packages
+  );
   unfreeRe = "^/nix/store/[a-z0-9]{32}-(${
     lib.concatMapStringsSep "|" lib.escapeRegex (lib.unique (map lib.getName unfree))
   })([-.]|$)";
