@@ -61,6 +61,8 @@ let
         local src=$1 u p code mp args
         if [ -z "''${RESTIC_REPOSITORY:-}" ]; then
           export RCLONE_CONFIG=/tmp/dotnix-rclone.conf
+          # (the Proton login: gone however this ends)
+          trap 'rm -f /tmp/dotnix-rclone.conf' EXIT
           echo "Proton Drive login"
           read -rp "Proton e-mail: " u
           read -rsp "Password: " p; echo

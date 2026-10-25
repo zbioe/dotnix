@@ -101,7 +101,15 @@ let
         fi
         echo "$1 is installing: waiting for it to boot the installed system..."
         key=$(ssh-keyscan -q -t ed25519 "$1" 2>/dev/null)
+        # gone for 20 minutes after the live system: it came back elsewhere
+        # (another address from DHCP) or not at all
+        gone=0
         until k=$(ssh-keyscan -q -t ed25519 "$1" 2>/dev/null) && [ -n "$k" ] && [ "$k" != "$key" ]; do
+          if [ -n "$k" ]; then gone=0; else gone=$((gone + 10)); fi
+          if [ "$gone" -ge 1200 ]; then
+            echo "nothing at $1 for 20 minutes: once it is up, dotnix-adopt ITS-ADDRESS" >&2
+            exit 1
+          fi
           sleep 10
         done
         # its sshd may answer before the user can log in

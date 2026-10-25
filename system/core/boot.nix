@@ -42,7 +42,7 @@ let
       fi
       if [ "''${1:-}" = --offer ]; then
         read -rp "Open the disk with the TPM and a PIN from now on (the passphrase keeps working)? [Y/n] " a
-        [ "$a" != n ] || exit 0
+        [[ $a != [nN]* ]] || exit 0
       fi
       systemd-cryptenroll --wipe-slot=tpm2 --tpm2-device=auto --tpm2-with-pin=yes \
         --tpm2-pcrs=7 ${luks.device}

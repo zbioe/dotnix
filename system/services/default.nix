@@ -10,5 +10,6 @@
     ./localsend.nix
     ./bitcoin.nix
     ./cache.nix
+    ./install-test.nix
   ];
 }

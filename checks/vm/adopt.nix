@@ -143,12 +143,16 @@ in
       ];
       users.users.zbioe.openssh.authorizedKeys.keyFiles = [ "${keys}/ssh.pub" ];
       # the stand-ins build offline, from the store paths flake.nix names
+      # (given to the sandbox: they aren't inputs there)
       nix.settings = {
         experimental-features = [
           "nix-command"
           "flakes"
         ];
-        sandbox = false;
+        extra-sandbox-paths = [
+          "${pkgs.bash}"
+          "${pkgs.coreutils}"
+        ];
         substituters = lib.mkForce [ ];
       };
       system.extraDependencies = with pkgs; [

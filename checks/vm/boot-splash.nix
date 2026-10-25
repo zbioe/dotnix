@@ -121,7 +121,8 @@ in
             assert time.time() < deadline, f"background {seen}, not {color}"
             time.sleep(1)
         target.screenshot("splash-" + color[1:])
-        time.sleep(3)
+        # (the prompt comes right after: slower runners)
+        time.sleep(5)
         target.send_chars("secret\n")
         target.wait_for_unit("multi-user.target")
 

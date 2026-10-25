@@ -42,6 +42,12 @@ in
 
   config = lib.mkIf config.dotnix.storage.impermanence.enable {
     environment.systemPackages = [ diff ];
+    # its state next to the logs it rotates (kept): from /var/lib it would
+    # start over at every boot, and rotate nothing if the boots come often
+    services.logrotate.extraArgs = [
+      "--state"
+      "/var/log/logrotate.status"
+    ];
 
     boot.initrd.systemd.services.rollback = {
       description = "Reset the btrfs root subvolume to root-blank";

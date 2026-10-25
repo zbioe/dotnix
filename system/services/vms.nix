@@ -23,10 +23,24 @@ in
         qemu.swtpm.enable = true;
       };
       virtualisation.spiceUSBRedirection.enable = true;
-      # the VMs' disks and libvirt's own key: kept, outside snapshots and backup
-      environment.persistence."/var/lib/nodatacow".directories =
-        lib.mkIf config.dotnix.storage.impermanence.enable
-          [ "/var/lib/libvirt" ];
+      environment.persistence = lib.mkIf config.dotnix.storage.impermanence.enable {
+        # the VMs' disks, saved RAM and dumps: big, outside snapshots and backup
+        "/var/lib/nodatacow".directories = [
+          "/var/lib/libvirt"
+          "/var/lib/libvirt/qemu/save"
+          "/var/lib/libvirt/qemu/ram"
+          "/var/lib/libvirt/qemu/dump"
+        ];
+        # what defines them (XML, UEFI variables, snapshots) and their
+        # secrets: small, in the backup
+        "/persist".directories = [
+          "/var/lib/libvirt/qemu"
+          {
+            directory = "/var/lib/libvirt/secrets";
+            mode = "0700";
+          }
+        ];
+      };
       programs.virt-manager.enable = true;
       users.users.${config.dotnix.core.user.name}.extraGroups = [
         "libvirtd"

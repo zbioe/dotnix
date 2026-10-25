@@ -28,8 +28,10 @@ let
       host=$(uname -n)
       cd "$flake"
       git fetch -q origin
+      upstream=false
       if git cat-file -e "origin/main:hosts/$host/default.nix" 2>/dev/null; then
         git reset -q --hard origin/main
+        upstream=true
       else
         git reset -q origin/main
         git add "hosts/$host"
@@ -37,7 +39,8 @@ let
       fi
       nh os switch -H "$host" "$flake"
       nh home switch -c "$host" "$flake"
-      rm -f .git/dotnix-firstboot
+      # (without secrets/ yet: dotnix-firstboot.service still waits for upstream)
+      [ "$upstream" = false ] || rm -f .git/dotnix-firstboot
       if command -v dotnix-tpm2-enroll >/dev/null; then dotnix-tpm2-enroll --offer; fi
     '';
   };
@@ -53,14 +56,20 @@ let
     uid=$(id -u ${user})
     as() { runuser -u ${user} -- env HOME=${home} XDG_RUNTIME_DIR=/run/user/$uid "$@"; }
     cd ${flake}
-    as git fetch -q origin
+    if ! as git fetch -q origin; then
+      echo "offline: next time"
+      exit 0
+    fi
     if ! as git cat-file -e "origin/main:hosts/$host/default.nix" 2>/dev/null; then
       echo "hosts/$host isn't upstream yet (dotnix-adopt)"
       exit 0
     fi
     as git reset -q --hard origin/main
-    system=$(as nix build --no-link --print-out-paths "${flake}#nixosConfigurations.$host.config.system.build.toplevel")
-    hm=$(as nix build --no-link --print-out-paths "${flake}#homeConfigurations.$host.activationPackage")
+    # both in one build: one evaluation, built side by side
+    as nix build --no-link "${flake}#nixosConfigurations.$host.config.system.build.toplevel" \
+      "${flake}#homeConfigurations.$host.activationPackage"
+    system=$(as nix path-info "${flake}#nixosConfigurations.$host.config.system.build.toplevel")
+    hm=$(as nix path-info "${flake}#homeConfigurations.$host.activationPackage")
     nix-env -p /nix/var/nix/profiles/system --set "$system"
     "$system/bin/switch-to-configuration" boot
     if [ -S /run/user/$uid/bus ]; then

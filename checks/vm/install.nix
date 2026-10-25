@@ -152,7 +152,8 @@ in
         target.wait_for_unit("display-manager.service")
         target.succeed("touch /gone /persist/kept && sync")
         # services' state that outlives the root reset (/persist, nodatacow)
-        state = ["/var/lib/private/open-webui", "/var/lib/private/ollama", "/var/lib/NetworkManager", "/var/lib/libvirt"]
+        state = ["/var/lib/private/open-webui", "/var/lib/private/ollama", "/var/lib/NetworkManager",
+                 "/var/lib/libvirt", "/var/lib/libvirt/qemu", "/var/lib/libvirt/qemu/save"]
         for d in state:
             target.succeed(f"mkdir -p {d} && touch {d}/kept")
         # the TPM, as dotnix-firstboot offers it
@@ -167,6 +168,10 @@ in
         for d in state:
             target.succeed(f"test -e {d}/kept")
         assert target.succeed("stat -c %a /var/lib/private").strip() == "700"
+        # libvirt's definitions in the backup, its big files out of it
+        target.succeed("test -e /persist/var/lib/libvirt/qemu/kept")
+        target.succeed("test -e /var/lib/nodatacow/var/lib/libvirt/kept")
+        target.succeed("test -e /var/lib/nodatacow/var/lib/libvirt/qemu/save/kept")
         target.shutdown()
   '';
 }

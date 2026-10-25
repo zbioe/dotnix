@@ -58,6 +58,8 @@
       ai.ollama.rocm = "11.0.0";
       # what it builds, for the other hosts (zbioe.cachix.org)
       cache.push.enable = true;
+      # dotnix-install still works (a VM, at night)
+      installTest.enable = true;
     };
   };
 

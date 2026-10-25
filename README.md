@@ -313,6 +313,7 @@ nix run .#options -- bx    # every dotnix.* option of a host and its value
 nix fmt                    # format
 nix build .#usb-key-test   # boots VMs: unlock from a stick, PIN, password fallback
 nix build .#usb-stick-test # boots a VM from a multiboot stick
+nix build .#backup-test    # a backup, and the restore test reading the Secure Boot keys back
 nix build .#disk-test      # installs on a VM as dotnix-install does, boots it
 nix build .#secure-boot-test # Limine, Secure Boot keys, then the TPM and its PIN, on a VM
 nix build .#boot-splash-test # the Plymouth splash on screen, in the theme picked
@@ -320,6 +321,11 @@ nix build .#sbctl-keys-test # Secure Boot keys for an install: over SSH, from a 
 nix build .#adopt-test     # dotnix-adopt from the live system on, then the first rebuild
 nix build .#install-test   # dotnix-install itself from the full ISO, offline (~1h)
 ```
+
+CI runs the checks and every VM test but install-test, which doesn't fit a
+runner: bx runs it at night (when it is on) on the flake's last commit
+(`dotnix.services.installTest`, a no-op when nothing changed) and notifies
+when it fails.
 
 ## USB key
 
