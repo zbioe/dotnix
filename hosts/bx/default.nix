@@ -24,12 +24,8 @@
       };
     };
     storage = {
-      disk = {
-        enable = true;
-        luks = "/dev/disk/by-uuid/8e7e951a-5b4c-4bfe-92f2-57d1f88da1d7";
-        efi = "/dev/disk/by-uuid/12CE-A600";
-        swap = "/dev/disk/by-partuuid/87f16c7f-16be-46da-ab99-db8f719b49a0";
-      };
+      # found by partition label, as a new install (renamed with sgdisk -c)
+      disk.enable = true;
       impermanence.enable = true;
       usbKey.enable = true;
       snapshots = {
