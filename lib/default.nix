@@ -144,6 +144,9 @@ in
       import ../checks/vm/sbctl-keys.nix { inherit inputs dotlib; }
     );
     adopt-test = pkgs.testers.runNixOSTest (import ../checks/vm/adopt.nix { inherit inputs dotlib; });
+    boot-splash-test = pkgs.testers.runNixOSTest (
+      import ../checks/vm/boot-splash.nix { inherit inputs dotlib; }
+    );
     install-test = pkgs.testers.runNixOSTest (
       import ../checks/vm/install.nix {
         inherit nixpkgs;

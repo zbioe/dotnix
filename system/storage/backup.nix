@@ -65,6 +65,20 @@ let
   verifyResult = "${cfg.cacheDir}/last-verify-result";
   # where the home directory is inside the snapshot being backed up
   backupHome = "/home/.backup/${lib.removePrefix "/home/" home}";
+  # the Secure Boot keys (system/core/boot.nix): every restore test reads them
+  # back, since a new machine takes them from here (dotnix-sbctl-keys)
+  sbctlKeys =
+    lib.optionals
+      (
+        config.dotnix.core.boot.secureBoot.enable
+        && config.dotnix.storage.impermanence.enable
+        && lib.elem "/persist" cfg.subvolumes
+      )
+      [
+        "var/lib/sbctl/keys/PK/PK.key"
+        "var/lib/sbctl/keys/KEK/KEK.key"
+        "var/lib/sbctl/keys/db/db.key"
+      ];
 
   # the backup itself (root); `auto` (timer) does nothing when the last one
   # is less than a day old, the user is away, the network is down or there
@@ -75,6 +89,7 @@ let
       lib.makeBinPath [
         pkgs.coreutils
         pkgs.findutils
+        pkgs.diffutils
         pkgs.jq
         pkgs.btrfs-progs
         pkgs.networkmanager
@@ -119,10 +134,17 @@ let
       restic ls --json --host ${host} latest \
         | jq -r 'select(.type == "file" and .size < 20000000) | .path | select(test("[][*?\\\\]") | not)' \
         | shuf -n 200 > "$tmp/files" || fail list
+      ${lib.optionalString (sbctlKeys != [ ]) ''
+        printf '/persist/.backup/%s\n' ${lib.escapeShellArgs sbctlKeys} >> "$tmp/files"
+        sort -u -o "$tmp/files" "$tmp/files"
+      ''}
       expected=$(wc -l < "$tmp/files")
       restic restore --host ${host} --target "$tmp/out" --include-file "$tmp/files" --verify latest || fail restore
       restored=$(find "$tmp/out" -type f | wc -l)
       [ "$restored" -eq "$expected" ] || fail "missing:$((expected - restored))"
+      for k in ${lib.escapeShellArgs sbctlKeys}; do
+        cmp -s "$tmp/out/persist/.backup/$k" "/persist/$k" || fail sbctl
+      done
       echo "ok $restored files, $(date +%F)" > ${verifyResult}
       touch ${verified}
       if [ "$mode" = verify-now ]; then

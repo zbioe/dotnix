@@ -71,7 +71,9 @@ let
 
   # a machine dotnix-install made (booted, its SSH up), into this flake: its
   # hosts/<host>, its SSH host key into secrets/ (dotnix-enroll), committed;
-  # pushed if you say so, then dotnix-firstboot there
+  # pushed if you say so, and it rebuilds itself from upstream. Run while it
+  # is still installing (the live system), it sends the Secure Boot keys
+  # first (dotnix-sbctl-send) and waits for the installed system to boot.
   user = config.dotnix.core.user.name;
   adopt = pkgs.writeShellApplication {
     name = "dotnix-adopt";
@@ -89,6 +91,25 @@ let
         echo "$flake has changes: commit them first" >&2
         exit 1
       fi
+      # the live system's SSH host key isn't the installed one's: kept out of
+      # known_hosts, and the installed system is up once the key changes
+      live=$(mktemp)
+      trap 'rm -f "$live"' EXIT
+      if ssh -n -o UserKnownHostsFile="$live" "${user}@$1" 'command -v dotnix-install' >/dev/null 2>&1; then
+        if command -v dotnix-sbctl-send >/dev/null; then
+          dotnix-sbctl-send -o UserKnownHostsFile="$live" "$1" || echo "Secure Boot keys not sent"
+        fi
+        echo "$1 is installing: waiting for it to boot the installed system..."
+        key=$(ssh-keyscan -q -t ed25519 "$1" 2>/dev/null)
+        until k=$(ssh-keyscan -q -t ed25519 "$1" 2>/dev/null) && [ -n "$k" ] && [ "$k" != "$key" ]; do
+          sleep 10
+        done
+        # its sshd may answer before the user can log in
+        for _ in $(seq 30); do
+          ssh -n -o ConnectTimeout=5 "${user}@$1" true 2>/dev/null && break
+          sleep 5
+        done
+      fi
       host=$(ssh -n "${user}@$1" uname -n)
       [[ $host =~ ^[a-z][a-z0-9-]*$ ]] || { echo "not a host name: $host" >&2; exit 1; }
       [ ! -e "hosts/$host" ] || { echo "hosts/$host is here already" >&2; exit 1; }
@@ -99,9 +120,9 @@ let
       read -rp "Push it? [y/N] " a
       if [ "$a" = y ]; then
         git push -q
-        echo "On $host now: dotnix-firstboot"
+        echo "$host rebuilds itself from it within minutes (or dotnix-firstboot there)"
       else
-        echo "After git push: dotnix-firstboot on $host"
+        echo "After git push $host rebuilds itself from it (or dotnix-firstboot there)"
       fi
     '';
   };

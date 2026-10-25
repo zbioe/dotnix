@@ -137,6 +137,8 @@ in
         target.succeed("${secureSystem}/bin/switch-to-configuration boot >&2")
         target.succeed("test -e /persist/var/lib/sbctl/keys/db/db.key")
         target.fail("test -e /var/lib/sbctl")
+        # not while Secure Boot is off (PCR 7 changes once it's on)
+        target.fail("${secureSystem}/sw/bin/dotnix-tpm2-enroll < /dev/null")
         target.shutdown()
 
     with subtest("a Secure Boot boot, the keys kept"):
@@ -144,7 +146,9 @@ in
         assert secure_boot()
         assert target.succeed("readlink -f /run/current-system").strip() == "${secureSystem}"
         target.succeed("test -e /persist/var/lib/sbctl/keys/db/db.key")
-        target.succeed("PASSWORD=secret NEWPIN=4321 dotnix-tpm2-enroll >&2")
+        # what dotnix-firstboot does: asks, then only once
+        target.succeed("echo y | PASSWORD=secret NEWPIN=4321 dotnix-tpm2-enroll --offer >&2")
+        target.succeed("dotnix-tpm2-enroll --offer < /dev/null")
         target.succeed("cryptsetup luksDump /dev/disk/by-partlabel/dotnix-luks | grep -q systemd-tpm2")
         assert target.succeed("cat /run/dotnix/boot-theme").strip() == "gruvbox-dark"
         # `theme` picks another one: theme-boot leaves it on the ESP

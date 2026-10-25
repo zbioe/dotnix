@@ -49,6 +49,7 @@ in
           useEFIBoot = true;
           memorySize = 8 * 1024;
           cores = 6;
+          tpm.enable = true;
         };
         # a disk with a serial, as real ones have
         services.udev.extraRules = ''
@@ -68,6 +69,7 @@ in
           cores = 4;
           useBootLoader = true;
           useEFIBoot = true;
+          tpm.enable = true;
           useDefaultFilesystems = false;
           efi.keepVariables = false;
           fileSystems."/" = {
@@ -98,7 +100,7 @@ in
         assert 'swapSize = "16G"' in host
         assert "impermanence.enable = true" in host
         assert 'passwordFile = "/persist/secrets/zbioe.passwd"' in host
-        assert "secureBoot.enable = true" in host
+        assert "secureBoot.enable = true; tpm2.enable = true;" in host
         installer.succeed("test -f /mnt/persist/var/lib/sbctl/keys/db/db.key")
         # enrolled: out of Setup Mode
         assert installer.succeed("od -An -t u1 /sys/firmware/efi/efivars/SetupMode-*").split()[-1] == "0"
@@ -114,6 +116,7 @@ in
         installer.succeed("grep -q '^\\$y\\$' /mnt/persist/secrets/zbioe.passwd")
         installer.succeed("test ! -e /tmp/dotnix-luks.key")
         installer.succeed("test -e /mnt/boot/EFI/BOOT/BOOTX64.EFI")
+        installer.succeed(f"test -e {flake}/.git/dotnix-firstboot")
 
     with subtest("the test driver in the installed system"):
         # the same host, plus what lets this test talk to it
@@ -130,10 +133,10 @@ in
     import shutil
     shutil.copy(installer.state_dir / "dotnix-live-efi-vars.fd", installer.state_dir / "target-efi-vars.fd")
 
-    def boot():
+    def boot(prompt="passphrase for", answer="secret"):
         target.start()
-        target.wait_for_console_text("passphrase for")
-        target.send_console("secret\n")
+        target.wait_for_console_text(prompt)
+        target.send_console(answer + "\n")
         target.wait_for_unit("multi-user.target")
 
     with subtest("boots the installed disk"):
@@ -152,11 +155,13 @@ in
         state = ["/var/lib/private/open-webui", "/var/lib/private/ollama", "/var/lib/NetworkManager", "/var/lib/libvirt"]
         for d in state:
             target.succeed(f"mkdir -p {d} && touch {d}/kept")
+        # the TPM, as dotnix-firstboot offers it
+        target.succeed("echo y | PASSWORD=secret NEWPIN=4321 dotnix-tpm2-enroll --offer >&2")
         target.succeed("sync")
         target.shutdown()
 
-    with subtest("/ is wiped, /persist is kept"):
-        boot()
+    with subtest("/ is wiped, /persist is kept; the disk opens with the PIN"):
+        boot("PIN", "4321")
         target.fail("test -e /gone")
         target.succeed("test -e /persist/kept")
         for d in state:

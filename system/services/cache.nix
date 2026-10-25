@@ -27,8 +27,14 @@ let
   })([-.]|$)";
 in
 {
-  options.dotnix.services.cache.push.enable =
-    lib.mkEnableOption "pushing this host's builds to zbioe.cachix.org";
+  options.dotnix.services.cache = {
+    push.enable = lib.mkEnableOption "pushing this host's builds to zbioe.cachix.org";
+    warnAt = lib.mkOption {
+      type = lib.types.ints.positive;
+      default = 4000;
+      description = "MB this host's system and home take on the cache (compressed) above which the user is told; the free plan has 5 GB.";
+    };
+  };
 
   config = lib.mkIf cfg.push.enable {
     assertions = [
@@ -57,6 +63,11 @@ in
         config.nix.package
         pkgs.coreutils
         pkgs.gnugrep
+        pkgs.gnused
+        pkgs.gawk
+        pkgs.curl
+        pkgs.util-linux
+        pkgs.libnotify
       ];
       script = ''
         paths=()
@@ -71,7 +82,20 @@ in
           : > skip
         fi
         # (already there or on cache.nixos.org: skipped by cachix)
-        comm -23 closure skip | ${lib.getExe pkgs.cachix} push zbioe
+        comm -23 closure skip > push
+        ${lib.getExe pkgs.cachix} push zbioe < push
+
+        # what they take there (compressed, as the narinfos say): past the
+        # free plan, the least used go, older generations first, then these
+        sed -E 's|^/nix/store/([a-z0-9]{32})-.*|url = "https://zbioe.cachix.org/\1.narinfo"|' push > urls
+        mb=$(curl -s --parallel --parallel-max 32 -K urls | awk '/^FileSize:/ { s += $2 } END { printf "%d", s / 1e6 }')
+        echo "zbioe.cachix.org: this system and home take $mb MB"
+        uid=$(id -u ${user})
+        if [ "$mb" -gt ${toString cfg.warnAt} ] && [ -S /run/user/$uid/bus ]; then
+          runuser -u ${user} -- env DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$uid/bus \
+            notify-send -a cachix -i dialog-warning "Binary cache almost full" \
+            "This system and home take $mb MB of zbioe.cachix.org's 5 GB" || true
+        fi
       '';
     };
 

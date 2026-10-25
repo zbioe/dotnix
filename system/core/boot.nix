@@ -20,12 +20,30 @@ let
   luks = config.boot.initrd.luks.devices.enc;
 
   # the disk opens with the TPM and a PIN while the boot chain is the signed
-  # one (PCR 7: Secure Boot's state and keys); the passphrase still works
+  # one (PCR 7: Secure Boot's state and keys); the passphrase still works.
+  # --offer (dotnix-firstboot): asks first, and only when not enrolled yet
   tpm2Enroll = pkgs.writeShellApplication {
     name = "dotnix-tpm2-enroll";
-    runtimeInputs = [ config.systemd.package ];
+    runtimeInputs = [
+      config.systemd.package
+      pkgs.coreutils
+      pkgs.gnugrep
+    ];
     text = ''
       [ "$(id -u)" = 0 ] || exec sudo "$0" "$@"
+      if [ "''${1:-}" = --offer ]; then
+        systemd-cryptenroll ${luks.device} | grep -qw tpm2 && exit 0
+      fi
+      sb=$(od -An -t u1 /sys/firmware/efi/efivars/SecureBoot-8be4df61-93ca-11d2-aa0d-00e098032b8c 2>/dev/null || true)
+      if [ "''${sb##* }" != 1 ]; then
+        echo "Secure Boot is off: turn it on in the firmware setup, then dotnix-tpm2-enroll" >&2
+        [ "''${1:-}" = --offer ] && exit 0
+        exit 1
+      fi
+      if [ "''${1:-}" = --offer ]; then
+        read -rp "Open the disk with the TPM and a PIN from now on (the passphrase keeps working)? [Y/n] " a
+        [ "$a" != n ] || exit 0
+      fi
       systemd-cryptenroll --wipe-slot=tpm2 --tpm2-device=auto --tpm2-with-pin=yes \
         --tpm2-pcrs=7 ${luks.device}
     '';
@@ -42,9 +60,10 @@ let
       openssh
     ];
     text = ''
-      [ $# = 1 ] || { echo "usage: dotnix-sbctl-send ADDRESS (of the live system installing)" >&2; exit 2; }
+      [ $# -ge 1 ] || { echo "usage: dotnix-sbctl-send [SSH OPTION...] ADDRESS (of the live system installing)" >&2; exit 2; }
+      sudo test -f ${sbctlDir}/sbctl/keys/db/db.key || { echo "no Secure Boot keys here yet" >&2; exit 1; }
       sudo tar -C ${sbctlDir} -cf - sbctl |
-        ssh "${config.dotnix.core.user.name}@$1" 'umask 077; cat > /tmp/dotnix-sbctl.tar.part && mv /tmp/dotnix-sbctl.tar.part /tmp/dotnix-sbctl.tar'
+        ssh "''${@:1:$#-1}" "${config.dotnix.core.user.name}@''${!#}" 'umask 077; cat > /tmp/dotnix-sbctl.tar.part && mv /tmp/dotnix-sbctl.tar.part /tmp/dotnix-sbctl.tar'
       echo "sent: dotnix-install goes on"
     '';
   };

@@ -37,8 +37,45 @@ let
       fi
       nh os switch -H "$host" "$flake"
       nh home switch -c "$host" "$flake"
+      rm -f .git/dotnix-firstboot
+      if command -v dotnix-tpm2-enroll >/dev/null; then dotnix-tpm2-enroll --offer; fi
     '';
   };
+
+  # the same by itself (dotnix-install leaves the marker): tried every few
+  # minutes until hosts/<host> is upstream (dotnix-adopt), then built, the
+  # system for the next boot and the home now, and the user told to reboot
+  flake = "${home}/dotnix";
+  marker = "${flake}/.git/dotnix-firstboot";
+  autoFirstboot = pkgs.writeShellScript "dotnix-firstboot-auto" ''
+    set -euo pipefail
+    host=${config.networking.hostName}
+    uid=$(id -u ${user})
+    as() { runuser -u ${user} -- env HOME=${home} XDG_RUNTIME_DIR=/run/user/$uid "$@"; }
+    cd ${flake}
+    as git fetch -q origin
+    if ! as git cat-file -e "origin/main:hosts/$host/default.nix" 2>/dev/null; then
+      echo "hosts/$host isn't upstream yet (dotnix-adopt)"
+      exit 0
+    fi
+    as git reset -q --hard origin/main
+    system=$(as nix build --no-link --print-out-paths "${flake}#nixosConfigurations.$host.config.system.build.toplevel")
+    hm=$(as nix build --no-link --print-out-paths "${flake}#homeConfigurations.$host.activationPackage")
+    nix-env -p /nix/var/nix/profiles/system --set "$system"
+    "$system/bin/switch-to-configuration" boot
+    if [ -S /run/user/$uid/bus ]; then
+      as env DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$uid/bus "$hm/activate"
+    else
+      as "$hm/activate"
+    fi
+    rm ${marker}
+    body="Reboot to finish."
+    [ ! -e "$system/sw/bin/dotnix-tpm2-enroll" ] || body="$body Then dotnix-tpm2-enroll: the disk opens with the TPM and a PIN."
+    if [ -S /run/user/$uid/bus ]; then
+      as env DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$uid/bus \
+        notify-send -a dotnix -i system-reboot "$host is set up" "$body" || true
+    fi
+  '';
 in
 {
   options.dotnix.core.homeActivation = with types; {
@@ -62,6 +99,31 @@ in
 
   config = mkIf cfg.enable {
     environment.systemPackages = [ firstboot ];
+    systemd.services.dotnix-firstboot = mkIf (!cfg.always) {
+      description = "First rebuild of a new install, from upstream";
+      after = [ "network-online.target" ];
+      wants = [ "network-online.target" ];
+      unitConfig.ConditionPathExists = marker;
+      path = [
+        config.nix.package
+        pkgs.git
+        pkgs.openssh
+        pkgs.util-linux
+        pkgs.libnotify
+      ];
+      serviceConfig = {
+        Type = "oneshot";
+        ExecStart = autoFirstboot;
+      };
+    };
+    systemd.timers.dotnix-firstboot = mkIf (!cfg.always) {
+      wantedBy = [ "timers.target" ];
+      unitConfig.ConditionPathExists = marker;
+      timerConfig = {
+        OnBootSec = "1min";
+        OnUnitActiveSec = "5min";
+      };
+    };
     systemd.services.home-activation = {
       description = "Activate ${user}'s home (home-manager)";
       wantedBy = [ "multi-user.target" ];

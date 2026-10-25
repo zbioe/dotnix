@@ -76,6 +76,8 @@ in
         "/var/lib/nixos"
         "/var/lib/systemd/coredump"
         "/var/lib/systemd/resolved"
+        # Wi-Fi and Bluetooth left off stay off
+        "/var/lib/systemd/rfkill"
         "/etc/NetworkManager/system-connections"
         # its secret key (stable per-network addresses), leases, networks seen
         "/var/lib/NetworkManager"

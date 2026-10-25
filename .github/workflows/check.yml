@@ -29,7 +29,31 @@ jobs:
         run: nix build -L .#checks.x86_64-linux.{format,deadnix,statix,stylua,ruff,dotnix-key,usb-stick}
       - name: Evaluate the hosts, homes and the minimal ISO
         run: nix build -L .#checks.x86_64-linux.{system-bx,system-te,system-minimal-iso,home-bx,home-te}
-      - name: USB key VM test
-        run: nix build -L .#usb-key-test
-      - name: Multiboot stick VM test
-        run: nix build -L .#usb-stick-test
+
+  # the VM tests that fit a runner (install-test, the whole desktop installed
+  # offline, doesn't: `nix build .#install-test` locally), one per runner
+  vm-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        test: [usb-key, usb-stick, disk, secure-boot, boot-splash, sbctl-keys, adopt]
+    steps:
+      - uses: actions/checkout@v5
+      # room for the test's closure (the runner has ~14 GB free)
+      - name: Free disk space
+        run: sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: system-features = nixos-test benchmark big-parallel kvm
+      - uses: cachix/cachix-action@v16
+        with:
+          name: zbioe
+      - name: ${{ matrix.test }} VM test
+        run: nix build -L .#${{ matrix.test }}-test

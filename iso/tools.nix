@@ -41,7 +41,7 @@ let
 
       from_ssh() {
         # (sent already, before choosing, is fine too)
-        echo "On the machine with the keys run: dotnix-sbctl-send ADDRESS, one of"
+        echo "On the machine with the keys run: dotnix-adopt ADDRESS (or dotnix-sbctl-send), one of"
         ip -4 -o addr show scope global | awk '{ split($4, a, "/"); print "  " a[1] }'
         echo "Waiting for them (Enter: give up)..."
         until [ -s /tmp/dotnix-sbctl.tar ]; do
@@ -264,6 +264,11 @@ let
       secureboot=""
       if [ "$secure" = true ]; then
         secureboot="core.boot = { loader = \"limine\"; secureBoot.enable = true; };"
+        # a TPM 2.0: the disk opens with it and a PIN too (dotnix-firstboot
+        # enrolls it, once Secure Boot is on)
+        if [ "$(cat /sys/class/tpm/tpm0/tpm_version_major 2>/dev/null)" = 2 ]; then
+          secureboot="core.boot = { loader = \"limine\"; secureBoot.enable = true; tpm2.enable = true; };"
+        fi
       fi
       # generated once the disk is mounted
       echo "{ }" > "$flake/hosts/$host/hardware-configuration.nix"
@@ -344,6 +349,8 @@ let
       git -C "$flake" init -q -b main
       git -C "$flake" remote add origin https://github.com/zbioe/dotnix.git
       git -C "$flake" add -A
+      # the first rebuild, by itself once online (system/core/home-activation.nix)
+      touch "$flake/.git/dotnix-firstboot"
       chown -R 1000:100 /mnt/home/${username}
 
       # last: once the firmware has keys it may refuse this unsigned ISO
@@ -355,10 +362,11 @@ let
       echo
       echo "''${bold}Done.''${off} Remove the USB and reboot. The flake is in ~/dotnix (hosts/$host);"
       echo "Once it boots, online:"
-      echo "  1. on a machine with your age key (bx): dotnix-adopt ADDRESS-OF-$host"
-      echo "     (hosts/$host and its key for secrets/, committed and pushed)"
-      echo "  2. here: dotnix-firstboot (the flake from upstream, then the first rebuild,"
-      echo "     with hosts/$host/hardware.nix: ''${hw[*]})"
+      echo "  1. on a machine with your age key (bx): dotnix-adopt ADDRESS-OF-$host, unless"
+      echo "     it is running already (hosts/$host and its key for secrets/, pushed)"
+      echo "  2. here, nothing: the first rebuild runs by itself once hosts/$host is upstream"
+      echo "     (with hosts/$host/hardware.nix: ''${hw[*]}), then asks for a reboot;"
+      echo "     dotnix-firstboot does it right away"
       echo "  3. backup setup, and restore your files from it"
       if [ "$secure" = true ]; then
         echo "Secure Boot: turn it on in the firmware setup now (the keys are enrolled)."

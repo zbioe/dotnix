@@ -266,16 +266,22 @@ building a new host takes. With the firmware in Setup Mode it also sets up
 Secure Boot (see below). `dotnix-mount` opens an installed disk on `/mnt` for
 recovery.
 
-Once the new host boots, online:
+On a machine with your age key (bx), while it installs or once it boots:
 
 ```sh
-dotnix-adopt ADDRESS   # on a machine with your age key: hosts/<host> and its
-                       # key for secrets/ into the flake, committed and pushed
-dotnix-firstboot       # on the new host: the flake from upstream, then the
-                       # first rebuild (hosts/<host>/hardware.nix: the
-                       # nixos-hardware modules of the CPU, GPU and disk found)
-backup setup           # and restore your files from it
+dotnix-adopt ADDRESS   # hosts/<host> and its key for secrets/ into the flake,
+                       # committed and pushed; started while the live system
+                       # installs, it sends the Secure Boot keys first and
+                       # waits for the installed system to boot
 ```
+
+The new host then rebuilds by itself once online (`dotnix-firstboot.service`,
+every few minutes until `hosts/<host>` is upstream): the flake from upstream,
+the system for the next boot (with `hosts/<host>/hardware.nix`: the
+nixos-hardware modules of the CPU, GPU and disk found) and the home, and a
+notification to reboot. `dotnix-firstboot` there does the same right away and
+offers the TPM and a PIN for the disk. Then `backup setup`, and restore your
+files from it.
 
 Then `rebuild` (or `Super+Shift+U`) rebuilds system and home. With
 impermanence, `dotnix-diff` lists what was written to `/` since boot and goes
@@ -295,7 +301,9 @@ sudo sgdisk -c 2:dotnix-efi -c 3:dotnix-swap -c 4:dotnix-luks /dev/nvme0n1   # i
 What bx builds (zmacs, the GTK4 swap, this flake's packages) goes to
 [zbioe.cachix.org](https://zbioe.cachix.org) after each switch, so the other
 hosts and CI download it instead of building; unfree packages stay out
-(`system/services/cache.nix`).
+(`system/services/cache.nix`). After each push it adds up what the system
+and home take there and warns past 4 GB (the free plan has 5; past it the
+least used paths go first).
 
 ## Checks
 
@@ -307,8 +315,9 @@ nix build .#usb-key-test   # boots VMs: unlock from a stick, PIN, password fallb
 nix build .#usb-stick-test # boots a VM from a multiboot stick
 nix build .#disk-test      # installs on a VM as dotnix-install does, boots it
 nix build .#secure-boot-test # Limine, Secure Boot keys, then the TPM and its PIN, on a VM
+nix build .#boot-splash-test # the Plymouth splash on screen, in the theme picked
 nix build .#sbctl-keys-test # Secure Boot keys for an install: over SSH, from a backup, new
-nix build .#adopt-test     # dotnix-adopt: a new host into the flake and secrets/
+nix build .#adopt-test     # dotnix-adopt from the live system on, then the first rebuild
 nix build .#install-test   # dotnix-install itself from the full ISO, offline (~1h)
 ```
 
@@ -351,9 +360,12 @@ of them); they live in `/persist/var/lib/sbctl`, so the daily backup has them.
 
 A new install does it all when the firmware is in Setup Mode (its Secure Boot
 keys cleared in the firmware setup): `dotnix-install` asks where the keys come
-from, another machine over SSH (`dotnix-sbctl-send ADDRESS` there), that
-machine's backup on Proton Drive, or new ones, installs Limine signed and
-enrolls them; then Secure Boot goes on in the firmware.
+from, another machine over SSH (`dotnix-adopt ADDRESS` there, or only
+`dotnix-sbctl-send ADDRESS`), that machine's backup on Proton Drive, or new
+ones, installs Limine signed and enrolls them; then Secure Boot goes on in the
+firmware. With a TPM 2.0 it also turns `tpm2` on, and `dotnix-firstboot`
+enrolls it. The monthly restore test (`backup verify`) reads the keys back
+from the backup every time.
 
 On a host already installed, once, in this order:
 
@@ -366,7 +378,7 @@ On a host already installed, once, in this order:
    and signs.
 4. Reboot, turn Secure Boot on in the firmware; `sbctl status` shows it.
 5. `dotnix.core.boot.tpm2.enable = true;`, rebuild, `dotnix-tpm2-enroll` (asks
-   the disk password and the new PIN).
+   the disk password and the new PIN; refused while Secure Boot is off).
 
 The kernel command line is sealed, so the boot theme can't go through it as
 with GRUB: `theme` leaves its name in `/boot/dotnix-theme` and the initrd takes
