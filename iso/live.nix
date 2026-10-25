@@ -16,12 +16,24 @@ let
   refBase = ref.extendModules {
     modules = [ { system.replaceDependencies.replacements = lib.mkForce [ ]; } ];
   };
+  # and as dotnix-install writes it with Secure Boot (Limine, signed)
+  refSecure = refBase.extendModules {
+    modules = [
+      {
+        dotnix.core.boot = {
+          loader = "limine";
+          secureBoot.enable = true;
+        };
+      }
+    ];
+  };
   refPkgs = ref.pkgs;
   outputs = [ "out" ] ++ ref.config.environment.extraOutputsToInstall;
   # kept as they are: this system's own swap would turn them into the
   # swapped ones the new host can't be built from
   unswapped = [
     refBase.config.system.build.toplevel
+    refSecure.config.system.build.toplevel
     # the home too swaps GTK4 in (lib/default.nix)
     dotnix.homeConfigurations.bx.config.home.activationPackage
   ]
@@ -83,6 +95,7 @@ in
     ++ [
       ref.config.system.build.toplevel
       ref.config.system.build.destroyFormatMount
+      refSecure.config.system.build.installBootLoader
       # baked into the initrd, so in no closure
       ref.config.hardware.cpu.amd.microcodePackage
       ref.config.hardware.cpu.intel.microcodePackage

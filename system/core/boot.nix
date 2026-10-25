@@ -30,6 +30,24 @@ let
         --tpm2-pcrs=7 ${luks.device}
     '';
   };
+
+  # this host's Secure Boot keys to a machine being installed (dotnix-install
+  # waits for them in its live system): one set of keys for every host, so a
+  # stick signed on one boots on all of them
+  sbctlDir = if config.dotnix.storage.impermanence.enable then "/persist/var/lib" else "/var/lib";
+  sbctlSend = pkgs.writeShellApplication {
+    name = "dotnix-sbctl-send";
+    runtimeInputs = with pkgs; [
+      gnutar
+      openssh
+    ];
+    text = ''
+      [ $# = 1 ] || { echo "usage: dotnix-sbctl-send ADDRESS (of the live system installing)" >&2; exit 2; }
+      sudo tar -C ${sbctlDir} -cf - sbctl |
+        ssh "${config.dotnix.core.user.name}@$1" 'umask 077; cat > /tmp/dotnix-sbctl.tar.part && mv /tmp/dotnix-sbctl.tar.part /tmp/dotnix-sbctl.tar'
+      echo "sent: dotnix-install goes on"
+    '';
+  };
 in
 {
   options.dotnix.core.boot = {
@@ -160,7 +178,8 @@ in
       }
     ];
 
-    # sbctl's keys straight in /persist: no /var/lib/sbctl, which Limine reads
+    # sbctl's keys straight in /persist (so in the daily backup too,
+    # system/storage/backup.nix): no /var/lib/sbctl, which Limine reads
     # as "keys made" (a bind mount there would leave Limine unsigned), and
     # there before the rebuild that turns secureBoot on creates them
     environment.etc."sbctl/sbctl.conf" =
@@ -189,7 +208,11 @@ in
             };
         };
     environment.systemPackages =
-      lib.optional cfg.secureBoot.enable pkgs.sbctl ++ lib.optional cfg.tpm2.enable tpm2Enroll;
+      lib.optionals cfg.secureBoot.enable [
+        pkgs.sbctl
+        sbctlSend
+      ]
+      ++ lib.optional cfg.tpm2.enable tpm2Enroll;
     boot.initrd.luks.devices = mkIf cfg.tpm2.enable {
       enc.crypttabExtraOpts = [ "tpm2-device=auto" ];
     };

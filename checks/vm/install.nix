@@ -1,6 +1,7 @@
 # dotnix-install itself, as the full ISO runs it: the live system
 # (iso/live.nix) offline, the answers typed in, the whole desktop installed on
-# an empty disk, and that disk booted.
+# an empty disk, and that disk booted, with Secure Boot (new keys: the
+# firmware starts in Setup Mode).
 {
   modules,
   specialArgs,
@@ -18,6 +19,7 @@ let
     "secret"
     "login" # user password
     "login"
+    "3" # Secure Boot: new keys
     "/dev/vda" # confirm
   ];
 in
@@ -31,41 +33,49 @@ in
   };
 
   nodes = {
-    installer = {
-      imports = modules ++ [ ../../iso/live.nix ];
-      virtualisation = {
-        # the target's disk is vda; the live system runs from vdb
-        diskImage = "./target.qcow2";
-        diskSize = 160 * 1024;
-        emptyDiskImages = [ (16 * 1024) ];
-        rootDevice = "/dev/vdb";
-        fileSystems."/".autoFormat = true;
-        useEFIBoot = true;
-        memorySize = 8 * 1024;
-        cores = 6;
+    installer =
+      { pkgs, ... }:
+      {
+        imports = modules ++ [ ../../iso/live.nix ];
+        virtualisation = {
+          useSecureBoot = true;
+          efi.OVMF = pkgs.OVMFFull.fd;
+          # the target's disk is vda; the live system runs from vdb
+          diskImage = "./target.qcow2";
+          diskSize = 160 * 1024;
+          emptyDiskImages = [ (16 * 1024) ];
+          rootDevice = "/dev/vdb";
+          fileSystems."/".autoFormat = true;
+          useEFIBoot = true;
+          memorySize = 8 * 1024;
+          cores = 6;
+        };
+        # a disk with a serial, as real ones have
+        services.udev.extraRules = ''
+          KERNEL=="vda", SYMLINK+="disk/by-id/virtio-dotnix-target"
+        '';
+        nix.settings.substituters = lib.mkForce [ ];
+        networking.useDHCP = lib.mkForce false;
       };
-      # a disk with a serial, as real ones have
-      services.udev.extraRules = ''
-        KERNEL=="vda", SYMLINK+="disk/by-id/virtio-dotnix-target"
-      '';
-      nix.settings.substituters = lib.mkForce [ ];
-      networking.useDHCP = lib.mkForce false;
-    };
-    target = {
-      virtualisation = {
-        diskImage = "./target.qcow2";
-        memorySize = 4096;
-        cores = 4;
-        useBootLoader = true;
-        useEFIBoot = true;
-        useDefaultFilesystems = false;
-        efi.keepVariables = false;
-        fileSystems."/" = {
-          device = "/dev/disk/by-label/unused";
-          fsType = "ext4";
+    target =
+      { pkgs, ... }:
+      {
+        virtualisation = {
+          useSecureBoot = true;
+          efi.OVMF = pkgs.OVMFFull.fd;
+          diskImage = "./target.qcow2";
+          memorySize = 4096;
+          cores = 4;
+          useBootLoader = true;
+          useEFIBoot = true;
+          useDefaultFilesystems = false;
+          efi.keepVariables = false;
+          fileSystems."/" = {
+            device = "/dev/disk/by-label/unused";
+            fsType = "ext4";
+          };
         };
       };
-    };
   };
 
   testScript = ''
@@ -88,6 +98,10 @@ in
         assert 'swapSize = "16G"' in host
         assert "impermanence.enable = true" in host
         assert 'passwordFile = "/persist/secrets/zbioe.passwd"' in host
+        assert "secureBoot.enable = true" in host
+        installer.succeed("test -f /mnt/persist/var/lib/sbctl/keys/db/db.key")
+        # enrolled: out of Setup Mode
+        assert installer.succeed("od -An -t u1 /sys/firmware/efi/efivars/SetupMode-*").split()[-1] == "0"
         # nixos-hardware from what it found (a VM, no battery), for the first
         # rebuild online: out of the offline reinstall below
         hardware = installer.succeed(f"cat {flake}/hosts/vmtest/hardware.nix")
@@ -112,6 +126,9 @@ in
         installer.shutdown()
 
     target.state_dir = installer.state_dir
+    # the same firmware, with the keys enrolled
+    import shutil
+    shutil.copy(installer.state_dir / "dotnix-live-efi-vars.fd", installer.state_dir / "target-efi-vars.fd")
 
     def boot():
         target.start()
@@ -122,6 +139,8 @@ in
     with subtest("boots the installed disk"):
         boot()
         assert target.succeed("hostname").strip() == "vmtest"
+        assert target.succeed("od -An -t u1 /sys/firmware/efi/efivars/SecureBoot-*").split()[-1] == "1"
+        target.succeed("test -e /boot/limine/limine.conf")
         target.succeed("findmnt -no OPTIONS / | grep -q subvol=/root")
         target.succeed("test -d /home/zbioe/dotnix/hosts/vmtest")
         target.succeed("command -v dotnix-enroll")
@@ -129,12 +148,20 @@ in
         target.succeed('cut -d: -f1,2 /etc/shadow | grep -qxF "zbioe:$(cat /persist/secrets/zbioe.passwd)"')
         target.wait_for_unit("display-manager.service")
         target.succeed("touch /gone /persist/kept && sync")
+        # services' state that outlives the root reset (/persist, nodatacow)
+        state = ["/var/lib/private/open-webui", "/var/lib/private/ollama", "/var/lib/NetworkManager", "/var/lib/libvirt"]
+        for d in state:
+            target.succeed(f"mkdir -p {d} && touch {d}/kept")
+        target.succeed("sync")
         target.shutdown()
 
     with subtest("/ is wiped, /persist is kept"):
         boot()
         target.fail("test -e /gone")
         target.succeed("test -e /persist/kept")
+        for d in state:
+            target.succeed(f"test -e {d}/kept")
+        assert target.succeed("stat -c %a /var/lib/private").strip() == "700"
         target.shutdown()
   '';
 }

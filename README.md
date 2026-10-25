@@ -262,14 +262,35 @@ Boot from it and run `dotnix-install`: it adds `hosts/<host>` to the flake,
 formats its disk with the layout of `system/storage/disk.nix` (declared with
 [disko](https://github.com/nix-community/disko), the same one the hosts mount)
 and installs it. From the full ISO it needs no network: the ISO carries what
-building a new host takes. The nixos-hardware modules of the CPU, GPU and disk
-it finds go to `hosts/<host>/hardware.nix`, from the first `rebuild` on.
-`dotnix-mount` opens an installed disk on `/mnt` for recovery.
+building a new host takes. With the firmware in Setup Mode it also sets up
+Secure Boot (see below). `dotnix-mount` opens an installed disk on `/mnt` for
+recovery.
+
+Once the new host boots, online:
+
+```sh
+dotnix-adopt ADDRESS   # on a machine with your age key: hosts/<host> and its
+                       # key for secrets/ into the flake, committed and pushed
+dotnix-firstboot       # on the new host: the flake from upstream, then the
+                       # first rebuild (hosts/<host>/hardware.nix: the
+                       # nixos-hardware modules of the CPU, GPU and disk found)
+backup setup           # and restore your files from it
+```
 
 Then `rebuild` (or `Super+Shift+U`) rebuilds system and home. With
 impermanence, `dotnix-diff` lists what was written to `/` since boot and goes
 away on the next one (`-a` with caches and `/tmp`): what may need a place in
 `/persist`.
+
+A host installed before this layout finds its disk by UUID
+(`dotnix.storage.disk.luks`, `efi`, `swap`); naming its partitions as a new
+install has them lets it drop those (the data stays as it is), then
+`nh os boot` and reboot:
+
+```sh
+sudo sgdisk --backup=/persist/gpt.bak /dev/nvme0n1   # first, to undo with --load-backup
+sudo sgdisk -c 2:dotnix-efi -c 3:dotnix-swap -c 4:dotnix-luks /dev/nvme0n1   # its numbers: sgdisk -p
+```
 
 What bx builds (zmacs, the GTK4 swap, this flake's packages) goes to
 [zbioe.cachix.org](https://zbioe.cachix.org) after each switch, so the other
@@ -286,6 +307,8 @@ nix build .#usb-key-test   # boots VMs: unlock from a stick, PIN, password fallb
 nix build .#usb-stick-test # boots a VM from a multiboot stick
 nix build .#disk-test      # installs on a VM as dotnix-install does, boots it
 nix build .#secure-boot-test # Limine, Secure Boot keys, then the TPM and its PIN, on a VM
+nix build .#sbctl-keys-test # Secure Boot keys for an install: over SSH, from a backup, new
+nix build .#adopt-test     # dotnix-adopt: a new host into the flake and secrets/
 nix build .#install-test   # dotnix-install itself from the full ISO, offline (~1h)
 ```
 
@@ -322,13 +345,25 @@ kernel and initrd: anything changed doesn't boot. The TPM then opens the disk
 with a short PIN, but only after that boot chain (PCR 7); the password and the
 USB key still work.
 
-Once per host, in this order:
+The keys are what signs: only machines whose firmware has them enrolled boot
+what they sign. Keep one set for every host (a signed stick then boots on all
+of them); they live in `/persist/var/lib/sbctl`, so the daily backup has them.
+
+A new install does it all when the firmware is in Setup Mode (its Secure Boot
+keys cleared in the firmware setup): `dotnix-install` asks where the keys come
+from, another machine over SSH (`dotnix-sbctl-send ADDRESS` there), that
+machine's backup on Proton Drive, or new ones, installs Limine signed and
+enrolls them; then Secure Boot goes on in the firmware.
+
+On a host already installed, once, in this order:
 
 1. `dotnix.core.boot.loader = "limine";`, rebuild and reboot (the boot menu
    is Limine's from now on).
 2. In the firmware setup, clear the Secure Boot keys (Setup Mode).
 3. `dotnix.core.boot.secureBoot.enable = true;` and `rebuild`: it makes the
-   keys, enrolls them next to Microsoft's (GPU firmware needs those) and signs.
+   keys (or takes the ones already in `/persist/var/lib/sbctl`, copied from
+   another host), enrolls them next to Microsoft's (GPU firmware needs those)
+   and signs.
 4. Reboot, turn Secure Boot on in the firmware; `sbctl status` shows it.
 5. `dotnix.core.boot.tpm2.enable = true;`, rebuild, `dotnix-tpm2-enroll` (asks
    the disk password and the new PIN).
@@ -356,8 +391,7 @@ On a host with Secure Boot keys (`dotnix.core.boot.secureBoot`), `create`,
 `add` and `remove` also sign the stick for it: it boots systemd-boot, signed,
 with a signed UKI of each NixOS ISO (its kernel, initrd and command line), and
 GRUB becomes its "Other ISOs" entry, for Secure Boot off. Only machines with
-the same keys trust it: give the hosts one set (copy `/persist/var/lib/sbctl`
-before step 3 above) to boot it on all of them.
+the same keys trust it: one set for every host (see above) boots it on all.
 
 GRUB lists `isos/*.iso` of the ISOS partition at every boot, so copying or
 deleting files there by hand works too; `add` also checks that the ISO boots

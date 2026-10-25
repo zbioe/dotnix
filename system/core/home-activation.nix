@@ -12,6 +12,33 @@ let
   cfg = config.dotnix.core.homeActivation;
   user = config.dotnix.core.user.name;
   home = config.users.users.${user}.home;
+
+  # a new install, online once: the flake's history from upstream (with this
+  # host in it after dotnix-adopt, else its files kept), then the first
+  # rebuild (hosts/<host>/hardware.nix, and secrets/ once adopted)
+  firstboot = pkgs.writeShellApplication {
+    name = "dotnix-firstboot";
+    runtimeInputs = with pkgs; [
+      coreutils
+      git
+      nh
+    ];
+    text = ''
+      flake=''${NH_FLAKE:-$HOME/dotnix}
+      host=$(uname -n)
+      cd "$flake"
+      git fetch -q origin
+      if git cat-file -e "origin/main:hosts/$host/default.nix" 2>/dev/null; then
+        git reset -q --hard origin/main
+      else
+        git reset -q origin/main
+        git add "hosts/$host"
+        echo "hosts/$host isn't upstream yet: dotnix-adopt $host's address on a machine with your age key, then this again"
+      fi
+      nh os switch -H "$host" "$flake"
+      nh home switch -c "$host" "$flake"
+    '';
+  };
 in
 {
   options.dotnix.core.homeActivation = with types; {
@@ -34,6 +61,7 @@ in
   };
 
   config = mkIf cfg.enable {
+    environment.systemPackages = [ firstboot ];
     systemd.services.home-activation = {
       description = "Activate ${user}'s home (home-manager)";
       wantedBy = [ "multi-user.target" ];

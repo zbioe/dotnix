@@ -68,6 +68,43 @@ let
       true
     '';
   };
+
+  # a machine dotnix-install made (booted, its SSH up), into this flake: its
+  # hosts/<host>, its SSH host key into secrets/ (dotnix-enroll), committed;
+  # pushed if you say so, then dotnix-firstboot there
+  user = config.dotnix.core.user.name;
+  adopt = pkgs.writeShellApplication {
+    name = "dotnix-adopt";
+    runtimeInputs = with pkgs; [
+      coreutils
+      openssh
+      git
+      enroll
+    ];
+    text = ''
+      [ $# = 1 ] || { echo "usage: dotnix-adopt ADDRESS (of a machine dotnix-install made)" >&2; exit 2; }
+      flake=''${NH_FLAKE:-$HOME/dotnix}
+      cd "$flake"
+      if ! git diff --quiet || ! git diff --cached --quiet; then
+        echo "$flake has changes: commit them first" >&2
+        exit 1
+      fi
+      host=$(ssh -n "${user}@$1" uname -n)
+      [[ $host =~ ^[a-z][a-z0-9-]*$ ]] || { echo "not a host name: $host" >&2; exit 1; }
+      [ ! -e "hosts/$host" ] || { echo "hosts/$host is here already" >&2; exit 1; }
+      scp -rq "${user}@$1:dotnix/hosts/$host" hosts/
+      dotnix-enroll "$host" "$1"
+      git add "hosts/$host" .sops.yaml secrets/common.yaml
+      git commit -qm "add $host"
+      read -rp "Push it? [y/N] " a
+      if [ "$a" = y ]; then
+        git push -q
+        echo "On $host now: dotnix-firstboot"
+      else
+        echo "After git push: dotnix-firstboot on $host"
+      fi
+    '';
+  };
 in
 {
   imports = [ inputs.sops.nixosModules.sops ];
@@ -92,6 +129,9 @@ in
       secrets.user-password.neededForUsers = true;
     };
     dotnix.core.user.passwordFile = lib.mkDefault config.sops.secrets.user-password.path;
-    environment.systemPackages = [ enroll ];
+    environment.systemPackages = [
+      enroll
+      adopt
+    ];
   };
 }

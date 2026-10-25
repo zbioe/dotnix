@@ -37,6 +37,8 @@ let
     home-module = home.nixosModules.home-manager;
     # the home every host shares, activated at boot by new installs and the live ISO
     homeActivation = self.homeConfigurations.bx.activationPackage;
+    # every host's home, for what a host does with its own (system/services/cache.nix)
+    homes = self.homeConfigurations;
   };
 
   # the desktop: every host and the full ISO
@@ -138,6 +140,10 @@ in
     secure-boot-test = pkgs.testers.runNixOSTest (
       import ../checks/vm/secure-boot.nix { inherit inputs dotlib; }
     );
+    sbctl-keys-test = pkgs.testers.runNixOSTest (
+      import ../checks/vm/sbctl-keys.nix { inherit inputs dotlib; }
+    );
+    adopt-test = pkgs.testers.runNixOSTest (import ../checks/vm/adopt.nix { inherit inputs dotlib; });
     install-test = pkgs.testers.runNixOSTest (
       import ../checks/vm/install.nix {
         inherit nixpkgs;

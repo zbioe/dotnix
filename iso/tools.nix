@@ -22,6 +22,81 @@ let
     }
   '';
 
+  # Secure Boot keys for this machine, in /var/lib/sbctl: another machine's,
+  # sent over SSH (dotnix-sbctl-send there) or from its backup, or new ones
+  keys = pkgs.writeShellApplication {
+    name = "dotnix-sbctl-keys";
+    runtimeInputs = with pkgs; [
+      coreutils
+      gawk
+      gnutar
+      iproute2
+      rclone
+      restic
+      sbctl
+    ];
+    text = ''
+      [ "$(id -u)" = 0 ] || exec sudo "$0" "$@"
+      usage() { echo "usage: dotnix-sbctl-keys ssh | backup HOST | new" >&2; exit 2; }
+
+      from_ssh() {
+        # (sent already, before choosing, is fine too)
+        echo "On the machine with the keys run: dotnix-sbctl-send ADDRESS, one of"
+        ip -4 -o addr show scope global | awk '{ split($4, a, "/"); print "  " a[1] }'
+        echo "Waiting for them (Enter: give up)..."
+        until [ -s /tmp/dotnix-sbctl.tar ]; do
+          if [ -t 0 ]; then
+            if read -rt 2; then return 1; fi
+          else
+            sleep 2
+          fi
+        done
+        tar -C /var/lib -xf /tmp/dotnix-sbctl.tar
+        shred -u /tmp/dotnix-sbctl.tar
+      }
+
+      # system/storage/backup.nix's repository of that host; RESTIC_REPOSITORY
+      # (and RESTIC_PASSWORD) set beforehand pick another one
+      from_backup() {
+        local src=$1 u p code mp args
+        if [ -z "''${RESTIC_REPOSITORY:-}" ]; then
+          export RCLONE_CONFIG=/tmp/dotnix-rclone.conf
+          echo "Proton Drive login"
+          read -rp "Proton e-mail: " u
+          read -rsp "Password: " p; echo
+          read -rp "2FA code (empty if none): " code
+          read -rsp "Mailbox password (empty unless two-password mode): " mp; echo
+          args=(username "$u" password "$p")
+          [ -z "$code" ] || args+=(2fa "$code")
+          [ -z "$mp" ] || args+=(mailbox_password "$mp")
+          rclone config create proton protondrive "''${args[@]}" >/dev/null || return 1
+          unset p mp
+          export RESTIC_REPOSITORY="rclone:proton:dotnix-backup/$src"
+        fi
+        if [ -z "''${RESTIC_PASSWORD:-}" ]; then
+          read -rsp "Backup password of $src (\`backup password\` there, or Proton Pass): " RESTIC_PASSWORD; echo
+          export RESTIC_PASSWORD
+        fi
+        rm -rf /tmp/dotnix-restore
+        restic restore latest --host "$src" --include /persist/.backup/var/lib/sbctl \
+          --target /tmp/dotnix-restore || return 1
+        cp -a /tmp/dotnix-restore/persist/.backup/var/lib/sbctl /var/lib/
+        rm -rf /tmp/dotnix-restore /tmp/dotnix-rclone.conf
+      }
+
+      rm -rf /var/lib/sbctl
+      mkdir -p /var/lib
+      case ''${1:-} in
+        ssh) from_ssh ;;
+        backup) [ -n "''${2:-}" ] || usage; from_backup "$2" ;;
+        new) sbctl create-keys >/dev/null ;;
+        *) usage ;;
+      esac
+      [ -f /var/lib/sbctl/keys/db/db.key ] || { echo "no keys came" >&2; exit 1; }
+      echo "keys in /var/lib/sbctl"
+    '';
+  };
+
   install = pkgs.writeShellApplication {
     name = "dotnix-install";
     runtimeInputs = with pkgs; [
@@ -35,6 +110,8 @@ let
       nix
       mkpasswd
       git
+      sbctl
+      keys
     ];
     text = ''
       bold=$'\e[1m' red=$'\e[31m' off=$'\e[0m'
@@ -87,6 +164,36 @@ let
         echo "''${red}different, again''${off}"
       done
 
+      # Secure Boot, with the firmware in Setup Mode (its keys cleared): keys
+      # in the live /var/lib/sbctl (dotnix-sbctl-keys), then on the new disk;
+      # enrolled at the end
+      setup_mode() {
+        local v
+        v=$(od -An -t u1 /sys/firmware/efi/efivars/SetupMode-8be4df61-93ca-11d2-aa0d-00e098032b8c 2>/dev/null || true)
+        [ "''${v##* }" = 1 ]
+      }
+      secure=false
+      if setup_mode; then
+        echo
+        echo "Secure Boot (the firmware is in Setup Mode), with:"
+        echo "  1) the keys of another machine, over SSH: one set everywhere, a signed stick boots on all (default)"
+        echo "  2) the keys of another machine, from its backup (Proton Drive)"
+        echo "  3) new keys, for this machine only"
+        echo "  4) no Secure Boot"
+        choice=$(ask "Choice [1]:" 1)
+        case $choice in
+          2) dotnix-sbctl-keys backup "$(ask "Machine whose backup has them [bx]:" bx)" || true ;;
+          3) dotnix-sbctl-keys new || true ;;
+          4) ;;
+          *) dotnix-sbctl-keys ssh || true ;;
+        esac
+        if [ -f /var/lib/sbctl/keys/db/db.key ]; then
+          secure=true
+        elif [ "$choice" != 4 ]; then
+          echo "''${red}no keys: installing without Secure Boot''${off}"
+        fi
+      fi
+
       # nixos-hardware for what this machine has, in hosts/<host>/hardware.nix
       # from the first rebuild on: the ISO carries a host without it
       hw=() graphics="" nvidia=""
@@ -121,6 +228,7 @@ let
 
       echo
       echo "Hardware: ''${hw[*]}"
+      [ "$secure" = false ] || echo "Secure Boot: Limine, signed with the keys of /var/lib/sbctl"
       echo "''${bold}$disk''${off} ($(lsblk -dno SIZE "$disk")) will be ''${red}erased''${off}: host $host, impermanence $impermanence, swap ''${swap}G"
       [ "$(ask "Type the disk path again to go on:" "")" = "$disk" ] || die "cancelled"
 
@@ -153,6 +261,10 @@ let
         password="core.user.passwordFile = \"/persist/secrets/${username}.passwd\";"
       fi
       unset upw upw2
+      secureboot=""
+      if [ "$secure" = true ]; then
+        secureboot="core.boot = { loader = \"limine\"; secureBoot.enable = true; };"
+      fi
       # generated once the disk is mounted
       echo "{ }" > "$flake/hosts/$host/hardware-configuration.nix"
       echo "{ }" > "$flake/hosts/$host/hardware.nix"
@@ -169,6 +281,7 @@ let
 
         dotnix = {
           $password
+          $secureboot
           # its home, the first time (then \`nh home switch\`)
           core.homeActivation.enable = true;
           hardware.keyboard.layout = "br";
@@ -203,6 +316,14 @@ let
       mkswap /dev/disk/by-partlabel/dotnix-swap
       swapon /dev/disk/by-partlabel/dotnix-swap
 
+      # the keys first: Limine is signed while installing
+      if [ "$secure" = true ]; then
+        if [ "$impermanence" = true ]; then keys=/mnt/persist/var/lib; else keys=/mnt/var/lib; fi
+        mkdir -p "$keys"
+        cp -a /var/lib/sbctl "$keys/"
+        chmod 700 "$keys/sbctl"
+      fi
+
       nixos-generate-config --root /mnt --no-filesystems --show-hardware-config 2>/dev/null > "$flake/hosts/$host/hardware-configuration.nix"
       if [ -n "$passwd" ]; then
         mkdir -p /mnt/persist/secrets
@@ -224,14 +345,26 @@ let
       git -C "$flake" remote add origin https://github.com/zbioe/dotnix.git
       git -C "$flake" add -A
       chown -R 1000:100 /mnt/home/${username}
+
+      # last: once the firmware has keys it may refuse this unsigned ISO
+      if [ "$secure" = true ] && setup_mode; then
+        sbctl enroll-keys --microsoft || echo "''${red}the firmware didn't take the keys: sbctl enroll-keys --microsoft once booted''${off}"
+      fi
       set +x
 
       echo
       echo "''${bold}Done.''${off} Remove the USB and reboot. The flake is in ~/dotnix (hosts/$host);"
-      echo "online, its history: git -C ~/dotnix fetch && git -C ~/dotnix reset origin/main"
-      echo "Then rebuild (hosts/$host/hardware.nix: ''${hw[*]}), backup setup (and restore"
-      echo "your files from it), nh home switch -c $host,"
-      echo "and from a machine with your age key: dotnix-enroll $host <its address>."
+      echo "Once it boots, online:"
+      echo "  1. on a machine with your age key (bx): dotnix-adopt ADDRESS-OF-$host"
+      echo "     (hosts/$host and its key for secrets/, committed and pushed)"
+      echo "  2. here: dotnix-firstboot (the flake from upstream, then the first rebuild,"
+      echo "     with hosts/$host/hardware.nix: ''${hw[*]})"
+      echo "  3. backup setup, and restore your files from it"
+      if [ "$secure" = true ]; then
+        echo "Secure Boot: turn it on in the firmware setup now (the keys are enrolled)."
+      else
+        echo "Secure Boot: see README (Secure Boot and TPM); the firmware needs Setup Mode."
+      fi
     '';
   };
 
@@ -263,6 +396,7 @@ in
   environment.systemPackages = with pkgs; [
     install
     mount
+    keys
     git
     gptfdisk
     cryptsetup
