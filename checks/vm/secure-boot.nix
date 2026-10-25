@@ -1,19 +1,26 @@
 # Secure Boot and TPM2 on a VM, as the README has them: a host installed with
 # Limine boots in Setup Mode, its first rebuild with secureBoot makes the keys
 # (in /persist) and enrolls them, the next boot is a Secure Boot one, and
-# after dotnix-tpm2-enroll the disk opens with the PIN.
+# after dotnix-tpm2-enroll the disk opens with the PIN. The boot theme, with
+# the command line sealed, comes from the ESP (desktop.bootScreens).
 { inputs, dotlib }:
 { pkgs, lib, ... }:
 let
   base = inputs.nixpkgs.lib.nixosSystem {
     inherit (pkgs.stdenv.hostPlatform) system;
-    specialArgs = { inherit dotlib; };
+    specialArgs = {
+      inherit dotlib;
+      inherit (inputs) base16;
+      username = "zbioe";
+    };
     modules = [
       inputs.disko.nixosModules.disko
       inputs.impermanence.nixosModules.impermanence
       ../../system/core/boot.nix
       ../../system/storage/disk.nix
       ../../system/storage/impermanence.nix
+      ../../system/core/users.nix
+      ../../system/desktop/boot-screens.nix
       "${inputs.nixpkgs}/nixos/modules/profiles/qemu-guest.nix"
       "${inputs.nixpkgs}/nixos/modules/testing/test-instrumentation.nix"
       {
@@ -31,6 +38,7 @@ let
             };
             impermanence.enable = true;
           };
+          desktop.bootScreens.enable = true;
         };
         # the prompts on the console the test reads
         boot.kernelParams = [ "console=ttyS0" ];
@@ -138,11 +146,27 @@ in
         target.succeed("test -e /persist/var/lib/sbctl/keys/db/db.key")
         target.succeed("PASSWORD=secret NEWPIN=4321 dotnix-tpm2-enroll >&2")
         target.succeed("cryptsetup luksDump /dev/disk/by-partlabel/dotnix-luks | grep -q systemd-tpm2")
+        assert target.succeed("cat /run/dotnix/boot-theme").strip() == "gruvbox-dark"
+        # `theme` picks another one: theme-boot leaves it on the ESP
+        target.succeed("install -d -o zbioe /home/zbioe/.local/state/theme")
+        target.succeed("echo catppuccin-light > /home/zbioe/.local/state/theme/boot")
+        target.succeed("systemctl start theme-boot.service")
+        assert target.succeed("cat /boot/dotnix-theme").strip() == "catppuccin-light"
         target.shutdown()
 
-    with subtest("the TPM opens the disk with the PIN"):
+    with subtest("the TPM opens the disk with the PIN, in the theme picked"):
         boot("PIN", "4321")
         assert secure_boot()
+        assert target.succeed("cat /run/dotnix/boot-theme").strip() == "catppuccin-light"
+        # anything else on the ESP: the default
+        # (theme-boot would put the user's back)
+        target.succeed("systemctl stop theme-boot.path")
+        target.succeed("echo '../../bin/sh' > /boot/dotnix-theme && sync")
+        target.shutdown()
+
+    with subtest("a name Nix didn't build is ignored"):
+        boot("PIN", "4321")
+        assert target.succeed("cat /run/dotnix/boot-theme").strip() == "gruvbox-dark"
         target.shutdown()
   '';
 }

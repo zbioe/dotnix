@@ -1,7 +1,7 @@
 # GRUB, Plymouth, the console and SDDM follow `theme`: every theme is prebuilt,
 # and theme-boot hands the choice over through grubenv and /var/lib/theme.
-# With Limine (Secure Boot) the kernel command line is sealed: the boot starts
-# with the default theme, the rest follows `theme` as with GRUB.
+# With Limine (Secure Boot) the kernel command line is sealed: theme-boot
+# leaves the theme's name on the ESP and the initrd picks it from there.
 {
   config,
   lib,
@@ -246,6 +246,56 @@ let
     ]) variants
   );
 
+  # Limine: the name theme-boot left on the ESP (unsigned, so only one Nix
+  # built is taken), for the console palette and plymouth
+  esp = config.fileSystems."/boot".device;
+  vtrgbs = pkgs.linkFarm "boot-vtrgb" (
+    map (v: {
+      name = v.id;
+      path = vtrgb v;
+    }) variants
+  );
+  # (the initrd copies these binaries, not the scripts' closures)
+  initrdBins = {
+    mount = "${pkgs.util-linux}/bin/mount";
+    umount = "${pkgs.util-linux}/bin/umount";
+    mkdir = "${pkgs.coreutils}/bin/mkdir";
+    sleep = "${pkgs.coreutils}/bin/sleep";
+    setvtrgb = "${pkgs.kbd}/bin/setvtrgb";
+  };
+  initrdTheme = pkgs.writeShellScript "dotnix-boot-theme" (
+    with initrdBins;
+    ''
+      id=${default} chosen=""
+      for _ in {1..30}; do
+        [ -e ${esp} ] && break
+        ${sleep} 0.1
+      done
+      ${mkdir} -p /run/dotnix/esp
+      if ${mount} -t vfat -o ro,nosuid,nodev,noexec ${esp} /run/dotnix/esp; then
+        [ -f /run/dotnix/esp/dotnix-theme ] && read -r -n 64 chosen < /run/dotnix/esp/dotnix-theme
+        ${umount} /run/dotnix/esp
+      fi
+      case "$chosen" in
+        ${lib.concatStringsSep "|" ids}) id=$chosen ;;
+      esac
+      echo "dotnix-boot-theme: $id"
+      echo "$id" > /run/dotnix/boot-theme
+      ${setvtrgb} ${vtrgbs}/"$id" || true
+    ''
+  );
+  plymouthStart = pkgs.writeShellScript "plymouth-start-theme" ''
+    id=${default}
+    [ -r /run/dotnix/boot-theme ] && read -r id < /run/dotnix/boot-theme
+    read -r line < /proc/cmdline
+    cmdline=""
+    for word in $line; do
+      [[ $word == plymouth.splash=* ]] || cmdline+=" $word"
+    done
+    exec ${config.boot.plymouth.package}/sbin/plymouthd --mode=boot --pid-file=/run/plymouth/pid \
+      --attach-to-session --kernel-command-line="$cmdline plymouth.splash=nix-$id"
+  '';
+
   stateDir = "${config.users.users.${config.dotnix.core.user.name}.home}/.local/state/theme";
 
   sync = pkgs.writeShellApplication {
@@ -276,11 +326,22 @@ let
             ;;
         esac
 
-        ${lib.optionalString grub ''
-          # shellcheck disable=SC2046 # one name=value per line
-          ${lib.getExe' pkgs.grub2 "grub-editenv"} /boot/grub/grubenv set $(cat ${index}/"$id"/grubenv)
-          sync -f /boot/grub/grubenv
-        ''}
+        ${
+          if grub then
+            ''
+              # shellcheck disable=SC2046 # one name=value per line
+              ${lib.getExe' pkgs.grub2 "grub-editenv"} /boot/grub/grubenv set $(cat ${index}/"$id"/grubenv)
+              sync -f /boot/grub/grubenv
+            ''
+          else
+            ''
+              if [ "$(cat /boot/dotnix-theme 2>/dev/null)" != "$id" ]; then
+                printf '%s\n' "$id" > /boot/dotnix-theme.tmp
+                mv -f /boot/dotnix-theme.tmp /boot/dotnix-theme
+                sync -f /boot/dotnix-theme
+              fi
+            ''
+        }
 
         mkdir -p /var/lib/theme
         ln -sfn ${index}/"$id" /var/lib/theme/current.tmp
@@ -374,6 +435,40 @@ in
           "vt.default_blu=${vtKernel defaultVariant "b"}"
         ]
     );
+    boot.initrd.supportedFilesystems.vfat = lib.mkIf (!grub) true;
+    boot.initrd.systemd.storePaths = lib.mkIf (!grub) (
+      [
+        initrdTheme
+        vtrgbs
+      ]
+      ++ lib.attrValues initrdBins
+      ++ lib.optional config.boot.plymouth.enable plymouthStart
+    );
+    boot.initrd.systemd.services = lib.mkIf (!grub) {
+      dotnix-boot-theme = {
+        description = "Pick the boot theme theme-boot left on the ESP";
+        wantedBy = [ "initrd.target" ];
+        after = [ "systemd-udev-trigger.service" ];
+        before = [
+          "plymouth-start.service"
+          "cryptsetup-pre.target"
+        ];
+        unitConfig.DefaultDependencies = false;
+        serviceConfig = {
+          Type = "oneshot";
+          RemainAfterExit = true;
+          ExecStart = initrdTheme;
+        };
+      };
+      plymouth-start = lib.mkIf config.boot.plymouth.enable {
+        wants = [ "dotnix-boot-theme.service" ];
+        after = [ "dotnix-boot-theme.service" ];
+        serviceConfig.ExecStart = [
+          ""
+          "${plymouthStart}"
+        ];
+      };
+    };
     # Limine's menu in the default theme's colors
     boot.loader.limine.style = {
       wallpapers = [ ];

@@ -333,9 +333,10 @@ Once per host, in this order:
 5. `dotnix.core.boot.tpm2.enable = true;`, rebuild, `dotnix-tpm2-enroll` (asks
    the disk password and the new PIN).
 
-The boot starts with the default theme: the kernel command line is sealed, so
-it can't follow `theme` as with GRUB (the session and SDDM still do). The ISOs
-and the multiboot stick keep GRUB, unsigned: Secure Boot off to boot them.
+The kernel command line is sealed, so the boot theme can't go through it as
+with GRUB: `theme` leaves its name in `/boot/dotnix-theme` and the initrd takes
+it from there, only if it is one of the themes built in. The ISOs and the
+multiboot stick keep GRUB, unsigned: Secure Boot off to boot them.
 `nix build .#secure-boot-test` goes through these steps on a VM.
 
 ## Multiboot stick
