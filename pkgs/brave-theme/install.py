@@ -1,14 +1,13 @@
 # Installs the theme extension into a Brave profile as a persistent unpacked
 # extension (what "Load unpacked" does), through the DevTools protocol over
 # --remote-debugging-pipe, in a headless Brave that is closed right after.
-# usage: install.py BRAVE USER_DATA_DIR PROFILE_DIRECTORY EXTENSION_DIR
+# usage: install.py BRAVE USER_DATA_DIR PROFILE_DIRECTORY EXTENSION_DIR EXTENSION_ID
 import json
 import os
 import subprocess
 import sys
-import time
 
-brave, root, profile, ext = sys.argv[1:5]
+brave, root, profile, ext, EXTENSION_ID = sys.argv[1:6]
 to_brave, from_us = os.pipe()  # browser reads fd 3
 from_brave, to_us = os.pipe()  # browser writes fd 4
 
@@ -58,9 +57,14 @@ try:
     reply = call(1, "Extensions.loadUnpacked", {"path": ext})
     if "error" in reply:
         sys.exit(f"brave-theme: {reply['error'].get('message')}")
-    time.sleep(1)  # the theme pack is built and the prefs written
+    # (loaded, theme installed; Brave writes Preferences as it closes)
     call(2, "Browser.close")
     proc.wait(timeout=30)
 finally:
     if proc.poll() is None:
         proc.kill()
+
+with open(os.path.join(root, profile, "Preferences")) as f:
+    theme = json.load(f).get("extensions", {}).get("theme", {}).get("id")
+if theme != EXTENSION_ID:
+    sys.exit(f"brave-theme: {profile} has theme {theme!r}, not the extension")

@@ -23,6 +23,7 @@
   python3,
   jq,
   brave,
+  inotify-tools,
 }:
 let
   # fixed extension id: pffajedgapdnpkofjjgjdhaipfdigfnd
@@ -49,7 +50,10 @@ in
     name: colors:
     runCommand "brave-theme-${name}"
       {
-        nativeBuildInputs = [ brave ];
+        nativeBuildInputs = [
+          brave
+          inotify-tools
+        ];
         manifest = builtins.toJSON {
           manifest_version = 3;
           name = "nix theme";
@@ -62,16 +66,17 @@ in
       ''
         mkdir -p $out home
         cp $manifestPath $out/manifest.json
+        name=""
         export HOME=$PWD/home
+        # the pack once written whole, watched before Brave starts
+        exec {events}< <(exec inotifywait -m -e close_write,moved_to --format %f $out 2>&1)
+        watch=$!
+        until [ "$name" = "Watches established." ]; do read -r name <&"$events"; done
         brave --headless=new --no-sandbox --disable-gpu --user-data-dir=$PWD/profile \
           --no-first-run --load-extension=$out \
           --disable-features=DisableLoadExtensionCommandLineSwitch about:blank >/dev/null 2>&1 &
-        for _ in $(seq 120); do
-          [ -s "$out/Cached Theme.pak" ] && break
-          sleep 0.5
-        done
-        sleep 0.5
-        kill $! || true
+        while read -r -t 60 name <&"$events" && [ "$name" != "Cached Theme.pak" ]; do :; done
+        kill $! $watch || true
         wait || true
         [ -s "$out/Cached Theme.pak" ] || { echo "brave-theme: no theme pack" >&2; exit 1; }
         # the address bar dropdown's window (omnibox_background, color 10)
@@ -120,7 +125,7 @@ in
     for dir in "$root"/Default "$root"/Profile\ *; do
       [ -d "$dir" ] || continue
       if [ "$(${jq}/bin/jq -r '.extensions.theme.id // ""' "$dir/Preferences" 2>/dev/null)" != ${id} ]; then
-        ${python3}/bin/python3 -I ${./install.py} "$1" "$root" "''${dir##*/}" "$ext" || continue
+        ${python3}/bin/python3 -I ${./install.py} "$1" "$root" "''${dir##*/}" "$ext" ${id} || continue
       fi
       # rounded page corners: the page's outline divides it from the toolbar,
       # instead of a line the address bar's dropdown would cover
