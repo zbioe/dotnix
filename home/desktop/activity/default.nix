@@ -19,7 +19,6 @@ let
   data = "${config.xdg.dataHome}/activitywatch";
   db = "${data}/aw-server-rust/sqlite.db";
   grafanaPort = 5610;
-  grafanaBackend = 5611;
 
   python = pkgs.python3.withPackages (p: [ p.psutil ]);
 
@@ -62,12 +61,8 @@ let
   };
 
   # buckets written to with plain events: the shell's and the setup's own
-  # (rebuilds)
+  # (rebuilds); the server answers once it says it's ready (Type=notify)
   buckets = pkgs.writeShellScript "aw-buckets" ''
-    for _ in $(seq 60); do
-      ${lib.getExe pkgs.curl} -sf ${api}/info >/dev/null && break
-      sleep 0.5
-    done
     bucket() {
       ${lib.getExe pkgs.curl} -sf -X POST -H 'Content-Type: application/json' \
         -d "{\"client\":\"$2\",\"type\":\"$3\",\"hostname\":\"${host}\"}" \
@@ -123,9 +118,10 @@ let
 
   grafanaIni = pkgs.writeText "grafana.ini" (
     lib.generators.toINI { } {
+      # a unix socket, the proxy's backend: there once Grafana listens
       server = {
-        http_addr = "127.0.0.1";
-        http_port = grafanaBackend;
+        protocol = "socket";
+        socket = "$__env{RUNTIME_DIRECTORY}/grafana.sock";
         root_url = "http://127.0.0.1:${toString grafanaPort}/";
       };
       paths = {
@@ -281,6 +277,7 @@ in
       aw-server = {
         Unit.Description = "ActivityWatch server (127.0.0.1:5600)";
         Service = {
+          Type = "notify";
           ExecStart = "${pkgs.aw-server-rust}/bin/aw-server --host 127.0.0.1 --port 5600 --dbpath ${db}";
           ExecStartPre = "${pkgs.coreutils}/bin/mkdir -p ${data}/aw-server-rust";
           ExecStartPost = buckets;
@@ -323,14 +320,15 @@ in
         };
         Service = {
           ExecStartPre = "${pkgs.coreutils}/bin/mkdir -p ${config.xdg.dataHome}/grafana ${config.xdg.stateHome}/grafana";
+          RuntimeDirectory = "grafana";
           ExecStart = "${pkgs.grafana}/bin/grafana server --homepath ${pkgs.grafana}/share/grafana --config ${grafanaIni}";
-          # ready once it answers, so the first request waits for it
+          # ready once its socket is there (its own READY comes before it
+          # listens), so the first request waits for it
           ExecStartPost = pkgs.writeShellScript "grafana-ready" ''
-            for _ in $(seq 120); do
-              ${lib.getExe pkgs.curl} -sf http://127.0.0.1:${toString grafanaBackend}/api/health >/dev/null && exit 0
-              sleep 0.5
-            done
-            exit 1
+            exec {events}< <(exec ${pkgs.inotify-tools}/bin/inotifywait -m -e create --format %f "$RUNTIME_DIRECTORY" 2>&1)
+            name=""
+            until [ "$name" = "Watches established." ]; do read -r name <&"$events"; done
+            until [ -S "$RUNTIME_DIRECTORY/grafana.sock" ]; do read -r name <&"$events"; done
           '';
           TimeoutStartSec = 90;
         };
@@ -364,7 +362,7 @@ in
           Requires = [ "grafana.service" ];
           After = [ "grafana.service" ];
         };
-        Service.ExecStart = "${pkgs.systemd}/lib/systemd/systemd-socket-proxyd --exit-idle-time=30min 127.0.0.1:${toString grafanaBackend}";
+        Service.ExecStart = "${pkgs.systemd}/lib/systemd/systemd-socket-proxyd --exit-idle-time=30min %t/grafana/grafana.sock";
       };
     };
 
