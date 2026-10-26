@@ -18,6 +18,23 @@ let
   };
   noctalia = inputs.noctalia.packages.${system}.default;
   dotlib = import ./options.nix { inherit lib; };
+  # before each commit, on the files in it: what checks/ runs on the tree
+  hooks = inputs.git-hooks.lib.${system}.run {
+    src = ../.;
+    hooks = {
+      nixfmt.enable = true;
+      deadnix = {
+        enable = true;
+        settings.edit = false;
+      };
+      statix = {
+        enable = true;
+        settings.config = "statix.toml";
+      };
+      stylua.enable = true;
+      ruff.enable = true;
+    };
+  };
 
   hostNames = lib.attrNames (
     lib.filterAttrs (_: type: type == "directory") (builtins.readDir ../hosts)
@@ -162,7 +179,9 @@ in
     );
   };
 
-  checks.${system} = import ../checks { inherit self pkgs lib; };
+  checks.${system} = import ../checks { inherit self pkgs lib; } // {
+    pre-commit = hooks;
+  };
 
   apps.${system}.options = {
     type = "app";
@@ -172,23 +191,27 @@ in
 
   formatter.${system} = pkgs.nixfmt-tree;
 
+  # (installs the hooks: `nix develop`, or direnv with the .envrc)
   devShells.${system}.default = pkgs.mkShellNoCC {
-    packages = with pkgs; [
-      nh
-      nixfmt-tree
-      go
-      gopls
-      gotools
-      self.packages.${system}.dotnix-key
-      self.packages.${system}.usb-stick
-      cryptsetup
-      util-linux
-      parted
-      dosfstools
-      e2fsprogs
-      grub2_efi
-      qemu_kvm
-      OVMF
-    ];
+    inherit (hooks) shellHook;
+    packages =
+      hooks.enabledPackages
+      ++ (with pkgs; [
+        nh
+        nixfmt-tree
+        go
+        gopls
+        gotools
+        self.packages.${system}.dotnix-key
+        self.packages.${system}.usb-stick
+        cryptsetup
+        util-linux
+        parted
+        dosfstools
+        e2fsprogs
+        grub2_efi
+        qemu_kvm
+        OVMF
+      ]);
   };
 }

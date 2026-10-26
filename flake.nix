@@ -51,6 +51,11 @@
       url = "github:hercules-ci/flake-parts";
       inputs.nixpkgs-lib.follows = "nixpkgs";
     };
+    # the format and lint checks, before each commit (the dev shell installs them)
+    git-hooks = {
+      url = "github:cachix/git-hooks.nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     systems.url = "github:nix-systems/default";
     impermanence = {
       url = "github:nix-community/impermanence";
