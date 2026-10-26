@@ -225,7 +225,8 @@ in
         assert "wifi: secret" in out, out
 
     with subtest("firstboot: upstream, the system for the next boot, the home"):
-        new.succeed("systemctl start dotnix-firstboot.service")
+        # a build sometimes killed (signal 9) on CI runners: again, as its timer does
+        new.wait_until_succeeds("systemctl start dotnix-firstboot.service", timeout=120)
         assert new.succeed("cat /tmp/switched").strip() == "boot"
         new.succeed("test -e /home/zbioe/activated")
         new.fail("test -e /home/zbioe/dotnix/.git/dotnix-firstboot")

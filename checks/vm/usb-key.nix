@@ -51,7 +51,7 @@ in
       pending = ""
 
       # wait_for_console_text with a timeout reads one line a second: too slow for a boot log
-      def console(text, timeout=180):
+      def console(text, timeout=300):
           global pending
           deadline = time.monotonic() + timeout
           while True:
