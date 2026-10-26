@@ -321,7 +321,8 @@ for pass in supported other; do
     elif [ "$pass" = other -a "$kind" = other ]; then
       menuentry "$iso (not supported)" "$iso" {
         echo "$2: no boot/grub/loopback.cfg, it can't boot from a file"
-        sleep 10
+        echo "Enter: back to the menu"
+        read
       }
     fi
   done
@@ -395,20 +396,26 @@ create() {
     [ "$answer" = "${args[0]}" ] || die "aborted"
   fi
 
+  local mkfs=()
+  if ((files_part)); then mkfs+=("mkfs.vfat -F 32 -n FILES"); fi
+  if ((isos_part)); then mkfs+=("mkfs.vfat -F 32 -n ESP" "mkfs.ext4 -q -F -m 0 -T largefile -L ISOS"); fi
   as_root wipefs -aq "$disk"
-  printf '%s\n' "${table[@]}" | as_root sfdisk --quiet --wipe always --wipe-partitions always "$disk"
-  as_root udevadm settle 2>/dev/null || true
-  local files esp isos
-  if ((files_part)); then
-    files=$(part_of FILES) || die "the FILES partition did not show up"
-    as_root mkfs.vfat -F 32 -n FILES "$files" >/dev/null
-  fi
+  # under udev's lock: its rereading of the new table would otherwise drop a
+  # filesystem being made (mount: wrong fs type)
+  # shellcheck disable=SC2016
+  printf '%s\n' "${table[@]}" | as_root udevadm lock --device="$disk" bash -c '
+    disk=$1; shift
+    sfdisk --quiet --wipe always --wipe-partitions always "$disk"
+    mapfile -t parts < <(lsblk -nrpo PATH "$disk" | tail -n +2)
+    ((${#parts[@]} == $#)) || { echo "usb-stick: the partitions did not show up" >&2; exit 1; }
+    for p in "${parts[@]}"; do $1 "$p" >/dev/null; shift; done
+  ' format "$disk" "${mkfs[@]}" || die "partitioning $disk failed"
+  as_root udevadm settle
 
+  local esp isos
   if ((isos_part)); then
     esp=$(part_of ESP) || die "the ESP partition did not show up"
     isos=$(part_of ISOS) || die "the ISOS partition did not show up"
-    as_root mkfs.vfat -F 32 -n ESP "$esp" >/dev/null
-    as_root mkfs.ext4 -q -F -m 0 -T largefile -L ISOS "$isos"
     mount_at "$esp" "$work/esp"
     as_root grub-install --target=x86_64-efi --efi-directory="$work/esp" \
       --boot-directory="$work/esp/boot" --removable --no-nvram "$disk"

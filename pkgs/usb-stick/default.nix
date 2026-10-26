@@ -12,6 +12,7 @@
   gnused,
   gnugrep,
   sbctl,
+  systemd,
   systemdUkify,
 }:
 writeShellApplication {
@@ -27,6 +28,8 @@ writeShellApplication {
     gawk
     gnused
     gnugrep
+    # udevadm
+    systemd
     # signing for Secure Boot: systemd-boot and a UKI per NixOS ISO
     sbctl
     systemdUkify
