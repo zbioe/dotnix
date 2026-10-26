@@ -51,6 +51,7 @@ let
 in
 {
   name = "dotnix-boot-splash";
+  enableOCR = true;
 
   nodes = {
     installer = {
@@ -109,8 +110,9 @@ in
         rgb = Counter(bytes(pixels[i:i + 3]) for i in range(0, len(pixels) - 2, 3 * 97))
         return "#" + rgb.most_common(1)[0][0].hex()
 
-    def boot(color):
-        target.start()
+    def boot(color, start=True):
+        if start:
+            target.start()
         # the splash, then its password prompt over it
         want = bytes.fromhex(color[1:])
         # (the framebuffer rounds a channel or two)
@@ -135,6 +137,19 @@ in
 
     with subtest("the one picked"):
         boot("#eff1f5")
+        target.shutdown()
+
+    with subtest("Limine's menu: a key shows it, Enter boots the entry"):
+        target.start()
+        # (its second of blank screen comes after the firmware's)
+        deadline = time.time() + 40
+        while time.time() < deadline:
+            target.send_key("down")
+            time.sleep(0.1)
+        target.wait_for_text("Generation")
+        target.screenshot("limine-menu")
+        target.send_key("ret")
+        boot("#eff1f5", start=False)
         target.shutdown()
   '';
 }

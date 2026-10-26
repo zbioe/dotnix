@@ -469,11 +469,60 @@ in
         ];
       };
     };
-    # Limine's menu in the default theme's colors
-    boot.loader.limine.style = {
-      wallpapers = [ ];
-      backdrop = defaultVariant.colors.base00;
-    };
+    # Limine's menu in the default theme's colors, the snowflake above it (its
+    # config is signed: `theme` can't change it)
+    boot.loader.limine.style =
+      let
+        c = defaultVariant.colors;
+        art = import ../../home/theme/art.nix {
+          inherit pkgs lib;
+          inherit (defaultVariant) colors;
+        };
+        palette = lib.concatMapStringsSep ";" (b: c.${b});
+      in
+      {
+        wallpapers = [
+          (pkgs.runCommandLocal "limine-wallpaper.png" { } ''
+            ${lib.getExe pkgs.imagemagick} -size 1920x1080 xc:'${c.withHashtag.base00}' \
+              ${art.logo 200} -gravity north -geometry +0+250 -composite $out
+          '')
+        ];
+        wallpaperStyle = "stretched";
+        backdrop = c.base00;
+        interface = {
+          branding = "NixOS";
+          brandingColor = c.base0D;
+          helpColor = c.base04;
+          helpColorBright = c.base0A;
+        };
+        graphicalTerminal = {
+          # the wallpaper behind the text
+          background = "ff${c.base00}";
+          foreground = c.base05;
+          brightBackground = c.base02;
+          brightForeground = c.base07;
+          palette = palette [
+            "base00"
+            "base08"
+            "base0B"
+            "base0A"
+            "base0D"
+            "base0E"
+            "base0C"
+            "base05"
+          ];
+          brightPalette = palette [
+            "base03"
+            "base08"
+            "base0B"
+            "base0A"
+            "base0D"
+            "base0E"
+            "base0C"
+            "base07"
+          ];
+        };
+      };
 
     # NixOS puts only the default plymouth theme in the initrd; ship them all so
     # plymouth.splash=nix-<theme> finds any of them (same path fixup as NixOS)
