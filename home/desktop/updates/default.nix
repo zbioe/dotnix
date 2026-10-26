@@ -12,7 +12,9 @@ let
     name = "flake-updates";
     runtimeInputs = with pkgs; [
       coreutils
+      curl
       gawk
+      gnused
       git
       gnutar
       hostname
@@ -51,25 +53,37 @@ let
       changes() {
         jq -r --slurpfile new "$2" '
           def day: strftime("%Y-%m-%d");
+          def version: (.url // "" | capture("_(?<v>[0-9.]+)_amd64") | .v) // "older";
           .nodes as $old | $new[0].nodes as $n
           | $old.root.inputs | to_entries[]
           | (.value | if type == "array" then empty else . end) as $node
           | $old[$node].locked as $o | $n[$node].locked as $l
-          # files (proton-pass) have no date, only a hash
+          # files (proton-pass) have no date: their version, from the URL
           | if $o.lastModified != null then
               select($o.lastModified != $l.lastModified)
               | [ .key, ($o.lastModified | day), ($l.lastModified | day),
                   ((($l.lastModified - $o.lastModified) / 86400) | floor) ]
             else
-              select($o.narHash != $l.narHash) | [ .key, "older", "newest", 0 ]
+              select($o.narHash != $l.narHash) | [ .key, ($o | version), ($l | version), 0 ]
             end
           | @tsv' "$1"
       }
       pretty() {
-        awk -F'\t' '$2 == "older" { printf "%-18s new release\n", $1; next }
+        awk -F'\t' '$4 == 0 { printf "%-18s %s → %s\n", $1, $2, $3; next }
           { printf "%-18s %s → %s (+%s days)\n", $1, $2, $3, $4 }' "$1"
       }
       inputs() { jq -r '.nodes.root.inputs | keys[]' "$flake/flake.lock"; }
+
+      # inputs locked to one version's URL (proton-pass): moved in the staged
+      # flake.nix to the newest stable one, so `nix flake update` locks it
+      newest_versions() {
+        case " $hold " in *" proton-pass "*) return 0 ;; esac
+        local url
+        url=$(curl -sf https://proton.me/download/PassDesktop/linux/x64/version.json |
+          jq -r '[.Releases[] | select(.CategoryName == "Stable")][0].File[].Url | select(endswith("_amd64.deb"))') || return 0
+        [[ $url =~ ^https://proton\.me/download/pass/linux/proton-pass_[0-9.]+_amd64\.deb$ ]] || return 0
+        sed -i -E "s|https://proton\.me/download/pass/linux/proton-pass_[0-9.]+_amd64\.deb|$url|" "$stage/flake.nix"
+      }
 
       check() {
         exec 9>"$state/lock"
@@ -84,6 +98,7 @@ let
         rm -rf "$stage"
         mkdir -p "$stage"
         git -C "$flake" ls-files -co --exclude-standard -z | tar -C "$flake" --null -T - -cf - | tar -C "$stage" -xf -
+        newest_versions
         local update=()
         for i in $(inputs); do
           case " $hold " in *" $i "*) ;; *) update+=("$i") ;; esac
@@ -132,6 +147,7 @@ let
             grep -v "Git tree .* is dirty" | sed -E 's/^(evaluation warning|warning|trace: warning): ?//' |
             sort -u > "$state/warnings" || true
           cp "$stage/flake.lock" "$state/ready.lock"
+          cp "$stage/flake.nix" "$state/ready.flake.nix"
           sha256sum "$flake/flake.nix" > "$state/ready.flake-nix"
           date +%F > "$state/ready"
           echo ready > "$state/result"
@@ -169,6 +185,8 @@ let
           return 0
         fi
         cp "$state/ready.lock" "$flake/flake.lock"
+        # (a version moved there too: proton-pass)
+        cmp -s "$state/ready.flake.nix" "$flake/flake.nix" || cp "$state/ready.flake.nix" "$flake/flake.nix"
         rm -f "$state/ready"
         if [ "''${1:-}" = --auto ]; then
           # home now, system at the next boot (system/core/updates.nix)

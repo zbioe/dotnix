@@ -135,7 +135,7 @@ local function changeRows()
           color = "on_surface_variant",
         }),
         ui.label({
-          text = c.from == "older" and "" or `+{c.days}d`,
+          text = (c.from == "older" or c.days == 0) and "" or `+{c.days}d`,
           fontSize = 10,
           color = "primary",
           width = 34,

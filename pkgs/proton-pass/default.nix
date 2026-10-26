@@ -1,5 +1,5 @@
-# nixpkgs' Proton Pass on the newest stable build from Proton (the
-# proton-pass flake input, moved forward by flake-updates)
+# nixpkgs' Proton Pass on Proton's own build (the proton-pass flake input,
+# moved to the newest stable one by flake-updates)
 {
   proton-pass,
   dpkg,

@@ -71,9 +71,12 @@
     };
     # long-term memory shared by the coding agents (home/dev)
     ai-memory.url = "github:akitaonrails/ai-memory";
-    # Proton's own build of the newest stable Proton Pass (pkgs/proton-pass)
+    # Proton's own build of Proton Pass (pkgs/proton-pass): a URL of one
+    # version, so what is locked stays downloadable; `flake-updates` moves it
+    # to the newest stable one (by hand: the version here, then
+    # `nix flake update proton-pass`)
     proton-pass = {
-      url = "file+https://proton.me/download/PassDesktop/linux/x64/ProtonPass.deb";
+      url = "file+https://proton.me/download/pass/linux/proton-pass_1.42.0_amd64.deb";
       flake = false;
     };
     bwt = {
