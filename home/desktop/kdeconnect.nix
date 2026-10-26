@@ -70,6 +70,11 @@ in
       enable = true;
       indicator = true;
     };
+    # home-manager's PATH (the home profile alone) has no xdg-open: Browse
+    # (kdeconnect://) failed with "Unable to detect a web browser"
+    systemd.user.services.kdeconnect.Service.Environment = lib.mkForce [
+      "PATH=${config.home.profileDirectory}/bin:/run/wrappers/bin:/run/current-system/sw/bin"
+    ];
 
     home.sessionVariables = {
       QT_QPA_PLATFORMTHEME = "qt6ct";
