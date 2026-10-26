@@ -33,6 +33,8 @@ in
 
         # audio editing
         ardour # digital audio workstation
+        zrythm # digital audio workstation
+        lmms # beats, loops and synthesizers
         audacity # audio editor
         musescore # music notation
 
