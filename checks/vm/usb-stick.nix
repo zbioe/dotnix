@@ -111,10 +111,10 @@ in
         assert labels == ["FILES"], labels
         out = machine.fail("usb-stick list /dev/sda 2>&1")
         assert "no ISOS partition" in out, out
-        # made again: the same key, no new LUKS slot
+        # made again with --keep-key: the same key, no new LUKS slot
         slots = "cryptsetup luksDump /dev/vdb | grep -c '^  [0-9]*: luks2'"
         before = machine.succeed(slots)
-        out = machine.succeed("usb-stick create --yes /dev/sda 2>&1")
+        out = machine.succeed("usb-stick create --keep-key --yes /dev/sda 2>&1")
         assert "Its key stays" in out and "opens /dev/vdb" in out, out
         assert machine.succeed(slots) == before
         machine.send_monitor_command("device_del dev-small")

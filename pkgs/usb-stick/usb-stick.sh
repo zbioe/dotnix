@@ -10,10 +10,10 @@ MIB=$((1024 * 1024))
 usage() {
   cat <<'EOF'
 usage:
-  usb-stick create [--pin | --new-key | --no-key] [--yes] [--serial] DEVICE [ISO...]
-                                    without ISOs: only FILES and the key; the
-                                    key it has stays (no new LUKS slot) unless
-                                    --pin or --new-key
+  usb-stick create [--pin | --keep-key | --no-key] [--yes] [--serial] DEVICE [ISO...]
+                                    without ISOs: only FILES and the key;
+                                    --keep-key: the key it has, put back (no
+                                    new LUKS slot)
   usb-stick add DEVICE ISO...       copy ISOs (a same-named one is replaced)
   usb-stick remove DEVICE NAME...   remove ISOs by file name
   usb-stick list DEVICE
@@ -339,11 +339,11 @@ EOF
 }
 
 create() {
-  local pin=0 newkey=0 nokey=0 yes=0 serial=0 args=()
+  local pin=0 keep=0 nokey=0 yes=0 serial=0 args=()
   while (($#)); do
     case $1 in
     --pin) pin=1 ;;
-    --new-key) newkey=1 ;;
+    --keep-key) keep=1 ;;
     --no-key) nokey=1 ;;
     --yes) yes=1 ;;
     --serial) serial=1 ;;
@@ -353,7 +353,7 @@ create() {
     shift
   done
   ((${#args[@]} >= 1)) || die "create: no DEVICE"
-  ((pin == 0 || nokey == 0)) || die "--pin and --no-key together"
+  ((pin + keep + nokey <= 1)) || die "--pin, --keep-key and --no-key: one of them"
   open_stick "${args[0]}"
   check_isos "${args[@]:1}"
 
@@ -393,8 +393,8 @@ create() {
 
   # its key, in memory only, back on it once made again
   local oldkey=""
-  if ((nokey == 0 && pin == 0 && newkey == 0)); then
-    oldkey=$(as_root dotnix-key export "$disk" 2>/dev/null) || oldkey=""
+  if ((keep)); then
+    oldkey=$(as_root dotnix-key export "$disk") || die "--keep-key: $disk has no key to keep"
   fi
 
   lsblk -o NAME,SIZE,TRAN,MODEL,FSTYPE,LABEL "$disk"

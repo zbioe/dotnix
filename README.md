@@ -357,8 +357,8 @@ sudo dotnix-key export /dev/sdX | sudo dotnix-key import /dev/sdY
 
 Partitions and files are never touched, only the gap; a gap holding something
 else (GRUB, Ventoy) is refused. Running `create` again replaces the stick's key
-and revokes the old one; `usb-stick create` keeps the key a stick has (unless
-`--pin` or `--new-key`). `export` prints the key itself (to a pipe or a file,
+and revokes the old one; `usb-stick create --keep-key` puts the stick's own
+key back instead. `export` prints the key itself (to a pipe or a file,
 never the terminal): a file of it opens the disk as the stick does. No stick, a stick for another machine or a wrong PIN
 (three times): the password is asked.
 
