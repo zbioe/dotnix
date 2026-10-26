@@ -13,6 +13,8 @@
   networking.hostName = "bx";
 
   dotnix = {
+    # README, "Secure Boot and TPM": step 1
+    core.boot.loader = "limine";
     hardware = {
       graphics.amd = {
         enable = true;
