@@ -155,9 +155,11 @@ in
       loader = {
         efi.canTouchEfiVariables = false;
         systemd-boot.enable = false;
-        timeout = 0;
+        # Limine has no key to show a menu at 0: a blank second, any key shows it
+        timeout = if cfg.loader == "limine" then 1 else 0;
         limine = mkIf (cfg.loader == "limine") {
           enable = true;
+          extraConfig = "quiet: yes";
           efiInstallAsRemovable = true;
           maxGenerations = 5;
           secureBoot = mkIf cfg.secureBoot.enable {
