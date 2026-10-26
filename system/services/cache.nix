@@ -99,11 +99,12 @@ in
       '';
     };
 
-    # a switch, a boot entry or a home generation
+    # a switch, a boot entry or a home generation: their folders (a watch on
+    # the profile links follows them into the store, where nothing changes)
     systemd.paths.cachix-push = {
       wantedBy = [ "multi-user.target" ];
       pathConfig = {
-        PathChanged = profiles;
+        PathChanged = map dirOf profiles;
         TriggerLimitIntervalSec = "1min";
       };
     };

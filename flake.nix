@@ -68,6 +68,11 @@
     zmacs = {
       url = "github:zbioe/zmacs";
       inputs.systems.follows = "systems";
+      # its mirror's master changes daily: the commit with the locked content
+      inputs.gnu-elpa-archive = {
+        url = "file+https://raw.githubusercontent.com/d12frosted/elpa-mirror/d5da57c856aceeaa9789488ee8714b40becfbe5b/gnu/archive-contents";
+        flake = false;
+      };
     };
     # long-term memory shared by the coding agents (home/dev)
     ai-memory.url = "github:akitaonrails/ai-memory";

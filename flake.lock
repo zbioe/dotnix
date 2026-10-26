@@ -203,11 +203,11 @@
       "locked": {
         "narHash": "sha256-8n7a0Q3AjQr/32W1gQxRERgocuVrIqYtbzn7qPepZz8=",
         "type": "file",
-        "url": "https://raw.githubusercontent.com/d12frosted/elpa-mirror/master/gnu/archive-contents"
+        "url": "https://raw.githubusercontent.com/d12frosted/elpa-mirror/d5da57c856aceeaa9789488ee8714b40becfbe5b/gnu/archive-contents"
       },
       "original": {
         "type": "file",
-        "url": "https://raw.githubusercontent.com/d12frosted/elpa-mirror/master/gnu/archive-contents"
+        "url": "https://raw.githubusercontent.com/d12frosted/elpa-mirror/d5da57c856aceeaa9789488ee8714b40becfbe5b/gnu/archive-contents"
       }
     },
     "hardware": {
