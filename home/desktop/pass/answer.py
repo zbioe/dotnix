@@ -20,8 +20,9 @@ while time.time() < deadline:
         if not chunk:
             break
         out += chunk
+        # right away: pass-cli (rpassword) turns echo off without flushing
+        # what was typed (TCSANOW), so it reads this
         if not sent and prompt in out:
-            time.sleep(0.1)
             os.write(fd, secret.encode())
             sent = True
     elif sent and os.waitpid(pid, os.WNOHANG)[0]:
