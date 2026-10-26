@@ -300,11 +300,11 @@ sudo sgdisk -c 2:dotnix-efi -c 3:dotnix-swap -c 4:dotnix-luks /dev/nvme0n1   # i
 
 Any other partition keeps what was on it, and the firmware lists a loader
 another OS left there again on every boot (bx's partition 1 had Bazzite's
-shim, back as "Fedora"); a new install wipes the whole disk. Its filesystem
-goes, then the entry:
+shim, back as "Fedora"); a new install wipes the whole disk. Zeroed, not
+wipefs (the firmware reads FAT32's backup boot sector), then the entry:
 
 ```sh
-sudo wipefs -a /dev/nvme0n1p1
+sudo blkdiscard -z /dev/nvme0n1p1
 sudo efibootmgr -b 0001 -B   # its number: efibootmgr
 ```
 
