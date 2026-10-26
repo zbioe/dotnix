@@ -469,58 +469,42 @@ in
         ];
       };
     };
-    # Limine's menu in the default theme's colors, the snowflake above it (its
-    # config is signed: `theme` can't change it)
+    # Limine's menu in black and white, whatever the theme (its config is
+    # signed: `theme` can't change it), the snowflake above it
     boot.loader.limine.style =
       let
-        c = defaultVariant.colors;
-        art = import ../../home/theme/art.nix {
-          inherit pkgs lib;
-          inherit (defaultVariant) colors;
-        };
-        palette = lib.concatMapStringsSep ";" (b: c.${b});
+        logo = pkgs.runCommandLocal "nix-snowflake-mono.svg" { } ''
+          sed -e 's/fill:url(#linearGradient4328)/fill:#808080/' \
+              -e 's/fill:url(#linearGradient4330)/fill:#ffffff/' \
+              ${pkgs.nixos-icons}/share/icons/hicolor/scalable/apps/nix-snowflake.svg > $out
+        '';
+        gray = "808080";
+        white = "ffffff";
       in
       {
         wallpapers = [
           (pkgs.runCommandLocal "limine-wallpaper.png" { } ''
-            ${lib.getExe pkgs.imagemagick} -size 1920x1080 xc:'${c.withHashtag.base00}' \
-              ${art.logo 200} -gravity north -geometry +0+250 -composite $out
+            ${lib.getExe pkgs.resvg} -w 200 ${logo} logo.png
+            ${lib.getExe pkgs.imagemagick} -size 1920x1080 xc:black \
+              logo.png -gravity north -geometry +0+250 -composite $out
           '')
         ];
         wallpaperStyle = "stretched";
-        backdrop = c.base00;
+        backdrop = "000000";
         interface = {
           branding = "NixOS";
-          brandingColor = c.base0D;
-          helpColor = c.base04;
-          helpColorBright = c.base0A;
+          brandingColor = white;
+          helpColor = gray;
+          helpColorBright = white;
         };
         graphicalTerminal = {
           # the wallpaper behind the text
-          background = "ff${c.base00}";
-          foreground = c.base05;
-          brightBackground = c.base02;
-          brightForeground = c.base07;
-          palette = palette [
-            "base00"
-            "base08"
-            "base0B"
-            "base0A"
-            "base0D"
-            "base0E"
-            "base0C"
-            "base05"
-          ];
-          brightPalette = palette [
-            "base03"
-            "base08"
-            "base0B"
-            "base0A"
-            "base0D"
-            "base0E"
-            "base0C"
-            "base07"
-          ];
+          background = "ff000000";
+          foreground = white;
+          brightBackground = "333333";
+          brightForeground = white;
+          palette = lib.concatStringsSep ";" ([ "000000" ] ++ lib.replicate 6 gray ++ [ white ]);
+          brightPalette = lib.concatStringsSep ";" ([ gray ] ++ lib.replicate 7 white);
         };
       };
 

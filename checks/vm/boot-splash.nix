@@ -140,10 +140,19 @@ in
         target.shutdown()
 
     with subtest("Limine's menu: a key shows it, Enter boots the entry"):
+        def lit():
+            # the logo's gray: only the menu's wallpaper has it
+            shot = target.state_dir / "screen.ppm"
+            target.send_monitor_command(f"screendump {shot}")
+            pixels = shot.read_bytes().split(maxsplit=4)[4]
+            samples = [pixels[i:i + 3] for i in range(0, len(pixels) - 2, 3 * 97)]
+            return sum(1 for p in samples if all(abs(v - 0x80) <= 4 for v in p)) / len(samples)
+
         target.start()
         # (its second of blank screen comes after the firmware's)
-        deadline = time.time() + 40
-        while time.time() < deadline:
+        deadline = time.time() + 60
+        while lit() < 0.002:
+            assert time.time() < deadline, "no menu"
             target.send_key("down")
             time.sleep(0.1)
         target.wait_for_text("Generation")
