@@ -1,5 +1,8 @@
 # findiso= (boot this ISO from a file on another disk) for the systemd initrd, which lacks it
 { config, pkgs, ... }:
+let
+  udevadm = "${config.boot.initrd.systemd.package}/bin/udevadm";
+in
 {
   boot.initrd.availableKernelModules = [
     "xhci_pci"
@@ -41,23 +44,37 @@
       config.boot.initrd.systemd.package.util-linux
     ];
     script = ''
-      iso=""
+      iso="" line=x
       for word in $(cat /proc/cmdline); do
         case $word in
         findiso=*) iso=''${word#findiso=} ;;
         esac
       done
       mkdir -p /findiso
-      for _ in $(seq 120); do
-        for dev in $(blkid -o device); do
-          mount -o ro "$dev" /findiso 2>/dev/null || continue
-          if [ -f "/findiso$iso" ]; then
-            losetup --find --read-only --show "/findiso$iso"
-            exit 0
-          fi
-          umount /findiso
-        done
-        sleep 0.5
+      found() {
+        mount -o ro "$1" /findiso 2>/dev/null || return 1
+        if [ -f "/findiso$iso" ]; then
+          losetup --find --read-only --show "/findiso$iso"
+          exit 0
+        fi
+        umount /findiso
+        return 1
+      }
+      # disks as udev finishes with them (a slow USB stick), watched before
+      # looking at those already there
+      exec {events}< <(exec ${udevadm} monitor --udev --subsystem-match=block --property)
+      until [ "$line" = "" ]; do read -r line <&"$events"; done
+      for dev in $(blkid -o device); do found "$dev" || true; done
+      deadline=$((SECONDS + 60)) action="" dev=""
+      while [ "$SECONDS" -lt "$deadline" ] && read -r -t $((deadline - SECONDS)) line <&"$events"; do
+        case $line in
+        ACTION=*) action=''${line#ACTION=} ;;
+        DEVNAME=*) dev=''${line#DEVNAME=} ;;
+        "")
+          if [ "$action" = add ] || [ "$action" = change ]; then found "$dev" || true; fi
+          action="" dev=""
+          ;;
+        esac
       done
       echo "findiso: $iso not found on any disk" >&2
       exit 1
