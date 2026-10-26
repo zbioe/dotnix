@@ -156,6 +156,12 @@ in
         assert secure_boot()
         assert target.succeed("readlink -f /run/current-system").strip() == "${secureSystem}"
         target.succeed("test -e /persist/var/lib/sbctl/keys/db/db.key")
+        # the next rebuilds only sign: no enrolling again, the keys' variables
+        # left immutable
+        target.succeed("test -e /var/lib/sbctl/keys/db/db.key")
+        out = target.succeed("${secureSystem}/bin/switch-to-configuration boot 2>&1")
+        assert "Setup Mode" not in out and "auto generating" not in out, out
+        target.succeed("${pkgs.e2fsprogs}/bin/lsattr /sys/firmware/efi/efivars/PK-* | grep -q '^....i'")
         # what dotnix-firstboot does: asks, then only once
         target.succeed("echo y | PASSWORD=secret NEWPIN=4321 dotnix-tpm2-enroll --offer >&2")
         target.succeed("dotnix-tpm2-enroll --offer < /dev/null")

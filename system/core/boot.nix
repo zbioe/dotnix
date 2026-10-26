@@ -206,9 +206,14 @@ in
     ];
 
     # sbctl's keys straight in /persist (so in the daily backup too,
-    # system/storage/backup.nix): no /var/lib/sbctl, which Limine reads
-    # as "keys made" (a bind mount there would leave Limine unsigned), and
-    # there before the rebuild that turns secureBoot on creates them
+    # system/storage/backup.nix), there before the rebuild that turns
+    # secureBoot on creates them. /var/lib/sbctl, which Limine and fwupd read
+    # as "keys made", is a link to them: broken until then, so that rebuild
+    # makes and enrolls them, and the next ones only sign (a bind mount would
+    # leave Limine unsigned)
+    systemd.tmpfiles.rules = mkIf (cfg.secureBoot.enable && sbctlDir != "/var/lib") [
+      "L /var/lib/sbctl - - - - ${sbctlDir}/sbctl"
+    ];
     environment.etc."sbctl/sbctl.conf" =
       mkIf (cfg.loader == "limine" && config.dotnix.storage.impermanence.enable)
         {
