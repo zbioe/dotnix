@@ -1,0 +1,7 @@
+{
+  "hardware": {
+    "cpu": [ { "vendor_name": "GenuineIntel" } ],
+    "graphics_card": [ { "vendor": { "hex": "8086", "name": "Intel Corporation" } } ]
+  },
+  "smbios": { "chassis": [ { "chassis_type": { "value": 10, "name": "Notebook" } } ] }
+}

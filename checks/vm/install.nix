@@ -104,11 +104,14 @@ in
         installer.succeed("test -f /mnt/persist/var/lib/sbctl/keys/db/db.key")
         # enrolled: out of Setup Mode
         assert installer.succeed("od -An -t u1 /sys/firmware/efi/efivars/SetupMode-*").split()[-1] == "0"
-        # nixos-hardware from what it found (a VM, no battery), for the first
-        # rebuild online: out of the offline reinstall below
-        hardware = installer.succeed(f"cat {flake}/hosts/vmtest/hardware.nix")
-        print(hardware)
-        assert "inputs.hardware.nixosModules.common-pc\n" in hardware
+        # what nixos-facter found (a VM), without serial numbers, and the host
+        # with it evaluates; for the first rebuild online: out of the offline
+        # reinstall below
+        facts = installer.succeed(f"cat {flake}/hosts/vmtest/facter.json")
+        assert '"serial"' not in facts and '"hardware"' in facts
+        installer.succeed(f"grep -q 'dotlib.facter ./facter.json' {flake}/hosts/vmtest/hardware.nix")
+        # (the whole system won't evaluate offline: the GTK4 swap builds)
+        assert installer.succeed(f"nix eval --offline 'path:{flake}#nixosConfigurations.vmtest.config.hardware.facter.detected.virtualisation.qemu.enable'").strip() == "true"
         installer.succeed(f"echo '{{ }}' > {flake}/hosts/vmtest/hardware.nix")
         installer.succeed(f"grep -q qemu-guest {flake}/hosts/vmtest/hardware-configuration.nix")
         installer.succeed(f"test $(stat -c %u {flake}/flake.nix) = 1000")

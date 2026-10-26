@@ -26,7 +26,7 @@ jobs:
         with:
           name: zbioe
       - name: Format, dead code, lint, Go tests, shellcheck
-        run: nix build -L .#checks.x86_64-linux.{format,deadnix,statix,stylua,ruff,dotnix-key,usb-stick}
+        run: nix build -L .#checks.x86_64-linux.{format,deadnix,statix,stylua,ruff,facter,pre-commit,dotnix-key,usb-stick}
       - name: Evaluate the hosts, homes and the minimal ISO
         run: nix build -L .#checks.x86_64-linux.{system-bx,system-te,system-minimal-iso,home-bx,home-te}
 
@@ -38,7 +38,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        test: [usb-key, usb-stick, backup, hardware, disk, secure-boot, boot-splash, sbctl-keys, adopt]
+        test: [usb-key, usb-stick, backup, disk, secure-boot, boot-splash, sbctl-keys, adopt]
     steps:
       - uses: actions/checkout@v5
       # room for the test's closure (the runner has ~14 GB free)

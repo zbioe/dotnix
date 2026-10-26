@@ -1,0 +1,7 @@
+{
+  "hardware": {
+    "cpu": [ { "vendor_name": "AuthenticAMD" } ],
+    "graphics_card": [ { "vendor": { "hex": "1002", "name": "ATI Technologies Inc" } } ]
+  },
+  "smbios": { "chassis": [ { "chassis_type": { "value": 3, "name": "Desktop" } } ] }
+}

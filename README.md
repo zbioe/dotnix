@@ -280,8 +280,10 @@ elsewhere (another address from DHCP): `dotnix-adopt` there.
 
 The new host then rebuilds by itself once online (`dotnix-firstboot.service`,
 every few minutes until `hosts/<host>` is upstream): the flake from upstream,
-the system for the next boot (with `hosts/<host>/hardware.nix`: the
-nixos-hardware modules of the CPU, GPU and disk found) and the home, and a
+the system for the next boot (with `hosts/<host>/hardware.nix`: what
+nixos-facter found, in `facter.json` without serial numbers, as kernel
+modules, firmware and the nixos-hardware modules of its CPU, GPU and form
+factor, `lib/facter.nix`) and the home, and a
 notification to reboot. `dotnix-firstboot` there does the same right away and
 offers the TPM and a PIN for the disk. Then `backup setup`, and restore your
 files from it.
@@ -324,10 +326,15 @@ least used paths go first).
 nix flake check            # every host evaluates, Go tests, fonts, formatting, dead code, lint
 nix run .#options -- bx    # every dotnix.* option of a host and its value
 nix fmt                    # format
+```
+
+The same format and lint checks run on the files of each commit: `nix
+develop` (or direnv, with the `.envrc`) installs them as a git hook.
+
+```sh
 nix build .#usb-key-test   # boots VMs: unlock from a stick, PIN, password fallback
 nix build .#usb-stick-test # boots a VM from a multiboot stick
 nix build .#backup-test    # a backup, and the restore test reading the Secure Boot keys back
-nix build .#hardware-test  # what dotnix-install detects: a desktop, then with a battery
 nix build .#disk-test      # installs on a VM as dotnix-install does, boots it
 nix build .#secure-boot-test # Limine, Secure Boot keys, then the TPM and its PIN, on a VM
 nix build .#boot-splash-test # the Plymouth splash on screen, in the theme picked
@@ -337,9 +344,14 @@ nix build .#install-test   # dotnix-install itself from the full ISO, offline (~
 ```
 
 CI runs the checks and every VM test but install-test, which doesn't fit a
-runner: bx runs it at night (when it is on) on the flake's last commit
-(`dotnix.services.installTest`, a no-op when nothing changed) and notifies
-when it fails.
+runner (an 8 GB VM, ~45 min, and the full ISO's 80 GB store): run it by hand
+after changing the installer (`iso/tools.nix`, `checks/vm/install.nix`).
+What breaks offline installs most, a package the new host needs that the ISO
+lacks, takes `nix run .#iso-closure` instead (~3 min, no VM): it walks the
+build graph of a host as dotnix-install writes one (`iso/installed.nix`)
+against the ISO's store and names any download that would be missing.
+`dotnix.services.installTest` runs it every night on the flake's last commit,
+for a machine that can spare that.
 
 ## USB key
 

@@ -39,6 +39,10 @@ lib.mapAttrs' (
 // {
   inherit (self.packages.${pkgs.stdenv.hostPlatform.system}) dotnix-key usb-stick;
   fonts = import ../home/theme/fonts/check.nix { inherit pkgs; };
+  # (fails to evaluate when a module pick is wrong)
+  facter =
+    assert import ./facter.nix { inherit lib; };
+    pkgs.writeText "facter-check" "";
   format = pkgs.runCommand "nixfmt-check" { nativeBuildInputs = [ pkgs.nixfmt ]; } ''
     cd ${src}
     find . -name '*.nix' -exec nixfmt --check {} +

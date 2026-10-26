@@ -115,50 +115,6 @@ let
     '';
   };
 
-  # the nixos-hardware modules for this machine (and the disk given), as
-  # hosts/<host>/hardware.nix
-  hardware = pkgs.writeShellApplication {
-    name = "dotnix-hardware";
-    runtimeInputs = with pkgs; [
-      coreutils
-      gnugrep
-    ];
-    text = ''
-      [ $# = 1 ] || { echo "usage: dotnix-hardware DISK" >&2; exit 2; }
-      disk=$1
-      hw=() graphics="" nvidia=""
-      case $(grep -m1 vendor_id /proc/cpuinfo) in
-        *AuthenticAMD) hw+=(common-cpu-amd common-cpu-amd-pstate) ;;
-        *GenuineIntel) hw+=(common-cpu-intel) ;;
-      esac
-      for dev in /sys/bus/pci/devices/*; do
-        [[ $(<"$dev/class") == 0x03* ]] || continue
-        case $(<"$dev/vendor") in
-          0x1002)
-            hw+=(common-gpu-amd)
-            graphics="dotnix.hardware.graphics.amd.enable = true;"
-            ;;
-          # (common-cpu-intel brings it too)
-          0x8086) [[ " ''${hw[*]} " == *" common-cpu-intel "* ]] || hw+=(common-gpu-intel) ;;
-          0x10de) nvidia="# an NVIDIA GPU: dotnix.hardware.graphics.nvidia" ;;
-        esac
-      done
-      [ "$(cat "/sys/block/$(basename "$(readlink -f "$disk")")/queue/rotational")" = 0 ] && hw+=(common-pc-ssd)
-      bats=(/sys/class/power_supply/BAT*)
-      if [ -e "''${bats[0]}" ]; then hw+=(common-pc-laptop); else hw+=(common-pc); fi
-      imports=$(printf '    inputs.hardware.nixosModules.%s\n' "''${hw[@]}")
-      echo "# what dotnix-install found here
-      { inputs, ... }:
-      {
-        imports = [
-      $imports
-        ];
-        $graphics
-        $nvidia
-      }"
-    '';
-  };
-
   install = pkgs.writeShellApplication {
     name = "dotnix-install";
     runtimeInputs = with pkgs; [
@@ -174,7 +130,8 @@ let
       git
       sbctl
       keys
-      hardware
+      nixos-facter
+      jq
     ];
     text = ''
       bold=$'\e[1m' red=$'\e[31m' off=$'\e[0m'
@@ -257,10 +214,15 @@ let
         fi
       fi
 
-      # nixos-hardware for what this machine has, in hosts/<host>/hardware.nix
-      # from the first rebuild on: the ISO carries a host without it
-      hardware=$(dotnix-hardware "$disk")
-      hw=$(grep -o 'nixosModules\.[a-z-]*' <<<"$hardware" | cut -d. -f2 | tr '\n' ' ')
+      # what this machine has (nixos-facter), without serial numbers (the
+      # flake is public): hosts/<host>/facter.json, which lib/facter.nix turns
+      # into kernel modules, firmware and nixos-hardware's modules from the
+      # first rebuild on (the ISO carries a host without them)
+      nixos-facter -o /tmp/dotnix-facter.json 2>/dev/null
+      facts=$(jq 'walk(if type == "object" then del(.serial, .uuid, .asset_tag) else . end)' /tmp/dotnix-facter.json)
+      rm -f /tmp/dotnix-facter.json
+      hw=$(jq -r '[(.hardware.cpu[0].vendor_name // empty), (.hardware.graphics_card[]?.vendor.name),
+        (.smbios.chassis[0].chassis_type.name // empty)] | join(", ")' <<<"$facts")
       echo
       echo "Hardware: $hw"
       [ "$secure" = false ] || echo "Secure Boot: Limine, signed with the keys of /var/lib/sbctl"
@@ -379,7 +341,14 @@ let
       nixos-install --flake "path:$flake#$host" --no-root-passwd --no-channel-copy \
         --option always-allow-substitutes true
 
-      printf '%s\n' "$hardware" > "$flake/hosts/$host/hardware.nix"
+      printf '%s\n' "$facts" > "$flake/hosts/$host/facter.json"
+      cat > "$flake/hosts/$host/hardware.nix" <<EOF
+      # what nixos-facter found here (facter.json; serial numbers left out)
+      { dotlib, ... }:
+      {
+        imports = [ (dotlib.facter ./facter.json) ];
+      }
+      EOF
       # a checkout again (/etc/dotnix is a store copy): offline, nothing fetched yet
       git -C "$flake" init -q -b main
       git -C "$flake" remote add origin https://github.com/zbioe/dotnix.git
@@ -438,7 +407,6 @@ in
 {
   environment.systemPackages = with pkgs; [
     install
-    hardware
     mount
     keys
     git

@@ -17,7 +17,10 @@ let
     config.allowUnfree = true;
   };
   noctalia = inputs.noctalia.packages.${system}.default;
-  dotlib = import ./options.nix { inherit lib; };
+  dotlib = import ./options.nix { inherit lib; } // {
+    # (hosts/<host>/hardware.nix: dotlib.facter ./facter.json)
+    facter = import ./facter.nix { inherit lib; };
+  };
   # before each commit, on the files in it: what checks/ runs on the tree
   hooks = inputs.git-hooks.lib.${system}.run {
     src = ../.;
@@ -120,9 +123,17 @@ let
     };
 
   # the live system of the full ISO and of install-test (iso/live.nix)
+  installReference = mkHost [ ../iso/reference.nix ];
   liveArgs = specialArgs // {
     dotnix = self;
-    installReference = mkHost [ ../iso/reference.nix ];
+    inherit installReference;
+  };
+  # a host dotnix-install would write, as it is and before the GTK4 swap
+  # (what evaluating it builds): `nix run .#iso-closure` checks both build
+  # offline from the full ISO
+  installed = installReference.extendModules { modules = [ ../iso/installed.nix ]; };
+  installedUnswapped = installed.extendModules {
+    modules = [ { system.replaceDependencies.replacements = lib.mkForce [ ]; } ];
   };
 in
 {
@@ -154,7 +165,6 @@ in
     usb-key-test = pkgs.testers.runNixOSTest ../checks/vm/usb-key.nix;
     usb-stick-test = pkgs.testers.runNixOSTest ../checks/vm/usb-stick.nix;
     backup-test = pkgs.testers.runNixOSTest ../checks/vm/backup.nix;
-    hardware-test = pkgs.testers.runNixOSTest ../checks/vm/hardware.nix;
     disk-test = pkgs.testers.runNixOSTest (
       import ../checks/vm/disk.nix { inherit inputs dotlib unstable; }
     );
@@ -183,10 +193,39 @@ in
     pre-commit = hooks;
   };
 
-  apps.${system}.options = {
-    type = "app";
-    program = lib.getExe (pkgs.callPackage ./options-app.nix { });
-    meta.description = "Every dotnix.* option of a host with its value";
+  # (evaluated when it runs: the hosts take GBs and builds to evaluate)
+  legacyPackages.${system}.isoClosure = { inherit installed installedUnswapped; };
+  apps.${system} = {
+    iso-closure = {
+      type = "app";
+      program = lib.getExe (
+        pkgs.writeShellApplication {
+          name = "iso-closure";
+          runtimeInputs = [ pkgs.python3 ];
+          text = ''
+            flake=''${1:-.}
+            tmp=$(mktemp -d)
+            trap 'rm -rf "$tmp"' EXIT
+            echo "the full ISO's system..."
+            iso=$(nix build --no-link --print-out-paths "$flake#nixosConfigurations.full-iso.config.system.build.toplevel")
+            nix path-info -r "$iso" > "$tmp/iso"
+            echo "$(wc -l < "$tmp/iso") paths in it"
+            for h in installed installedUnswapped; do
+              drv=$(nix eval --raw "$flake#legacyPackages.${system}.isoClosure.$h.config.system.build.toplevel.drvPath")
+              nix derivation show -r "$drv" > "$tmp/$h.json"
+            done
+            python3 -I ${../iso/closure.py} "$tmp/iso" "$tmp/installed.json" "$tmp/installedUnswapped.json"
+          '';
+        }
+      );
+      meta.description = "Whether a host dotnix-install writes builds offline from the full ISO";
+    };
+
+    options = {
+      type = "app";
+      program = lib.getExe (pkgs.callPackage ./options-app.nix { });
+      meta.description = "Every dotnix.* option of a host with its value";
+    };
   };
 
   formatter.${system} = pkgs.nixfmt-tree;

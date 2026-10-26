@@ -1,0 +1,7 @@
+{
+  "hardware": {
+    "cpu": [ { "vendor_name": "AuthenticAMD" } ],
+    "graphics_card": [ { "vendor": { "hex": "10de", "name": "NVIDIA Corporation" } } ]
+  },
+  "smbios": { "chassis": [ { "chassis_type": { "value": 3, "name": "Desktop" } } ] }
+}
