@@ -25,7 +25,6 @@ in
         media-downloader # yt-dlp GUI
 
         # video editing
-        davinci-resolve # professional video editor and color grading
         kdePackages.kdenlive # video editor
         shotcut # video editor
         losslesscut-bin # lossless cut and trim
@@ -34,7 +33,6 @@ in
 
         # audio editing
         ardour # digital audio workstation
-        reaper # digital audio workstation
         audacity # audio editor
         musescore # music notation
 
