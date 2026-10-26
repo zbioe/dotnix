@@ -75,6 +75,40 @@ in
       '';
     };
 
+    # systemd-creds won't read its key through the link impermanence makes
+    # for a file not in /persist yet: made there (it holds the machine id, so
+    # not before stage 2) and bind mounted, before any service uses it
+    systemd.services.dotnix-credential-secret = {
+      description = "systemd-creds' host key, in /persist";
+      wantedBy = [ "sysinit.target" ];
+      before = [ "sysinit.target" ];
+      after = [ "local-fs.target" ];
+      unitConfig = {
+        DefaultDependencies = false;
+        ConditionPathExists = "!/persist/var/lib/systemd/credential.secret";
+      };
+      serviceConfig.Type = "oneshot";
+      path = [
+        config.systemd.package
+        pkgs.coreutils
+        pkgs.util-linux
+      ];
+      script = ''
+        secret=/persist/var/lib/systemd/credential.secret
+        live=/var/lib/systemd/credential.secret
+        mkdir -p /persist/var/lib/systemd
+        if [ -f $live ] && [ ! -L $live ]; then
+          # one made before it was persisted: what's encrypted with it stays readable
+          mv $live $secret
+        else
+          rm -f $live
+          SYSTEMD_CREDENTIAL_SECRET=$secret systemd-creds setup
+        fi
+        touch $live
+        mount --bind $secret $live
+      '';
+    };
+
     environment.persistence."/persist" = {
       hideMounts = true;
       directories = [

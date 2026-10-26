@@ -140,6 +140,9 @@ in
         target.wait_for_unit("swap.target")
         target.succeed("grep -q /dev/dm- /proc/swaps")
         machine_id = target.succeed("cat /etc/machine-id")
+        # systemd-creds' key: made in /persist on the first boot, bind mounted
+        target.succeed("findmnt /var/lib/systemd/credential.secret")
+        sealed = target.succeed("echo kept | systemd-creds encrypt - - | base64 -w0")
         target.succeed("touch /gone /persist/kept && sync")
         target.shutdown()
 
@@ -148,6 +151,7 @@ in
         target.fail("test -e /gone")
         target.succeed("test -e /persist/kept")
         assert target.succeed("cat /etc/machine-id") == machine_id
+        assert target.succeed(f"echo {sealed} | base64 -d | systemd-creds decrypt - -").strip() == "kept"
         target.shutdown()
   '';
 }
