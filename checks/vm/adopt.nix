@@ -198,14 +198,29 @@ in
         new.succeed("test -e /home/zbioe/dotnix/.git/dotnix-firstboot")
         new.fail("test -e /tmp/switched")
 
+    def adopt(unit, args):
+        bx.succeed(f"systemd-run --unit {unit} --uid zbioe -p WorkingDirectory=/home/zbioe --setenv=HOME=/home/zbioe --setenv=PATH=$PATH"
+                   f" sh -c 'echo y | dotnix-adopt {args} > /tmp/{unit}.out 2>&1; echo $? > /tmp/{unit}.rc'")
+
     with subtest("dotnix-adopt on the live system: the keys, then waits"):
-        bx.succeed("systemd-run --unit adopt --uid zbioe -p WorkingDirectory=/home/zbioe --setenv=HOME=/home/zbioe --setenv=PATH=$PATH"
-                   " sh -c 'echo y | dotnix-adopt new > /tmp/adopt.out 2>&1; echo $? > /tmp/adopt.rc'")
+        adopt("adopt-gone", "--wait 1 new")
         new.wait_until_succeeds("tar -tf /tmp/dotnix-sbctl.tar | grep -q sbctl/keys/db/db.key")
-        bx.wait_until_succeeds("grep -q 'waiting for it' /tmp/adopt.out")
-        bx.fail("test -e /tmp/adopt.rc")
+        bx.wait_until_succeeds("grep -q 'waiting for it' /tmp/adopt-gone.out")
+        bx.fail("test -e /tmp/adopt-gone.rc")
         # nothing of the live system's in known_hosts
         bx.fail("su - zbioe -c 'ssh-keygen -F new'")
+
+    with subtest("it comes back at another address: given up, then adopted there"):
+        # (IPv6 too: bx's /etc/hosts has both)
+        old = new.succeed("ip -o addr show dev eth1 scope global | awk '{ print $4 }'").split()
+        new.succeed("ip addr flush dev eth1 scope global && ip addr add 192.168.1.50/24 dev eth1")
+        bx.wait_until_succeeds("test -e /tmp/adopt-gone.rc", timeout=180)
+        assert bx.succeed("cat /tmp/adopt-gone.rc").strip() == "1"
+        out = bx.succeed("cat /tmp/adopt-gone.out")
+        assert "nothing at new for 1 minutes: once it is up, dotnix-adopt ITS-ADDRESS" in out, out
+        adopt("adopt", "192.168.1.50")
+        bx.wait_until_succeeds("grep -q 'waiting for it' /tmp/adopt.out")
+        bx.fail("test -e /tmp/adopt.rc")
 
     with subtest("the installed system boots: adopted and pushed"):
         new.succeed("rm /run/wrappers/bin/dotnix-install /etc/ssh/ssh_host_*")
@@ -220,6 +235,10 @@ in
         sops_yaml = as_zbioe(bx, "git -C /srv/origin.git show main:.sops.yaml")
         assert "&new age1" in sops_yaml and "- *new" in sops_yaml, sops_yaml
         assert as_zbioe(bx, "git -C /srv/origin.git log --format=%s -1").strip() == "add new"
+        # back where bx's /etc/hosts has it
+        new.succeed("ip addr flush dev eth1 scope global")
+        for a in old:
+            new.succeed(f"ip addr add {a} dev eth1")
 
     with subtest("the new machine opens secrets/ with its own SSH key"):
         as_zbioe(bx, "git -C /srv/origin.git show main:secrets/common.yaml > /tmp/common.yaml")
@@ -241,6 +260,7 @@ in
         new.fail("test -e /tmp/switched")
 
     with subtest("a second time: refused"):
-        bx.fail("su - zbioe -c 'echo y | dotnix-adopt new'")
+        out = bx.fail("su - zbioe -c 'echo y | dotnix-adopt new' 2>&1")
+        assert "is here already" in out, out
   '';
 }

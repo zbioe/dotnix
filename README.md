@@ -275,6 +275,9 @@ dotnix-adopt ADDRESS   # hosts/<host> and its key for secrets/ into the flake,
                        # waits for the installed system to boot
 ```
 
+Gone for 20 minutes after the live system (`--wait MINUTES`), it came back
+elsewhere (another address from DHCP): `dotnix-adopt` there.
+
 The new host then rebuilds by itself once online (`dotnix-firstboot.service`,
 every few minutes until `hosts/<host>` is upstream): the flake from upstream,
 the system for the next boot (with `hosts/<host>/hardware.nix`: the

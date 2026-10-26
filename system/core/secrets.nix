@@ -84,7 +84,14 @@ let
       enroll
     ];
     text = ''
-      [ $# = 1 ] || { echo "usage: dotnix-adopt ADDRESS (of a machine dotnix-install made)" >&2; exit 2; }
+      # --wait: how long the installed system may be gone after the live one
+      wait=20
+      if [ "''${1:-}" = --wait ]; then
+        [[ ''${2:-} =~ ^[0-9]+$ ]] || { echo "--wait takes minutes" >&2; exit 2; }
+        wait=$2
+        shift 2
+      fi
+      [ $# = 1 ] || { echo "usage: dotnix-adopt [--wait MINUTES] ADDRESS (of a machine dotnix-install made)" >&2; exit 2; }
       flake=''${NH_FLAKE:-$HOME/dotnix}
       cd "$flake"
       if ! git diff --quiet || ! git diff --cached --quiet; then
@@ -101,13 +108,14 @@ let
         fi
         echo "$1 is installing: waiting for it to boot the installed system..."
         key=$(ssh-keyscan -q -t ed25519 "$1" 2>/dev/null)
-        # gone for 20 minutes after the live system: it came back elsewhere
-        # (another address from DHCP) or not at all
-        gone=0
+        # gone that long after the live system: it came back elsewhere
+        # (another address from DHCP) or not at all. (Asked every 10 s: it
+        # has no way to tell this machine it's up.)
+        gone=""
         until k=$(ssh-keyscan -q -t ed25519 "$1" 2>/dev/null) && [ -n "$k" ] && [ "$k" != "$key" ]; do
-          if [ -n "$k" ]; then gone=0; else gone=$((gone + 10)); fi
-          if [ "$gone" -ge 1200 ]; then
-            echo "nothing at $1 for 20 minutes: once it is up, dotnix-adopt ITS-ADDRESS" >&2
+          if [ -n "$k" ]; then gone=""; else gone=''${gone:-$SECONDS}; fi
+          if [ -n "$gone" ] && [ $((SECONDS - gone)) -ge $((wait * 60)) ]; then
+            echo "nothing at $1 for $wait minutes: once it is up, dotnix-adopt ITS-ADDRESS" >&2
             exit 1
           fi
           sleep 10
