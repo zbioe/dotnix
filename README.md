@@ -298,6 +298,16 @@ sudo sgdisk --backup=/persist/gpt.bak /dev/nvme0n1   # first, to undo with --loa
 sudo sgdisk -c 2:dotnix-efi -c 3:dotnix-swap -c 4:dotnix-luks /dev/nvme0n1   # its numbers: sgdisk -p
 ```
 
+Any other partition keeps what was on it, and the firmware lists a loader
+another OS left there again on every boot (bx's partition 1 had Bazzite's
+shim, back as "Fedora"); a new install wipes the whole disk. Its filesystem
+goes, then the entry:
+
+```sh
+sudo wipefs -a /dev/nvme0n1p1
+sudo efibootmgr -b 0001 -B   # its number: efibootmgr
+```
+
 What bx builds (zmacs, the GTK4 swap, this flake's packages) goes to
 [zbioe.cachix.org](https://zbioe.cachix.org) after each switch, so the other
 hosts and CI download it instead of building; unfree packages stay out

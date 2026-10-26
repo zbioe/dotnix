@@ -65,6 +65,7 @@ in
         cryptsetup
         btrfs-progs
         e2fsprogs
+        dosfstools
       ];
       nix.settings.substituters = lib.mkForce [ ];
     };
@@ -89,9 +90,17 @@ in
     installer.wait_for_unit("multi-user.target")
     installer.succeed("udevadm settle")
     installer.succeed("printf secret > /tmp/dotnix-luks.key")
+    # what another OS left (as on bx): a BIOS boot partition holding a FAT
+    # with a shim, which the firmware lists as an entry again on every boot
+    installer.succeed(
+        "udevadm lock --device=/dev/vda sh -c \"echo 'size=3M, type=21686148-6449-6E6F-744E-656564454649' | sfdisk -X gpt /dev/vda && mkfs.vfat /dev/vda1\""
+    )
+    installer.succeed("mkdir -p /old && mount /dev/vda1 /old && mkdir -p /old/EFI/fedora && touch /old/EFI/fedora/shimx64.efi && umount /old")
     installer.succeed("${destroyFormatMount}/bin/disko-destroy-format-mount --yes-wipe-all-disks >&2")
 
-    with subtest("partitions by label"):
+    with subtest("partitions by label, nothing left from before"):
+        assert installer.succeed("lsblk -nro PARTLABEL /dev/vda | sed /^$/d").split() == ["dotnix-efi", "dotnix-swap", "dotnix-luks"]
+        installer.fail("test -e /mnt/boot/EFI/fedora")
         for p in ["efi", "swap", "luks"]:
             installer.succeed(f"test -b /dev/disk/by-partlabel/dotnix-{p}")
         installer.succeed("cryptsetup luksDump /dev/disk/by-partlabel/dotnix-luks | grep -q 'Label:.*dotnix'")
