@@ -26,14 +26,11 @@ let
   # active, so it never gets in), and the special tag stays Super+S only
   prevTag = "$XDG_RUNTIME_DIR/mango-prev-tag";
   tagHistory = pkgs.writeShellScript "mango-tag-history" ''
-    # mango's IPC answers a moment after the session starts
-    until mon=$(${mmsg} get all-monitors 2>/dev/null |
-      ${pkgs.jq}/bin/jq -er '[.monitors[] | select(.active)][0].name'); do
-      sleep 1
-    done
+    # the focused monitor's tags: as they are, then on every change (also
+    # before it has a monitor, early in the session)
     cur=""
-    ${mmsg} watch tags "$mon" |
-      ${pkgs.jq}/bin/jq --unbuffered -r '[.tags[] | select(.is_active) | .index] | map(tostring) | join("|")' |
+    ${mmsg} watch all-monitors |
+      ${pkgs.jq}/bin/jq --unbuffered -r '[.monitors[] | select(.active)][0] // empty | [.tags[] | select(.is_active) | .index] | map(tostring) | join("|")' |
       while read -r tags; do
         if [ -n "$tags" ] && [ "$tags" != "$cur" ]; then
           [ -n "$cur" ] && echo "$cur" > "${prevTag}"
