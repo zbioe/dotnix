@@ -232,7 +232,8 @@ let
         esac
       done
       [ "$(cat "/sys/block/$(basename "$(readlink -f "$disk")")/queue/rotational")" = 0 ] && hw+=(common-pc-ssd)
-      if compgen -G "/sys/class/power_supply/BAT*" >/dev/null; then hw+=(common-pc-laptop); else hw+=(common-pc); fi
+      bats=(/sys/class/power_supply/BAT*)
+      if [ -e "''${bats[0]}" ]; then hw+=(common-pc-laptop); else hw+=(common-pc); fi
       imports=$(printf '    inputs.hardware.nixosModules.%s\n' "''${hw[@]}")
       hardware="# what dotnix-install found here
       { inputs, ... }:
