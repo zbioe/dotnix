@@ -17,7 +17,6 @@
     ./vpn
     ./pass
     ./updates
-    ./insightful
     ./kdeconnect.nix
     ./activity
   ];

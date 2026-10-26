@@ -150,8 +150,8 @@ in
           if [ -e ${home}/.local/state/nix/profiles/home-manager ]; then exit 0; fi
         ''}
         # no session yet: no systemd user instance to reload, D-Bus started
-        # for dconf by home-manager itself; steps that download a lot skip
-        # themselves (DOTNIX_BOOT_ACTIVATION, e.g. home/desktop/insightful)
+        # for dconf by home-manager itself; steps that download a lot can
+        # skip themselves (DOTNIX_BOOT_ACTIVATION)
         exec runuser -l ${user} -c "DOTNIX_BOOT_ACTIVATION=1 ${cfg.package}/activate"
       '';
     };

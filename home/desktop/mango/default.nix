@@ -210,7 +210,6 @@ in
           (onTag 3 "^brave-browser$" "")
           (onTag 5 "^discord$" "is_open_silent:1,")
           (onTag 6 "^gimp" "")
-          (onTag 8 "^workpuls-agent$" "is_open_silent:1,")
           (onTag 9 "^(alacritty|foot)$" "")
           # every Emacs frame but the capture one (zmacs/capture-frame)
           "tags:10,app_id:^emacs$,title:^(?!capture$)"

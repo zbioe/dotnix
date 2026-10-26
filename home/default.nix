@@ -73,7 +73,6 @@
       wifi.enable = true;
       pass.enable = true;
       rebuild.enable = true;
-      insightful.enable = true;
     };
   };
 

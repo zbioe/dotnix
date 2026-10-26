@@ -11,7 +11,7 @@ lib.mkIf config.dotnix.desktop.mango.enable {
     addLoginEntry = false;
   };
   programs.uwsm.enable = true;
-  # X11 apps through Xwayland (Workpuls among them)
+  # X11 apps through Xwayland
   programs.xwayland.enable = true;
 
   # uwsm's own entry plus -g -1: it would wait for graphical.target, which
