@@ -70,6 +70,14 @@ in
       "PATH=${config.home.profileDirectory}/bin:/run/wrappers/bin:/run/current-system/sw/bin"
     ];
 
+    # the Bluetooth backend publishes an SPP record; headsets that probe SPP
+    # (aiwa AW-ANC45F) hit its MITM requirement and the whole link drops
+    home.activation.kdeconnectNoBluetooth = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+      run mkdir -p ${config.xdg.configHome}/kdeconnect
+      run ${pkgs.crudini}/bin/crudini --ini-options=nospace --set \
+        ${config.xdg.configHome}/kdeconnect/config General disabled_providers AsyncLinkProvider
+    '';
+
     home.sessionVariables = {
       QT_QPA_PLATFORMTHEME = "qt6ct";
       QT_STYLE_OVERRIDE = "Fusion";
