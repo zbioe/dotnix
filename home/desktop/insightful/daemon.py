@@ -4,7 +4,7 @@ insightful-daemon.py - runs on HOST (outside Distrobox)
 
 Monitors:
   1. Focused window (title + app id) via mango's `mmsg`
-  2. Mouse movement via `mmsg get cursorpos` polling
+  2. Input mango sees (touchpad gestures too) via `mmsg watch all-devices`
   3. Focus changes via `mmsg watch focusing-client`
   4. Creates a uinput virtual input device so tracker.node
      can read real kernel-level input events (needed for APM)
@@ -41,6 +41,13 @@ _last_activity = time.time()
 _activity_lock = threading.Lock()
 _shm_fd = -1       # opened once in run_daemon(), reused by write_shm()
 running = True
+
+def fail(msg):
+    """A source of events is gone: the daemon stops (stale state written)
+    and systemd starts it again (Restart=always)."""
+    print(msg, file=sys.stderr)
+    os.kill(os.getpid(), signal.SIGTERM)
+
 
 def update_activity():
     global _last_activity
@@ -232,8 +239,8 @@ def evdev_monitor():
                 except (BlockingIOError, OSError):
                     pass
         except Exception as e:
-            print(f"[evdev] error: {e}", file=sys.stderr)
-            time.sleep(1)
+            # (a device gone: the restart finds the ones there now)
+            fail(f"[evdev] error: {e}")
 
     for fd in fds:
         try:
@@ -241,31 +248,18 @@ def evdev_monitor():
         except OSError:
             pass
 
-def cursor_monitor():
-    """Poll `mmsg get cursorpos` every 500ms. Update activity on change.
-    This is a FALLBACK for when evdev can't detect certain mouse movements
-    (e.g. touchpad gestures routed through Wayland only)."""
-    last_pos = None
-    fails = 0
-    print("[cursor] Starting...", file=sys.stderr)
-    while running:
-        try:
-            r = subprocess.run([MMSG, "get", "cursorpos"],
-                               capture_output=True, text=True, timeout=1)
-            if r.returncode == 0:
-                pos = r.stdout.strip()
-                if pos and pos != last_pos:
-                    if last_pos is not None:
-                        update_activity()
-                    last_pos = pos
-                fails = 0
-            time.sleep(0.5)  # slower polling since evdev is primary now
-        except Exception as e:
-            fails += 1
-            if fails > 10:
-                print(f"[cursor] error: {e}", file=sys.stderr)
-                fails = 0
-            time.sleep(1)
+def device_events():
+    """Count every input event mango reports as activity: the ones evdev
+    can't see (e.g. touchpad gestures routed through Wayland only)."""
+    print("[mango] watching input devices", file=sys.stderr)
+    with subprocess.Popen([MMSG, "watch", "all-devices"],
+                          stdout=subprocess.PIPE, text=True) as p:
+        for line in p.stdout:
+            if not running:
+                p.terminate()
+                return
+            update_activity()
+    fail("[mango] the input stream ended (mango restarting?)")
 
 def swayidle_monitor():
     """Use swayidle (ext-idle-notify Wayland protocol) to detect
@@ -278,65 +272,57 @@ def swayidle_monitor():
         print("[swayidle] Not found, skipping", file=sys.stderr)
         return
     print("[swayidle] Starting idle monitor...", file=sys.stderr)
-    while running:
-        try:
-            proc = subprocess.Popen(
-                [swayidle_bin, "-w",
-                 "timeout", "3", "echo idle",
-                 "resume", "echo resume"],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.DEVNULL,
-                text=True
-            )
-            while running and proc.poll() is None:
-                line = proc.stdout.readline().strip()
-                if line == "resume":
-                    update_activity()
-                elif line == "idle":
-                    pass  # just note it, don't do anything
-            proc.terminate()
-        except Exception as e:
-            print(f"[swayidle] error: {e}", file=sys.stderr)
-            time.sleep(5)
+    with subprocess.Popen(
+        [swayidle_bin, "-w",
+         "timeout", "3", "echo idle",
+         "resume", "echo resume"],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.DEVNULL,
+        text=True
+    ) as proc:
+        for line in proc.stdout:
+            if not running:
+                proc.terminate()
+                return
+            if line.strip() == "resume":
+                update_activity()
+    fail("[swayidle] it ended")
 
 def activity_injector():
     """Continuously inject uinput events while user is active.
     The main loop handles SHM writes with the effective timestamp."""
     print("[injector] Starting...", file=sys.stderr)
+    # (every half second: the tracker counts input events over time)
     while running:
         try:
             idle = time.time() - get_last_activity()
             if idle < ACTIVE_TIMEOUT:
                 uinput_inject()
-            time.sleep(0.5)
-        except Exception:
-            time.sleep(1)
+        except Exception as e:
+            fail(f"[injector] error: {e}")
+            return
+        time.sleep(0.5)
 
 def focus_events():
     """Count focus changes (window switch, tag switch) as activity."""
     print("[mango] watching the focused client", file=sys.stderr)
-    while running:
-        try:
-            with subprocess.Popen([MMSG, "watch", "focusing-client"],
-                                  stdout=subprocess.PIPE, text=True) as p:
-                last = None
-                for line in p.stdout:
-                    if not running:
-                        p.terminate()
-                        break
-                    try:
-                        d = json.loads(line)
-                        key = (d.get("id"), d.get("title"), tuple(d.get("tags") or ()))
-                    except Exception:
-                        continue
-                    if last is not None and key != last:
-                        update_activity()
-                        uinput_inject()
-                    last = key
-        except Exception as e:
-            if running:
-                print(f"[mango] error: {e}", file=sys.stderr)
-        time.sleep(5)  # mango restarting / not up yet
+    with subprocess.Popen([MMSG, "watch", "focusing-client"],
+                          stdout=subprocess.PIPE, text=True) as p:
+        last = None
+        for line in p.stdout:
+            if not running:
+                p.terminate()
+                return
+            try:
+                d = json.loads(line)
+                key = (d.get("id"), d.get("title"), tuple(d.get("tags") or ()))
+            except Exception:
+                continue
+            if last is not None and key != last:
+                update_activity()
+                uinput_inject()
+            last = key
+    fail("[mango] the focus stream ended (mango restarting?)")
 
 # ----------------------------------------------------------------
 # Main
@@ -347,7 +333,7 @@ def run_daemon():
 
     uinput_open()
 
-    for target in (evdev_monitor, cursor_monitor, focus_events,
+    for target in (evdev_monitor, device_events, focus_events,
                   swayidle_monitor, activity_injector):
         threading.Thread(target=target, daemon=True).start()
 
@@ -390,6 +376,7 @@ def run_daemon():
             write_shm(title, cls, effective_ts)
         except Exception as e:
             print(f"[daemon] error: {e}", file=sys.stderr)
+        # (the effective time moves on by itself while active: refreshed)
         time.sleep(0.5)
 
 if __name__ == "__main__":
