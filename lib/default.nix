@@ -137,6 +137,7 @@ in
     usb-key-test = pkgs.testers.runNixOSTest ../checks/vm/usb-key.nix;
     usb-stick-test = pkgs.testers.runNixOSTest ../checks/vm/usb-stick.nix;
     backup-test = pkgs.testers.runNixOSTest ../checks/vm/backup.nix;
+    hardware-test = pkgs.testers.runNixOSTest ../checks/vm/hardware.nix;
     disk-test = pkgs.testers.runNixOSTest (import ../checks/vm/disk.nix { inherit inputs dotlib unstable; });
     secure-boot-test = pkgs.testers.runNixOSTest (
       import ../checks/vm/secure-boot.nix { inherit inputs dotlib unstable; }

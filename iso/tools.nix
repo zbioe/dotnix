@@ -115,6 +115,50 @@ let
     '';
   };
 
+  # the nixos-hardware modules for this machine (and the disk given), as
+  # hosts/<host>/hardware.nix
+  hardware = pkgs.writeShellApplication {
+    name = "dotnix-hardware";
+    runtimeInputs = with pkgs; [
+      coreutils
+      gnugrep
+    ];
+    text = ''
+      [ $# = 1 ] || { echo "usage: dotnix-hardware DISK" >&2; exit 2; }
+      disk=$1
+      hw=() graphics="" nvidia=""
+      case $(grep -m1 vendor_id /proc/cpuinfo) in
+        *AuthenticAMD) hw+=(common-cpu-amd common-cpu-amd-pstate) ;;
+        *GenuineIntel) hw+=(common-cpu-intel) ;;
+      esac
+      for dev in /sys/bus/pci/devices/*; do
+        [[ $(<"$dev/class") == 0x03* ]] || continue
+        case $(<"$dev/vendor") in
+          0x1002)
+            hw+=(common-gpu-amd)
+            graphics="dotnix.hardware.graphics.amd.enable = true;"
+            ;;
+          # (common-cpu-intel brings it too)
+          0x8086) [[ " ''${hw[*]} " == *" common-cpu-intel "* ]] || hw+=(common-gpu-intel) ;;
+          0x10de) nvidia="# an NVIDIA GPU: dotnix.hardware.graphics.nvidia" ;;
+        esac
+      done
+      [ "$(cat "/sys/block/$(basename "$(readlink -f "$disk")")/queue/rotational")" = 0 ] && hw+=(common-pc-ssd)
+      bats=(/sys/class/power_supply/BAT*)
+      if [ -e "''${bats[0]}" ]; then hw+=(common-pc-laptop); else hw+=(common-pc); fi
+      imports=$(printf '    inputs.hardware.nixosModules.%s\n' "''${hw[@]}")
+      echo "# what dotnix-install found here
+      { inputs, ... }:
+      {
+        imports = [
+      $imports
+        ];
+        $graphics
+        $nvidia
+      }"
+    '';
+  };
+
   install = pkgs.writeShellApplication {
     name = "dotnix-install";
     runtimeInputs = with pkgs; [
@@ -130,6 +174,7 @@ let
       git
       sbctl
       keys
+      hardware
     ];
     text = ''
       bold=$'\e[1m' red=$'\e[31m' off=$'\e[0m'
@@ -214,39 +259,10 @@ let
 
       # nixos-hardware for what this machine has, in hosts/<host>/hardware.nix
       # from the first rebuild on: the ISO carries a host without it
-      hw=() graphics="" nvidia=""
-      case $(grep -m1 vendor_id /proc/cpuinfo) in
-        *AuthenticAMD) hw+=(common-cpu-amd common-cpu-amd-pstate) ;;
-        *GenuineIntel) hw+=(common-cpu-intel) ;;
-      esac
-      for dev in /sys/bus/pci/devices/*; do
-        [[ $(<"$dev/class") == 0x03* ]] || continue
-        case $(<"$dev/vendor") in
-          0x1002)
-            hw+=(common-gpu-amd)
-            graphics="dotnix.hardware.graphics.amd.enable = true;"
-            ;;
-          # (common-cpu-intel brings it too)
-          0x8086) [[ " ''${hw[*]} " == *" common-cpu-intel "* ]] || hw+=(common-gpu-intel) ;;
-          0x10de) nvidia="# an NVIDIA GPU: dotnix.hardware.graphics.nvidia" ;;
-        esac
-      done
-      [ "$(cat "/sys/block/$(basename "$(readlink -f "$disk")")/queue/rotational")" = 0 ] && hw+=(common-pc-ssd)
-      bats=(/sys/class/power_supply/BAT*)
-      if [ -e "''${bats[0]}" ]; then hw+=(common-pc-laptop); else hw+=(common-pc); fi
-      imports=$(printf '    inputs.hardware.nixosModules.%s\n' "''${hw[@]}")
-      hardware="# what dotnix-install found here
-      { inputs, ... }:
-      {
-        imports = [
-      $imports
-        ];
-        $graphics
-        $nvidia
-      }"
-
+      hardware=$(dotnix-hardware "$disk")
+      hw=$(grep -o 'nixosModules\.[a-z-]*' <<<"$hardware" | cut -d. -f2 | tr '\n' ' ')
       echo
-      echo "Hardware: ''${hw[*]}"
+      echo "Hardware: $hw"
       [ "$secure" = false ] || echo "Secure Boot: Limine, signed with the keys of /var/lib/sbctl"
       echo "''${bold}$disk''${off} ($(lsblk -dno SIZE "$disk")) will be ''${red}erased''${off}: host $host, impermanence $impermanence, swap ''${swap}G"
       [ "$(ask "Type the disk path again to go on:" "")" = "$disk" ] || die "cancelled"
@@ -384,7 +400,7 @@ let
       echo "  1. on a machine with your age key (bx): dotnix-adopt ADDRESS-OF-$host, unless"
       echo "     it is running already (hosts/$host and its key for secrets/, pushed)"
       echo "  2. here, nothing: the first rebuild runs by itself once hosts/$host is upstream"
-      echo "     (with hosts/$host/hardware.nix: ''${hw[*]}), then asks for a reboot;"
+      echo "     (with hosts/$host/hardware.nix: $hw), then asks for a reboot;"
       echo "     dotnix-firstboot does it right away"
       echo "  3. backup setup, and restore your files from it"
       if [ "$secure" = true ]; then
@@ -422,6 +438,7 @@ in
 {
   environment.systemPackages = with pkgs; [
     install
+    hardware
     mount
     keys
     git

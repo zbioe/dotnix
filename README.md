@@ -324,6 +324,7 @@ nix fmt                    # format
 nix build .#usb-key-test   # boots VMs: unlock from a stick, PIN, password fallback
 nix build .#usb-stick-test # boots a VM from a multiboot stick
 nix build .#backup-test    # a backup, and the restore test reading the Secure Boot keys back
+nix build .#hardware-test  # what dotnix-install detects: a desktop, then with a battery
 nix build .#disk-test      # installs on a VM as dotnix-install does, boots it
 nix build .#secure-boot-test # Limine, Secure Boot keys, then the TPM and its PIN, on a VM
 nix build .#boot-splash-test # the Plymouth splash on screen, in the theme picked

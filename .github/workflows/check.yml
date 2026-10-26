@@ -38,7 +38,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        test: [usb-key, usb-stick, backup, disk, secure-boot, boot-splash, sbctl-keys, adopt]
+        test: [usb-key, usb-stick, backup, hardware, disk, secure-boot, boot-splash, sbctl-keys, adopt]
     steps:
       - uses: actions/checkout@v5
       # room for the test's closure (the runner has ~14 GB free)
