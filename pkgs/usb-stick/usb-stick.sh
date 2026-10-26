@@ -10,8 +10,10 @@ MIB=$((1024 * 1024))
 usage() {
   cat <<'EOF'
 usage:
-  usb-stick create [--pin | --no-key] [--yes] [--serial] DEVICE [ISO...]
-                                    without ISOs: only FILES and the key
+  usb-stick create [--pin | --new-key | --no-key] [--yes] [--serial] DEVICE [ISO...]
+                                    without ISOs: only FILES and the key; the
+                                    key it has stays (no new LUKS slot) unless
+                                    --pin or --new-key
   usb-stick add DEVICE ISO...       copy ISOs (a same-named one is replaced)
   usb-stick remove DEVICE NAME...   remove ISOs by file name
   usb-stick list DEVICE
@@ -337,10 +339,11 @@ EOF
 }
 
 create() {
-  local pin=0 nokey=0 yes=0 serial=0 args=()
+  local pin=0 newkey=0 nokey=0 yes=0 serial=0 args=()
   while (($#)); do
     case $1 in
     --pin) pin=1 ;;
+    --new-key) newkey=1 ;;
     --no-key) nokey=1 ;;
     --yes) yes=1 ;;
     --serial) serial=1 ;;
@@ -388,8 +391,15 @@ create() {
     layout+=("ESP ${ESP_SIZE_MIB}MiB" "ISOS $(human "$isos_part")")
   fi
 
+  # its key, in memory only, back on it once made again
+  local oldkey=""
+  if ((nokey == 0 && pin == 0 && newkey == 0)); then
+    oldkey=$(as_root dotnix-key export "$disk" 2>/dev/null) || oldkey=""
+  fi
+
   lsblk -o NAME,SIZE,TRAN,MODEL,FSTYPE,LABEL "$disk"
   echo "EVERYTHING on $disk is erased: ${layout[*]}."
+  if [ -n "$oldkey" ]; then echo "Its key stays: the same LUKS slot."; fi
   if ((yes == 0)); then
     local answer
     read -rp "Type ${args[0]} to continue: " answer
@@ -427,7 +437,12 @@ create() {
   fi
 
   as_root sfdisk --verify --quiet "$disk" || die "the partition table does not verify"
-  if ((nokey == 0)); then
+  if [ -n "$oldkey" ]; then
+    printf '%s\n' "$oldkey" | as_root dotnix-key import -yes -force "$disk" ||
+      die "the stick is ready, but without its key: run 'dotnix-key create' on it"
+    oldkey=""
+    as_root dotnix-key list
+  elif ((nokey == 0)); then
     local keyopt=()
     if ((pin)); then keyopt=(-pin); fi
     as_root dotnix-key create -yes -force "${keyopt[@]}" "$disk" ||

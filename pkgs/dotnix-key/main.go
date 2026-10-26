@@ -3,6 +3,7 @@ package main
 
 import (
 	"bufio"
+	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -20,6 +21,9 @@ const usage = `usage:
   dotnix-key list
   dotnix-key create [-pin | -pin-file FILE] [-luks DEVICE] [-yes] [-force] DISK
   dotnix-key adopt [-offset 2048] [-luks DEVICE] [-yes] DISK
+  dotnix-key export [-luks DEVICE] DISK > KEY    the stick's key, to put back
+  dotnix-key import [-pin-file FILE] [-luks DEVICE] [-yes] [-force] DISK < KEY
+                                                 on it or another one
   dotnix-key unlock -device DEVICE -name NAME [-timeout 10s] [-allow-discards]
                     [-no-read-workqueue] [-no-write-workqueue] [-ask-password PATH]
 `
@@ -34,8 +38,10 @@ func main() {
 	switch cmd {
 	case "list":
 		err = list(hostFS, os.Stdout)
-	case "create", "adopt":
+	case "create", "adopt", "import":
 		err = writeCmd(cmd, args)
+	case "export":
+		err = exportCmd(args)
 	case "unlock":
 		unlockCmd(args)
 	default:
@@ -92,10 +98,29 @@ func writeCmd(cmd string, args []string) error {
 		yes:   *yes,
 		force: *force,
 	}
-	if cmd == "adopt" {
+	switch cmd {
+	case "adopt":
 		return c.adopt(pos[0], *luks, *offset)
+	case "import":
+		return c.importKey(pos[0], *luks, os.Stdin)
 	}
 	return c.create(pos[0], *luks, *pin)
+}
+
+// exportCmd won't print the key on a terminal: to a pipe or a file only.
+func exportCmd(args []string) error {
+	fs := flag.NewFlagSet("export", flag.ExitOnError)
+	luks := fs.String("luks", "", "the LUKS volume (default: the only one)")
+	pos := parse(fs, args)
+	if len(pos) != 1 {
+		fs.Usage()
+		os.Exit(2)
+	}
+	if st, err := os.Stdout.Stat(); err == nil && st.Mode()&os.ModeCharDevice != 0 {
+		return errors.New("export prints the key itself: redirect it (> FILE or | dotnix-key import)")
+	}
+	c := &creator{fs: hostFS, cs: cryptsetup{bin: cryptsetupBin}, out: os.Stdout}
+	return c.export(pos[0], *luks)
 }
 
 func unlockCmd(args []string) {

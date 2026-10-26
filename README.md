@@ -351,11 +351,15 @@ sudo dotnix-key create /dev/sdX        # a new key, in its own LUKS slot
 sudo dotnix-key create -pin /dev/sdX   # the stick also needs a short PIN at boot
 sudo dotnix-key adopt /dev/sdX         # a key written the old way (offset 2048)
 sudo dotnix-key list                   # sticks found and what they open
+# the same key on another stick (or back on this one): no new LUKS slot
+sudo dotnix-key export /dev/sdX | sudo dotnix-key import /dev/sdY
 ```
 
 Partitions and files are never touched, only the gap; a gap holding something
 else (GRUB, Ventoy) is refused. Running `create` again replaces the stick's key
-and revokes the old one. No stick, a stick for another machine or a wrong PIN
+and revokes the old one; `usb-stick create` keeps the key a stick has (unless
+`--pin` or `--new-key`). `export` prints the key itself (to a pipe or a file,
+never the terminal): a file of it opens the disk as the stick does. No stick, a stick for another machine or a wrong PIN
 (three times): the password is asked.
 
 Enable it on a host with `dotnix.storage.usbKey.enable = true;`.
