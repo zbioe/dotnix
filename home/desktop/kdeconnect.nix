@@ -24,19 +24,13 @@ let
       exit 1
     fi
 
-    ${pkgs.kdePackages.kdeconnect-kde}/bin/kdeconnect-cli -d "$DEVICE_ID" --mount >/dev/null 2>&1 || true
-
-    BASE="/run/user/$(id -u)/$DEVICE_ID"
-
-    for i in {1..15}; do
-      [ -d "$BASE" ] && break
-      sleep 0.2
-    done
-
-    if [ ! -d "$BASE" ]; then
+    # returns once mounted
+    sftp=(org.kde.kdeconnect "/modules/kdeconnect/devices/$DEVICE_ID/sftp" org.kde.kdeconnect.device.sftp)
+    if [ "$(${pkgs.systemd}/bin/busctl --user call "''${sftp[@]}" mountAndWait)" != "b true" ]; then
       notify-send "KDE Connect" "Failed to mount device"
       exit 1
     fi
+    BASE=$(${pkgs.systemd}/bin/busctl --user call "''${sftp[@]}" mountPoint | sed -n 's/^s "\(.*\)"$/\1/p')
 
     TARGET=""
     for candidate in \
