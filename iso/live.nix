@@ -39,7 +39,10 @@ let
   ]
   ++ lib.concatMap (
     p: map (o: p.${o}) (lib.intersectLists (p.outputs or [ "out" ]) outputs)
-  ) ref.config.environment.systemPackages;
+  ) ref.config.environment.systemPackages
+  # fish's completions of each package, which the new host joins for its own
+  # set of packages: never substituted, and not in a closure when empty
+  ++ refSecure.config.environment.etc."fish/generated_completions".source.paths;
   # zmacs' twist reads package headers through derivations of its own nixpkgs
   inherit (pkgs.stdenv.hostPlatform) system;
   zmacs = dotnix.inputs.zmacs.packages.${system};
