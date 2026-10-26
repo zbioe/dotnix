@@ -10,12 +10,18 @@ let
   cfg = config.dotnix.core.boot;
   # (enrolls on firmware that leaves its empty keys in place)
   sbctl = pkgs.callPackage ../../pkgs/sbctl { };
+  # (cards as udev finishes with them, watched before looking at those there)
   waitForGpu = pkgs.writeShellScript "wait-for-gpu" ''
-    for _ in $(${pkgs.coreutils}/bin/seq 80); do
-      for card in /sys/class/drm/card[0-9]*; do
-        [ -e "$card/device/vendor" ] && exit 0
-      done
-      ${pkgs.coreutils}/bin/sleep 0.1
+    exec {events}< <(exec ${config.boot.initrd.systemd.package}/bin/udevadm monitor --udev --subsystem-match=drm --property)
+    line=x
+    until [ "$line" = "" ]; do read -r line <&"$events" || exit 0; done
+    gpu() { [ -e "$1/device/vendor" ]; }
+    for card in /sys/class/drm/card[0-9]*; do gpu "$card" && exit 0; done
+    deadline=$((SECONDS + 8))
+    while [ "$SECONDS" -lt "$deadline" ] && read -r -t $((deadline - SECONDS)) line <&"$events"; do
+      case $line in
+      DEVNAME=/dev/dri/card*) gpu "/sys/class/drm/''${line##*/}" && exit 0 ;;
+      esac
     done
     exit 0
   '';
