@@ -97,6 +97,8 @@ in
         "/etc/ssh/ssh_host_ed25519_key.pub"
         "/etc/ssh/ssh_host_rsa_key"
         "/etc/ssh/ssh_host_rsa_key.pub"
+        # what systemd-creds encrypts with (libvirt's secrets key)
+        "/var/lib/systemd/credential.secret"
       ];
     };
   };

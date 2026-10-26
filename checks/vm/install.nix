@@ -172,6 +172,8 @@ in
         target.succeed("test -e /persist/var/lib/libvirt/qemu/kept")
         target.succeed("test -e /var/lib/nodatacow/var/lib/libvirt/kept")
         target.succeed("test -e /var/lib/nodatacow/var/lib/libvirt/qemu/save/kept")
+        # its key, encrypted with the host's credential key (kept too)
+        target.succeed("systemctl restart libvirtd.service")
         target.shutdown()
   '';
 }
