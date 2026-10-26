@@ -47,7 +47,8 @@ let
   loopIso = fakeIso "linux-test" ''
     mkdir -p root/boot/grub
     echo 'echo "LOOPBACK-OK $iso_path"' > root/boot/grub/loopback.cfg
-    echo 'sleep 600' >> root/boot/grub/loopback.cfg
+    # (stays there: a key would go on)
+    echo 'read' >> root/boot/grub/loopback.cfg
   '';
   winIso = fakeIso "windows" "echo setup > root/setup.txt";
 
@@ -79,20 +80,16 @@ in
     # wait_for_console_text with a timeout reads one line a second: too slow for a boot log
     def console(m, text, timeout=300):
         deadline = time.monotonic() + timeout
-        while True:
+        pending.setdefault(m.name, "")
+        while not (found := re.search(text, pending[m.name])):
+            left = deadline - time.monotonic()
             try:
-                while True:
-                    pending[m.name] = pending.get(m.name, "") + m.last_lines.get(block=False) + "\n"
+                pending[m.name] += m.last_lines.get(timeout=max(left, 0)) + "\n"
             except queue.Empty:
-                pass
-            found = re.search(text, pending.get(m.name, ""))
-            if found:
-                seen = pending[m.name][: found.end()]
-                pending[m.name] = pending[m.name][found.end():]
-                return seen
-            if time.monotonic() > deadline:
                 raise Exception(f"{text!r} not on the console of {m.name} after {timeout}s")
-            time.sleep(0.1)
+        seen = pending[m.name][: found.end()]
+        pending[m.name] = pending[m.name][found.end():]
+        return seen
 
     image = machine.state_dir / "stick.img"
     with open(image, "wb") as f:

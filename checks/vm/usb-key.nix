@@ -54,19 +54,13 @@ in
       def console(text, timeout=300):
           global pending
           deadline = time.monotonic() + timeout
-          while True:
+          while not (m := re.search(text, pending)):
+              left = deadline - time.monotonic()
               try:
-                  while True:
-                      pending += machine.last_lines.get(block=False) + "\n"
+                  pending += machine.last_lines.get(timeout=max(left, 0)) + "\n"
               except queue.Empty:
-                  pass
-              m = re.search(text, pending)
-              if m:
-                  pending = pending[m.end():]
-                  return
-              if time.monotonic() > deadline:
                   raise Exception(f"{text!r} not on the console after {timeout}s")
-              time.sleep(0.1)
+          pending = pending[m.end():]
 
       def boot():
           global pending
@@ -159,7 +153,8 @@ in
 
       with subtest("stick plugged while waiting: no passphrase"):
           boot()
-          time.sleep(8)
+          # the unlocker is looking: no stick yet
+          console("Starting Unlock enc with a USB stick key")
           plug("plain")
           console("enc opened with the key on /dev/sda")
           booted()

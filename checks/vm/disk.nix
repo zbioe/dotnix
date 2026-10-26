@@ -1,12 +1,16 @@
 # What dotnix-install does, on a VM: the disko script formats the disk
 # (system/storage/disk.nix), nixos-install puts a system on it, and that
 # system boots from it: LUKS password, GRUB EFI, / wiped and /persist kept.
-{ inputs, dotlib }:
+{
+  inputs,
+  dotlib,
+  unstable,
+}:
 { pkgs, lib, ... }:
 let
   target = inputs.nixpkgs.lib.nixosSystem {
     inherit (pkgs.stdenv.hostPlatform) system;
-    specialArgs = { inherit dotlib; };
+    specialArgs = { inherit dotlib unstable; };
     modules = [
       inputs.disko.nixosModules.disko
       inputs.impermanence.nixosModules.impermanence

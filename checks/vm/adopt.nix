@@ -4,7 +4,11 @@
 # (its hosts/<host>), that key opens secrets/, and that is committed and
 # pushed (to a repository on bx here). The new machine then rebuilds itself
 # from upstream (dotnix-firstboot.service; a flake that builds stand-ins).
-{ inputs, dotlib }:
+{
+  inputs,
+  dotlib,
+  unstable,
+}:
 { pkgs, lib, ... }:
 let
   # dotnix-adopt and dotnix-sbctl-send as a host with secrets and Secure Boot
@@ -12,7 +16,7 @@ let
   host = inputs.nixpkgs.lib.nixosSystem {
     inherit (pkgs.stdenv.hostPlatform) system;
     specialArgs = {
-      inherit inputs dotlib;
+      inherit inputs dotlib unstable;
       username = "zbioe";
     };
     modules = [

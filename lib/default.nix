@@ -137,16 +137,16 @@ in
     usb-key-test = pkgs.testers.runNixOSTest ../checks/vm/usb-key.nix;
     usb-stick-test = pkgs.testers.runNixOSTest ../checks/vm/usb-stick.nix;
     backup-test = pkgs.testers.runNixOSTest ../checks/vm/backup.nix;
-    disk-test = pkgs.testers.runNixOSTest (import ../checks/vm/disk.nix { inherit inputs dotlib; });
+    disk-test = pkgs.testers.runNixOSTest (import ../checks/vm/disk.nix { inherit inputs dotlib unstable; });
     secure-boot-test = pkgs.testers.runNixOSTest (
-      import ../checks/vm/secure-boot.nix { inherit inputs dotlib; }
+      import ../checks/vm/secure-boot.nix { inherit inputs dotlib unstable; }
     );
     sbctl-keys-test = pkgs.testers.runNixOSTest (
-      import ../checks/vm/sbctl-keys.nix { inherit inputs dotlib; }
+      import ../checks/vm/sbctl-keys.nix { inherit inputs dotlib unstable; }
     );
-    adopt-test = pkgs.testers.runNixOSTest (import ../checks/vm/adopt.nix { inherit inputs dotlib; });
+    adopt-test = pkgs.testers.runNixOSTest (import ../checks/vm/adopt.nix { inherit inputs dotlib unstable; });
     boot-splash-test = pkgs.testers.runNixOSTest (
-      import ../checks/vm/boot-splash.nix { inherit inputs dotlib; }
+      import ../checks/vm/boot-splash.nix { inherit inputs dotlib unstable; }
     );
     install-test = pkgs.testers.runNixOSTest (
       import ../checks/vm/install.nix {

@@ -1,13 +1,17 @@
 # The boot splash on screen with Limine: Plymouth asks for the disk password
 # over the theme picked with `theme` (theme-boot leaves its name on the ESP,
 # desktop.bootScreens), read off the screen as the background's color.
-{ inputs, dotlib }:
+{
+  inputs,
+  dotlib,
+  unstable,
+}:
 { pkgs, lib, ... }:
 let
   target = inputs.nixpkgs.lib.nixosSystem {
     inherit (pkgs.stdenv.hostPlatform) system;
     specialArgs = {
-      inherit dotlib;
+      inherit dotlib unstable;
       inherit (inputs) base16;
       username = "zbioe";
     };
@@ -86,7 +90,6 @@ in
   };
 
   testScript = ''
-    import time
     from collections import Counter
 
     installer.start()
@@ -115,16 +118,15 @@ in
             target.start()
         # the splash, then its password prompt over it
         want = bytes.fromhex(color[1:])
-        # (the framebuffer rounds a channel or two)
-        def close(seen):
-            return all(abs(a - b) <= 4 for a, b in zip(bytes.fromhex(seen[1:]), want))
-        deadline = time.time() + 120
-        while not close(seen := background()):
-            assert time.time() < deadline, f"background {seen}, not {color}"
-            time.sleep(1)
+        def splash(last):
+            seen = background()
+            # (the framebuffer rounds a channel or two)
+            ok = all(abs(a - b) <= 4 for a, b in zip(bytes.fromhex(seen[1:]), want))
+            assert ok or not last, f"background {seen}, not {color}"
+            return ok
+        retry(splash, timeout_seconds=120)
         target.screenshot("splash-" + color[1:])
-        # (the prompt comes right after: slower runners)
-        time.sleep(5)
+        target.wait_for_text("passphrase")
         target.send_chars("secret\n")
         target.wait_for_unit("multi-user.target")
 
@@ -139,22 +141,12 @@ in
         boot("#eff1f5")
         target.shutdown()
 
-    with subtest("Limine's menu: a key shows it, Enter boots the entry"):
-        def lit():
-            # the logo's gray: only the menu's wallpaper has it
-            shot = target.state_dir / "screen.ppm"
-            target.send_monitor_command(f"screendump {shot}")
-            pixels = shot.read_bytes().split(maxsplit=4)[4]
-            samples = [pixels[i:i + 3] for i in range(0, len(pixels) - 2, 3 * 97)]
-            return sum(1 for p in samples if all(abs(v - 0x80) <= 4 for v in p)) / len(samples)
-
+    with subtest("Limine's menu: any key shows it, Enter boots the entry"):
         target.start()
-        # (its second of blank screen comes after the firmware's)
-        deadline = time.time() + 60
-        while lit() < 0.002:
-            assert time.time() < deadline, "no menu"
-            target.send_key("down")
-            time.sleep(0.1)
+        # the firmware hands over to Limine: a key it doesn't use, waiting
+        # for its quiet second (Limine < 12.9.1 left the menu blank)
+        target.wait_for_console_text("BdsDxe: starting")
+        target.send_key("x")
         target.wait_for_text("Generation")
         target.screenshot("limine-menu")
         target.send_key("ret")

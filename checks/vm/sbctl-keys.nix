@@ -1,14 +1,18 @@
 # Where dotnix-install takes the Secure Boot keys from (dotnix-sbctl-keys):
 # another machine sending them over SSH (dotnix-sbctl-send), that machine's
 # backup (a local restic server standing in for Proton Drive), or new ones.
-{ inputs, dotlib }:
+{
+  inputs,
+  dotlib,
+  unstable,
+}:
 { pkgs, lib, ... }:
 let
   # dotnix-sbctl-send as a host with secureBoot has it
   host = inputs.nixpkgs.lib.nixosSystem {
     inherit (pkgs.stdenv.hostPlatform) system;
     specialArgs = {
-      inherit dotlib;
+      inherit dotlib unstable;
       username = "zbioe";
     };
     modules = [

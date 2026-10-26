@@ -260,17 +260,14 @@ let
     mount = "${pkgs.util-linux}/bin/mount";
     umount = "${pkgs.util-linux}/bin/umount";
     mkdir = "${pkgs.coreutils}/bin/mkdir";
-    sleep = "${pkgs.coreutils}/bin/sleep";
+    udevadm = "${config.boot.initrd.systemd.package}/bin/udevadm";
     setvtrgb = "${pkgs.kbd}/bin/setvtrgb";
   };
   initrdTheme = pkgs.writeShellScript "dotnix-boot-theme" (
     with initrdBins;
     ''
       id=${default} chosen=""
-      for _ in {1..30}; do
-        [ -e ${esp} ] && break
-        ${sleep} 0.1
-      done
+      ${udevadm} wait --timeout=3 ${esp} || true
       ${mkdir} -p /run/dotnix/esp
       if ${mount} -t vfat -o ro,nosuid,nodev,noexec ${esp} /run/dotnix/esp; then
         [ -f /run/dotnix/esp/dotnix-theme ] && read -r -n 64 chosen < /run/dotnix/esp/dotnix-theme
@@ -371,10 +368,7 @@ let
   shutdownSplash = pkgs.writeShellScript "plymouth-shutdown" ''
     # the state as it is now, even if a change never got synced
     ${lib.getExe sync} || true
-    for _ in $(${pkgs.coreutils}/bin/seq 50); do
-      ${pkgs.procps}/bin/pgrep -x 'mango|sddm-greeter.*' >/dev/null || break
-      ${pkgs.coreutils}/bin/sleep 0.1
-    done
+    ${pkgs.coreutils}/bin/timeout 5 ${pkgs.procps}/bin/pidwait -x 'mango|sddm-greeter.*' || true
     id=$(${pkgs.coreutils}/bin/basename "$(${pkgs.coreutils}/bin/readlink /var/lib/theme/current)")
     cmdline=$(${pkgs.gnused}/bin/sed 's/plymouth\.splash=[^ ]*//' /proc/cmdline)
     exec ${config.boot.plymouth.package}/sbin/plymouthd --mode=shutdown --attach-to-session \

@@ -3,13 +3,17 @@
 # (in /persist) and enrolls them, the next boot is a Secure Boot one, and
 # after dotnix-tpm2-enroll the disk opens with the PIN. The boot theme, with
 # the command line sealed, comes from the ESP (desktop.bootScreens).
-{ inputs, dotlib }:
+{
+  inputs,
+  dotlib,
+  unstable,
+}:
 { pkgs, lib, ... }:
 let
   base = inputs.nixpkgs.lib.nixosSystem {
     inherit (pkgs.stdenv.hostPlatform) system;
     specialArgs = {
-      inherit dotlib;
+      inherit dotlib unstable;
       inherit (inputs) base16;
       username = "zbioe";
     };
@@ -130,6 +134,12 @@ in
         boot()
         target.succeed("test -e /boot/limine/limine.conf")
         assert not secure_boot()
+        # the firmware's entry for it, named, written once
+        efibootmgr = "${pkgs.efibootmgr}/bin/efibootmgr"
+        target.wait_until_succeeds(f"{efibootmgr} | grep -q ' NixOS'")
+        before = target.succeed(efibootmgr)
+        target.succeed("systemctl restart dotnix-boot-entry.service")
+        assert target.succeed(efibootmgr) == before
 
     with subtest("the rebuild with secureBoot makes and enrolls the keys"):
         # what `nixos-rebuild boot` does

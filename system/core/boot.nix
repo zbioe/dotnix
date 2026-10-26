@@ -2,6 +2,7 @@
   config,
   lib,
   pkgs,
+  unstable,
   dotlib,
   ...
 }:
@@ -159,6 +160,8 @@ in
         timeout = if cfg.loader == "limine" then 1 else 0;
         limine = mkIf (cfg.loader == "limine") {
           enable = true;
+          # 12.9.1+: a key during the quiet second no longer leaves the menu blank
+          package = unstable.limine;
           extraConfig = "quiet: yes";
           efiInstallAsRemovable = true;
           maxGenerations = 5;
@@ -228,6 +231,30 @@ in
               };
             };
         };
+    # Limine sits at the removable path (it boots wherever the firmware's
+    # entries are lost), which the firmware lists as "UEFI OS": an entry
+    # named NixOS for it, written once
+    systemd.services.dotnix-boot-entry = mkIf (cfg.loader == "limine") {
+      description = "A firmware boot entry named NixOS for Limine";
+      wantedBy = [ "multi-user.target" ];
+      unitConfig = {
+        RequiresMountsFor = "/boot";
+        ConditionPathExists = "/sys/firmware/efi/efivars";
+      };
+      serviceConfig.Type = "oneshot";
+      path = with pkgs; [
+        efibootmgr
+        util-linux
+        gnugrep
+        coreutils
+      ];
+      script = ''
+        efibootmgr | grep -q '^Boot[0-9A-F]\{4\}\*\? NixOS\b' && exit 0
+        part=$(findmnt -no SOURCE /boot)
+        n=$(cat "/sys/class/block/$(basename "$part")/partition")
+        efibootmgr -q -c -d "/dev/$(lsblk -no PKNAME "$part")" -p "$n" -L NixOS -l '\EFI\BOOT\BOOTX64.EFI'
+      '';
+    };
     environment.systemPackages =
       lib.optionals cfg.secureBoot.enable [
         pkgs.sbctl
