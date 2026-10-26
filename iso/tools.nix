@@ -32,6 +32,7 @@ let
       coreutils
       gawk
       gnutar
+      inotify-tools
       iproute2
       rclone
       restic
@@ -46,13 +47,26 @@ let
         echo "On the machine with the keys run: dotnix-adopt ADDRESS (or dotnix-sbctl-send), one of"
         ip -4 -o addr show scope global | awk '{ split($4, a, "/"); print "  " a[1] }'
         echo "Waiting for them (Enter: give up)..."
-        until [ -s /tmp/dotnix-sbctl.tar ]; do
+        # dotnix-sbctl-send moves it in whole; watched before looking, so it
+        # can't land in between
+        local fd watch giveup="" name=""
+        exec {fd}< <(exec inotifywait -m -e moved_to --format %f /tmp 2>&1)
+        watch=$!
+        until [ "$name" = "Watches established." ]; do read -r name <&"$fd"; done
+        if [ ! -s /tmp/dotnix-sbctl.tar ]; then
           if [ -t 0 ]; then
-            if read -rt 2; then return 1; fi
-          else
-            sleep 2
+            # (<&0: not /dev/null, as for any other background job)
+            { read -r; kill "$watch"; } <&0 &
+            giveup=$!
           fi
-        done
+          while read -r name <&"$fd"; do
+            [ "$name" != dotnix-sbctl.tar ] || break
+          done
+          [ -z "$giveup" ] || kill "$giveup" 2>/dev/null || true
+        fi
+        kill "$watch" 2>/dev/null || true
+        exec {fd}<&-
+        [ -s /tmp/dotnix-sbctl.tar ] || return 1
         tar -C /var/lib -xf /tmp/dotnix-sbctl.tar
         shred -u /tmp/dotnix-sbctl.tar
       }
