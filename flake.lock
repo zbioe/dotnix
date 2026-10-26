@@ -655,11 +655,11 @@
         "twist": "twist"
       },
       "locked": {
-        "lastModified": 1793029125,
-        "narHash": "sha256-2/rp5VaJRZMUtl+QbpSYDYCRs8CNkdNl7byLTG/tyAY=",
+        "lastModified": 1793043090,
+        "narHash": "sha256-wnh2fUi+1uHDIfOXbfddTrLSLdCAM7yQM+sNySaNyzA=",
         "owner": "zbioe",
         "repo": "zmacs",
-        "rev": "f44e13e4ca4e9b713d04905096267317dd43dc82",
+        "rev": "f70f11c333312d7c50ec8083f75ae67ab9f45a85",
         "type": "github"
       },
       "original": {
