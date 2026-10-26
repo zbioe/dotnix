@@ -146,7 +146,11 @@ let
       snapshots.external_enabled = false;
       public_dashboards.enabled = false;
       security.disable_gravatar = true;
-      plugins.plugin_admin_enabled = false;
+      plugins = {
+        plugin_admin_enabled = false;
+        # (the plugins it would download at every start)
+        preinstall_disabled = true;
+      };
       unified_alerting.enabled = false;
       # one user, on localhost
       auth.disable_login_form = true;
