@@ -111,6 +111,24 @@ in
         live.succeed(f"{env} RESTIC_PASSWORD=pw dotnix-sbctl-keys backup bx < /dev/null >&2")
         same_keys()
 
+    with subtest("the Proton Drive login, as far as it goes offline"):
+        # e-mail, password, 2FA, no mailbox password, the backup's password
+        live.succeed("printf 'me@proton.me\\nsecret-pass\\n123456\\n\\npw\\n' > /tmp/login.in")
+        live.succeed("systemd-run --unit proton-login --setenv=PATH=$PATH"
+                     " sh -c 'dotnix-sbctl-keys backup bx < /tmp/login.in > /tmp/login.out 2>&1; echo $? > /tmp/login.rc'")
+        try:
+            live.wait_until_succeeds("test -e /tmp/login.rc", timeout=90)
+        finally:
+            print(live.execute("cat /tmp/login.out; ps -ef --forest | grep -E 'rclone|restic|sbctl-keys' | grep -v grep")[1])
+        out = live.succeed("cat /tmp/login.out")
+        assert live.succeed("cat /tmp/login.rc").strip() != "0", out
+        assert "Proton Drive login" in out, out
+        # the rclone remote it made, which Proton would answer on
+        assert "rclone:proton:dotnix-backup/bx" in out, out
+        # the login gone, written nowhere in clear
+        live.fail("test -e /tmp/dotnix-rclone.conf")
+        live.fail("grep -rqs secret-pass /tmp/dotnix-* /root /var/lib/sbctl")
+
     with subtest("new keys"):
         live.succeed("dotnix-sbctl-keys new >&2")
         assert live.succeed("cat /var/lib/sbctl/keys/db/db.pem") != db
