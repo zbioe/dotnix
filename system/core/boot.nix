@@ -8,6 +8,8 @@
 }:
 let
   cfg = config.dotnix.core.boot;
+  # (enrolls on firmware that leaves its empty keys in place)
+  sbctl = pkgs.callPackage ../../pkgs/sbctl { };
   waitForGpu = pkgs.writeShellScript "wait-for-gpu" ''
     for _ in $(${pkgs.coreutils}/bin/seq 80); do
       for card in /sys/class/drm/card[0-9]*; do
@@ -167,6 +169,7 @@ in
           maxGenerations = 5;
           secureBoot = mkIf cfg.secureBoot.enable {
             enable = true;
+            inherit sbctl;
             # the first rebuild with it makes the keys and, in Setup Mode,
             # enrolls them next to Microsoft's (GPU firmware needs those)
             autoGenerateKeys = true;
@@ -257,7 +260,7 @@ in
     };
     environment.systemPackages =
       lib.optionals cfg.secureBoot.enable [
-        pkgs.sbctl
+        sbctl
         sbctlSend
       ]
       ++ lib.optional cfg.tpm2.enable tpm2Enroll;

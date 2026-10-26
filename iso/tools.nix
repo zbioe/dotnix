@@ -7,6 +7,8 @@
   ...
 }:
 let
+  # (enrolls on firmware that leaves its empty keys in place)
+  sbctl = pkgs.callPackage ../pkgs/sbctl { };
   mountAll = ''
     # subvolumes of system/storage/disk.nix on /mnt
     mount_all() {
