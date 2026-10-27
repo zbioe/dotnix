@@ -231,7 +231,7 @@ part_of() {
       echo "$path"
       return 0
     fi
-  done < <(lsblk -nrpo PATH,PARTLABEL "$disk")
+  done < <(lsblk -nrpo PATH,LABEL "$disk")
   return 1
 }
 
@@ -275,7 +275,7 @@ copy_isos() {
 
 grub_cfg() {
   echo "# usb-stick: lists isos/*.iso of the ISOS partition at every boot"
-  echo "insmod part_gpt"
+  echo "insmod part_msdos"
   echo "insmod fat"
   echo "insmod ext2"
   echo "insmod iso9660"
@@ -380,14 +380,15 @@ create() {
   fi
   ((files_part >= 64 * MIB || isos_part)) || die "$disk is too small: $(human "$total")"
 
-  local table=("label: gpt") layout=()
+  # MBR: car radios and TVs read only that, FAT32 first
+  local table=("label: dos") layout=()
   if ((files_part)); then
-    table+=("size=$((files_part / MIB))MiB, type=EBD0A0A2-B9E5-4433-87C0-68B6B72699C7, name=FILES")
+    table+=("size=$((files_part / MIB))MiB, type=c")
     layout+=("FILES $(human "$files_part")")
   fi
   if ((isos_part)); then
-    table+=("size=${ESP_SIZE_MIB}MiB, type=C12A7328-F81F-11D2-BA4B-00A0C93EC93B, name=ESP")
-    table+=("type=0FC63DAF-8483-4772-8E79-3D69D8477DE4, name=ISOS")
+    table+=("size=${ESP_SIZE_MIB}MiB, type=ef")
+    table+=("type=83")
     layout+=("ESP ${ESP_SIZE_MIB}MiB" "ISOS $(human "$isos_part")")
   fi
 

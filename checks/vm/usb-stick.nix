@@ -107,8 +107,11 @@ in
         machine.wait_until_succeeds("test -b /dev/sda")
         out = machine.succeed("echo -n pass | usb-stick create --yes /dev/sda 2>&1")
         assert "opens /dev/vdb" in out, out
-        labels = machine.succeed("lsblk -nro PARTLABEL /dev/sda").split()
+        labels = machine.succeed("lsblk -nro LABEL /dev/sda").split()
         assert labels == ["FILES"], labels
+        # what car radios read: MBR, FAT32
+        table = machine.succeed("lsblk -dnro PTTYPE /dev/sda").strip()
+        assert table == "dos", table
         out = machine.fail("usb-stick list /dev/sda 2>&1")
         assert "no ISOS partition" in out, out
         # made again with --keep-key: the same key, no new LUKS slot
