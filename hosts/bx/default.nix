@@ -64,7 +64,12 @@
       # what it builds, for the other hosts (zbioe.cachix.org)
       cache.push.enable = true;
       # the phone, with AVNC's SSH tunnel
-      wayvnc.enable = true;
+      wayvnc = {
+        enable = true;
+        keys = [
+          "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIL8k7JLjnb15p1kNKwSgLeb9SUalUB0anoGx3DTKXARm avnc-phone"
+        ];
+      };
     };
   };
 
