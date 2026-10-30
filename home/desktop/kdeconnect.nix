@@ -53,6 +53,35 @@ let
 
     ${pkgs.nautilus}/bin/nautilus "$TARGET"
   '';
+
+  # files from the phone were deleted as incomplete when it sent more bytes
+  # than it had announced
+  kdeconnect = pkgs.kdePackages.kdeconnect-kde.overrideAttrs (old: {
+    patches = (old.patches or [ ]) ++ [ ../../overlays/patches/kdeconnect-stale-size.patch ];
+  });
+
+  # the phone's "Run command": the screen, full size, to every connected device
+  send-screen = pkgs.writeShellScript "kdeconnect-send-screen" ''
+    set -euo pipefail
+    dir=$XDG_RUNTIME_DIR/kdeconnect-screen
+    # the previous one: sent long ago (the share returns before reading it)
+    rm -rf "$dir"
+    mkdir -p "$dir"
+    shot=$dir/screen-$(date +%Y%m%d-%H%M%S).png
+    ${pkgs.grim}/bin/grim "$shot"
+    for id in $(${kdeconnect}/bin/kdeconnect-cli -a --id-only); do
+      ${kdeconnect}/bin/kdeconnect-cli -d "$id" --share "$shot"
+    done
+  '';
+  # QSettings ini: a quoted string holding the JSON
+  commands = builtins.toJSON (
+    builtins.toJSON {
+      dotnix-send-screen = {
+        name = "Send screen";
+        command = "${send-screen}";
+      };
+    }
+  );
 in
 {
   options.dotnix.desktop.kdeconnect.enable = lib.mkEnableOption "KDE Connect helpers" // {
@@ -63,11 +92,7 @@ in
     services.kdeconnect = {
       enable = true;
       indicator = true;
-      # files from the phone were deleted as incomplete when it sent more
-      # bytes than it had announced
-      package = pkgs.kdePackages.kdeconnect-kde.overrideAttrs (old: {
-        patches = (old.patches or [ ]) ++ [ ../../overlays/patches/kdeconnect-stale-size.patch ];
-      });
+      package = kdeconnect;
     };
     # home-manager's PATH (the home profile alone) has no xdg-open: Browse
     # (kdeconnect://) failed with "Unable to detect a web browser"
@@ -81,6 +106,18 @@ in
       run mkdir -p ${config.xdg.configHome}/kdeconnect
       run ${pkgs.crudini}/bin/crudini --ini-options=nospace --set \
         ${config.xdg.configHome}/kdeconnect/config General disabled_providers AsyncLinkProvider
+    '';
+
+    # the commands, for every paired device (a new one gets them at the next switch)
+    home.activation.kdeconnectCommands = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+      kdc=${config.xdg.configHome}/kdeconnect
+      if [ -f "$kdc/trusted_devices" ]; then
+        for id in $(${pkgs.crudini}/bin/crudini --get "$kdc/trusted_devices"); do
+          run mkdir -p "$kdc/$id/kdeconnect_runcommand"
+          run ${pkgs.crudini}/bin/crudini --ini-options=nospace --set \
+            "$kdc/$id/kdeconnect_runcommand/config" General commands ${lib.escapeShellArg commands}
+        done
+      fi
     '';
 
     home.sessionVariables = {
