@@ -8,6 +8,7 @@
     ./searx.nix
     ./kdeconnect.nix
     ./localsend.nix
+    ./wayvnc.nix
     ./bitcoin.nix
     ./cache.nix
     ./install-test.nix

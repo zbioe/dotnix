@@ -18,6 +18,7 @@
     ./pass
     ./updates
     ./kdeconnect.nix
+    ./wayvnc.nix
     ./activity
   ];
 
