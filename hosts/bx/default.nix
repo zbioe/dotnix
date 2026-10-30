@@ -67,7 +67,7 @@
       wayvnc = {
         enable = true;
         keys = [
-          "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIL8k7JLjnb15p1kNKwSgLeb9SUalUB0anoGx3DTKXARm avnc-phone"
+          "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBtFuMrQPdb+ExX6JkMlAkAauGPddbqGWAapIbQliHN/ avnc-phone"
         ];
       };
     };
