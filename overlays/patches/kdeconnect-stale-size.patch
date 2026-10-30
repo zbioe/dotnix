@@ -1,0 +1,13 @@
+--- a/core/filetransferjob.cpp
++++ b/core/filetransferjob.cpp
+@@ -105,7 +105,9 @@
+         setErrorText(m_reply->errorString());
+     } else {
+         // TODO: MD5-check the file
+-        if (m_size == m_written) {
++        // Android can announce a stale size (MIUI edits screenshots after
++        // saving them): only fewer bytes than announced means incomplete
++        if (m_written >= m_size) {
+             qCDebug(KDECONNECT_CORE) << "Finished transfer" << m_destination;
+         } else {
+             qCDebug(KDECONNECT_CORE) << "Received incomplete file (" << m_written << "/" << m_size << "bytes ), deleting";

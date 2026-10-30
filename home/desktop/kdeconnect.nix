@@ -63,6 +63,11 @@ in
     services.kdeconnect = {
       enable = true;
       indicator = true;
+      # files from the phone were deleted as incomplete when it sent more
+      # bytes than it had announced
+      package = pkgs.kdePackages.kdeconnect-kde.overrideAttrs (old: {
+        patches = (old.patches or [ ]) ++ [ ../../overlays/patches/kdeconnect-stale-size.patch ];
+      });
     };
     # home-manager's PATH (the home profile alone) has no xdg-open: Browse
     # (kdeconnect://) failed with "Unable to detect a web browser"
