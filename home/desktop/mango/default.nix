@@ -44,6 +44,40 @@ let
   '';
   mmsg = "${config.wayland.windowManager.mango.package}/bin/mmsg";
 
+  # types the clipboard (where a paste is refused), with a Cancel button on
+  # its notification; `type-clipboard cancel` stops it too
+  typeClipboard = pkgs.writeShellApplication {
+    name = "type-clipboard";
+    runtimeInputs = with pkgs; [
+      wtype
+      wl-clipboard
+      libnotify
+    ];
+    text = ''
+      pidfile=$XDG_RUNTIME_DIR/type-clipboard.pid
+      if [ "''${1:-}" = cancel ]; then
+        if [ -f "$pidfile" ]; then kill "$(cat "$pidfile")" 2>/dev/null || true; fi
+        exit 0
+      fi
+      text=$(wl-paste --no-newline)
+      wtype -d "''${TYPE_CLIPBOARD_DELAY:-75}" "$text" &
+      typer=$!
+      echo "$typer" >"$pidfile"
+      note=$(mktemp)
+      notify-send -a "Type clipboard" -p -A cancel=Cancel "Typing the clipboard" "''${#text} characters" >"$note" &
+      ask=$!
+      # the button: waits on the notification while the text goes out
+      (wait "$ask"; if [ "$(tail -n 1 "$note")" = cancel ]; then kill "$typer" 2>/dev/null; fi) &
+      watcher=$!
+      status=0
+      wait "$typer" || status=$?
+      kill "$ask" "$watcher" 2>/dev/null || true
+      if [ "$status" = 0 ]; then msg=Typed; else msg=Cancelled; fi
+      notify-send -a "Type clipboard" -r "$(head -n 1 "$note")" -t 1500 "$msg"
+      rm -f "$note" "$pidfile"
+    '';
+  };
+
   # every bind with what it does: mango's binds and the noctalia "Shortcuts"
   # panel (Super+/, home/desktop/noctalia) both come from this list
   # an org capture over whatever is open, in its own Emacs frame
@@ -86,6 +120,7 @@ let
       (k "System" "SUPER+CTRL,n" "spawn,noctalia msg notification-dnd-toggle" "Toggle do not disturb")
       (k "System" "SUPER+SHIFT,r" "spawn,noctalia msg session lock" "Lock the screen")
       (k "System" "SUPER+SHIFT,u" "spawn,rebuild" "Update the system (rebuild)")
+      (k "System" "SUPER,Escape" "spawn,type-clipboard cancel" "Stop typing the clipboard (Super+M V)")
       (k "System" "SUPER+SHIFT,x" "quit" "Quit the session (mango)")
 
       (k "Screenshot" "NONE,Print" "spawn_shell,grim -g \"$(slurp)\" - | wl-copy" "Area to the clipboard")
@@ -164,6 +199,8 @@ in
   };
 
   config = lib.mkIf config.dotnix.desktop.mango.enable {
+    home.packages = [ typeClipboard ];
+
     wayland.windowManager.mango = {
       enable = true;
       systemd.enable = false; # uwsm handles the session (system/desktop)
