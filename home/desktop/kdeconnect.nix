@@ -54,10 +54,14 @@ let
     ${pkgs.nautilus}/bin/nautilus "$TARGET"
   '';
 
-  # files from the phone were deleted as incomplete when it sent more bytes
-  # than it had announced
   kdeconnect = pkgs.kdePackages.kdeconnect-kde.overrideAttrs (old: {
-    patches = (old.patches or [ ]) ++ [ ../../overlays/patches/kdeconnect-stale-size.patch ];
+    patches = (old.patches or [ ]) ++ [
+      # files from the phone were deleted as incomplete when it sent more
+      # bytes than it had announced
+      ../../overlays/patches/kdeconnect-stale-size.patch
+      # through the portal every click was a left one
+      ../../overlays/patches/kdeconnect-portal-button.patch
+    ];
   });
 
   # the phone's "Run command": the screen, full size, to every connected device
