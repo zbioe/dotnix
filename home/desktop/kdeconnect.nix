@@ -80,6 +80,11 @@ let
         name = "Send screen";
         command = "${send-screen}";
       };
+      # the phone's own Lock needs a screensaver service noctalia doesn't have
+      dotnix-lock = {
+        name = "Lock screen";
+        command = "noctalia msg session lock";
+      };
     }
   );
 in
