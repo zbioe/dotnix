@@ -103,6 +103,15 @@ in
       indicator = true;
       package = kdeconnect;
     };
+    # D-Bus activation through the unit: a call while it restarted started a
+    # second daemon outside it, holding the name with stale state
+    xdg.dataFile."dbus-1/services/org.kde.kdeconnect.service".text = ''
+      [D-BUS Service]
+      Name=org.kde.kdeconnect
+      Exec=${kdeconnect}/bin/kdeconnectd
+      SystemdService=kdeconnect.service
+    '';
+
     # home-manager's PATH (the home profile alone) has no xdg-open: Browse
     # (kdeconnect://) failed with "Unable to detect a web browser"
     systemd.user.services.kdeconnect.Service.Environment = lib.mkForce [
