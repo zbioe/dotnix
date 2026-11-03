@@ -48,6 +48,8 @@
     };
     editors.emacs.enable = true;
     editors.nvim.enable = true;
+    # the Lichess token: secrets/chess.yaml
+    games.chess.lichess.enable = true;
     dev = {
       node.enable = true;
       opencode.enable = true;
