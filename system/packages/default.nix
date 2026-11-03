@@ -12,7 +12,7 @@
     ./media.nix
     ./office.nix
     ./chat.nix
-    ./games.nix
+    ./games
     ./phone.nix
     ./web3.nix
   ];

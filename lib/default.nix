@@ -162,6 +162,7 @@ in
     iso-minimal = self.nixosConfigurations.minimal-iso.config.system.build.isoImage;
     dotnix-key = pkgs.callPackage ../pkgs/dotnix-key { };
     usb-stick = pkgs.callPackage ../pkgs/usb-stick { };
+    chess-engines = pkgs.callPackage ../pkgs/chess-engines { inherit (inputs) maia; };
     usb-key-test = pkgs.testers.runNixOSTest ../checks/vm/usb-key.nix;
     usb-stick-test = pkgs.testers.runNixOSTest ../checks/vm/usb-stick.nix;
     backup-test = pkgs.testers.runNixOSTest ../checks/vm/backup.nix;

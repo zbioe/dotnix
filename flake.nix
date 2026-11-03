@@ -88,5 +88,10 @@
       url = "github:bwt-dev/bwt";
       flake = false;
     };
+    # Maia's networks: Lc0 playing like people of 1100 to 1900 (pkgs/chess-engines)
+    maia = {
+      url = "github:CSSLab/maia-chess";
+      flake = false;
+    };
   };
 }

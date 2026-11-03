@@ -127,7 +127,10 @@
       media.enable = true;
       office.enable = true;
       chat.enable = true;
-      games.enable = true;
+      games = {
+        enable = true;
+        chess.enable = true;
+      };
       phone.enable = true;
     };
   };

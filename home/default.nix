@@ -13,6 +13,7 @@
     ./desktop
     ./theme
     ./dev
+    ./games
   ];
 
   home.username = username;

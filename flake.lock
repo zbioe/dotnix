@@ -312,6 +312,22 @@
         "type": "github"
       }
     },
+    "maia": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1779649597,
+        "narHash": "sha256-OEgrFdB+Rm/OLq6Ixu8JlILYNAXqv/Hz4c1rO+F1YzY=",
+        "owner": "CSSLab",
+        "repo": "maia-chess",
+        "rev": "749204cf5979ce7f8b0412e804a4ee7c83c49ff8",
+        "type": "github"
+      },
+      "original": {
+        "owner": "CSSLab",
+        "repo": "maia-chess",
+        "type": "github"
+      }
+    },
     "mango": {
       "inputs": {
         "flake-parts": [
@@ -514,6 +530,7 @@
         "hardware": "hardware",
         "home": "home",
         "impermanence": "impermanence",
+        "maia": "maia",
         "mango": "mango",
         "nix-index-database": "nix-index-database",
         "nixpkgs": "nixpkgs_2",

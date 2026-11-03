@@ -9,6 +9,8 @@ let
   cfg = config.dotnix.packages.games;
 in
 {
+  imports = [ ./chess.nix ];
+
   options.dotnix.packages.games = dotlib.mkPackages "games";
 
   config = lib.mkIf cfg.enable {
