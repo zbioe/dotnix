@@ -93,5 +93,10 @@
       url = "github:CSSLab/maia-chess";
       flake = false;
     };
+    # every named opening line, as Lichess names them (home/games/chess)
+    chess-openings = {
+      url = "github:lichess-org/chess-openings";
+      flake = false;
+    };
   };
 }

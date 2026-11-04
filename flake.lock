@@ -57,6 +57,22 @@
         "type": "github"
       }
     },
+    "chess-openings": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1793719027,
+        "narHash": "sha256-IAuhK5d+eUPYsCN7c98AB7s/bLmWZunGoro6199XrMI=",
+        "owner": "lichess-org",
+        "repo": "chess-openings",
+        "rev": "3fd6ce992679e4d991a6bb4dade71f2b826c568a",
+        "type": "github"
+      },
+      "original": {
+        "owner": "lichess-org",
+        "repo": "chess-openings",
+        "type": "github"
+      }
+    },
     "disko": {
       "inputs": {
         "nixpkgs": [
@@ -525,6 +541,7 @@
         "ai-memory": "ai-memory",
         "base16": "base16",
         "bwt": "bwt",
+        "chess-openings": "chess-openings",
         "disko": "disko",
         "git-hooks": "git-hooks",
         "hardware": "hardware",

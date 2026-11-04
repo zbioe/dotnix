@@ -94,7 +94,7 @@ let
             unstable
             dotlib
             ;
-          inherit (inputs) base16 zmacs;
+          inherit (inputs) base16 zmacs chess-openings;
           # the host's choices, as home-manager names them inside NixOS
           inherit osConfig;
           # the home starts with its host: same release
