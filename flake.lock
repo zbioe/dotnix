@@ -85,15 +85,15 @@
       "locked": {
         "lastModified": 1793825220,
         "narHash": "sha256-ZNqxpyeFw6GzcvYP2Vgeu7VOgfImTDZWbK7aIW3d6Tw=",
-        "ref": "refs/heads/main",
+        "owner": "zbioe",
+        "repo": "chix",
         "rev": "64d51c944ac3a0a5f70e6d45e179756cbb56ed5b",
-        "revCount": 7,
-        "type": "git",
-        "url": "file:///home/zbioe/dev/chix"
+        "type": "github"
       },
       "original": {
-        "type": "git",
-        "url": "file:///home/zbioe/dev/chix"
+        "owner": "zbioe",
+        "repo": "chix",
+        "type": "github"
       }
     },
     "disko": {

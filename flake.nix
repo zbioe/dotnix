@@ -90,7 +90,7 @@
     };
     # chess: openings by name, your games reviewed, the engines (home/games/chess)
     chix = {
-      url = "git+file:///home/zbioe/dev/chix";
+      url = "github:zbioe/chix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
