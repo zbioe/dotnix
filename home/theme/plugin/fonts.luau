@@ -13,8 +13,8 @@ local saved = nil -- the default snapshot, when there is one
 local newName = "" -- name for the next saved preset
 
 local samples = {
-  sans = "Ação rápida: você já configurou o pen drive?",
-  serif = "O tipo serifado conduz o olho pela linha.",
+  sans = "Quick façade: déjà vu at the café in São Paulo?",
+  serif = "A serif type leads the eye along the line.",
   mono = 'if x != 0O1lI { return "ok" } // => <=',
   emoji = "😀 🫠 🪿 👍🏽 🇧🇷 ❤️ ✨",
 }

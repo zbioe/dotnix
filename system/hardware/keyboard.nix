@@ -81,7 +81,7 @@ in
 
             # USB
             "/dev/input/by-id/usb-SINO_WEALTH_Bluetooth_Keyboard-event-kbd"
-            "/dev/input/by-id/usb-258a_00e1*-event-kbd" # Curinga pelo ID
+            "/dev/input/by-id/usb-258a_00e1*-event-kbd" # wildcard on the ID
 
             # Wireless
             "/dev/input/by-id/usb-Compx_2.4G_Wireless_Receiver-event-kbd"
