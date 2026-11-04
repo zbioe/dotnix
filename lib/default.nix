@@ -94,7 +94,7 @@ let
             unstable
             dotlib
             ;
-          inherit (inputs) base16 zmacs chess-openings;
+          inherit (inputs) base16 zmacs;
           # the host's choices, as home-manager names them inside NixOS
           inherit osConfig;
           # the home starts with its host: same release
@@ -106,6 +106,7 @@ let
           inputs.noctalia.homeModules.default
           inputs.sops.homeManagerModules.sops
           inputs.zmacs.homeModules.default
+          inputs.chix.homeModules.default
           ../home
         ];
       };
@@ -162,7 +163,6 @@ in
     iso-minimal = self.nixosConfigurations.minimal-iso.config.system.build.isoImage;
     dotnix-key = pkgs.callPackage ../pkgs/dotnix-key { };
     usb-stick = pkgs.callPackage ../pkgs/usb-stick { };
-    chess-engines = pkgs.callPackage ../pkgs/chess-engines { inherit (inputs) maia; };
     usb-key-test = pkgs.testers.runNixOSTest ../checks/vm/usb-key.nix;
     usb-stick-test = pkgs.testers.runNixOSTest ../checks/vm/usb-stick.nix;
     backup-test = pkgs.testers.runNixOSTest ../checks/vm/backup.nix;

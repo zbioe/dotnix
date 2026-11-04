@@ -1,4 +1,4 @@
-# Chess: the engines (pkgs/chess-engines) and the boards to study on; the
+# Chess: the engines (chix's) and the boards to study on; the
 # terminal tools, Emacs and the Lichess token are in home/games/chess
 {
   config,
@@ -17,8 +17,8 @@ in
     // {
       engines = lib.mkOption {
         type = lib.types.package;
-        default = pkgs.callPackage ../../../pkgs/chess-engines { inherit (inputs) maia; };
-        defaultText = lib.literalExpression "pkgs/chess-engines";
+        default = inputs.chix.packages.${pkgs.stdenv.hostPlatform.system}.engines;
+        defaultText = lib.literalExpression "inputs.chix.packages.\${system}.engines";
         description = "The UCI engines, one command each; home/games/chess hands them to the tools and the GUIs.";
       };
     };
