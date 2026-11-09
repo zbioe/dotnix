@@ -39,6 +39,7 @@ in
   imports = map (m: inputs.hardware.nixosModules.${m}) modules;
   hardware.facter.reportPath = report;
   dotnix.hardware.graphics.amd.enable = lib.mkIf amdGpu true;
+  dotnix.hardware.laptop.enable = lib.mkIf laptop true;
   # an NVIDIA GPU takes a choice (its driver's options): told until made
   warnings = lib.optional (
     lib.elem "10de" gpus && !config.dotnix.hardware.graphics.nvidia.enable

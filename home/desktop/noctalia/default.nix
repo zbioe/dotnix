@@ -2,11 +2,13 @@
 # Its colors follow `theme`, and its dark/light toggle drives `theme` back.
 {
   config,
+  osConfig,
   lib,
   pkgs,
   ...
 }:
 let
+  laptop = osConfig.dotnix.hardware.laptop.enable;
   # where am I (GeoClue, Wi-Fi based) -> ~/.config/noctalia/location.toml;
   # noctalia merges every *.toml in its config dir
   locate = pkgs.writeShellApplication {
@@ -253,6 +255,10 @@ in
             "notifications" # bell; crossed out while do not disturb is on
             "tray"
             "clock"
+          ]
+          # (hidden by itself where there's no battery)
+          ++ lib.optional laptop "brightness"
+          ++ [
             "battery"
             "control-center"
           ];
@@ -298,11 +304,12 @@ in
             actions.middle = "panel-toggle dotnix/wifi:priority";
           };
           volume.show_label = false;
-          # a glyph, so it follows the icon pack
+          # a glyph, so it follows the icon pack; the percentage on a laptop
           battery = {
-            show_label = false;
+            show_label = laptop;
             display_mode = "glyph";
           };
+          brightness.show_label = false;
 
           # fcitx's "us" says nothing (fixed layout); network and bluetooth
           # already have their own widgets
@@ -358,6 +365,10 @@ in
         # the desktop monitor has no kernel backlight: DDC/CI (system/desktop)
         brightness.enable_ddcutil = true;
 
+        # a notification at 20% and lower (critical): UPower's low level
+        # (system/hardware); at 3% it shuts down
+        battery.warning_threshold = 20;
+
         # local Nix-built plugins only; no git sources or background updates
         plugins = {
           enabled = map (name: "dotnix/${name}") (lib.attrNames plugins);
@@ -378,12 +389,13 @@ in
           ];
         };
 
-        # defaults with the theme tile in place of power profiles (desktop)
+        # the theme tile, and on a laptop its power profiles (performance,
+        # balanced, power saver: tlp-pd) in place of the night light
         control_center.shortcuts = map (type: { inherit type; }) [
           "wifi"
           "bluetooth"
           "caffeine"
-          "nightlight"
+          (if laptop then "power_profile" else "nightlight")
           "notification"
           "dotnix/theme:theme" # the home grid shows at most 6
         ];
