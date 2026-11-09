@@ -11,7 +11,10 @@
 }:
 let
   default = "gruvbox-dark";
-  grub = config.dotnix.core.boot.loader == "grub";
+  # the loader dotnix manages; none on the live ISO, which boots with its own
+  loader = if config.dotnix.core.boot.enable then config.dotnix.core.boot.loader else null;
+  grub = loader == "grub";
+  limine = loader == "limine";
 
   themes = import ../../home/theme/themes.nix { inherit pkgs; };
   # boot screens can't follow `theme font`: the catalog's defaults
@@ -330,7 +333,7 @@ let
               ${lib.getExe' pkgs.grub2 "grub-editenv"} /boot/grub/grubenv set $(cat ${index}/"$id"/grubenv)
               sync -f /boot/grub/grubenv
             ''
-          else
+          else if limine then
             ''
               if [ "$(cat /boot/dotnix-theme 2>/dev/null)" != "$id" ]; then
                 printf '%s\n' "$id" > /boot/dotnix-theme.tmp
@@ -338,6 +341,8 @@ let
                 sync -f /boot/dotnix-theme
               fi
             ''
+          else
+            ""
         }
 
         mkdir -p /var/lib/theme
@@ -429,8 +434,8 @@ in
           "vt.default_blu=${vtKernel defaultVariant "b"}"
         ]
     );
-    boot.initrd.supportedFilesystems.vfat = lib.mkIf (!grub) true;
-    boot.initrd.systemd.storePaths = lib.mkIf (!grub) (
+    boot.initrd.supportedFilesystems.vfat = lib.mkIf limine true;
+    boot.initrd.systemd.storePaths = lib.mkIf limine (
       [
         initrdTheme
         vtrgbs
@@ -438,7 +443,7 @@ in
       ++ lib.attrValues initrdBins
       ++ lib.optional config.boot.plymouth.enable plymouthStart
     );
-    boot.initrd.systemd.services = lib.mkIf (!grub) {
+    boot.initrd.systemd.services = lib.mkIf limine {
       dotnix-boot-theme = {
         description = "Pick the boot theme theme-boot left on the ESP";
         wantedBy = [ "initrd.target" ];

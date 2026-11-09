@@ -29,7 +29,9 @@ let
       cd "$flake"
       git fetch -q origin
       upstream=false
-      if git cat-file -e "origin/main:hosts/$host/default.nix" 2>/dev/null; then
+      # a reinstall is upstream once its install.nix is (dotnix-adopt)
+      if git cat-file -e "origin/main:hosts/$host/default.nix" 2>/dev/null &&
+        { [ ! -e "hosts/$host/install.nix" ] || git diff --quiet origin/main -- "hosts/$host/install.nix"; }; then
         git reset -q --hard origin/main
         upstream=true
       else
@@ -62,6 +64,10 @@ let
     fi
     if ! as git cat-file -e "origin/main:hosts/$host/default.nix" 2>/dev/null; then
       echo "hosts/$host isn't upstream yet (dotnix-adopt)"
+      exit 0
+    fi
+    if [ -e "hosts/$host/install.nix" ] && ! as git diff --quiet origin/main -- "hosts/$host/install.nix"; then
+      echo "this install of $host isn't upstream yet (dotnix-adopt)"
       exit 0
     fi
     as git reset -q --hard origin/main

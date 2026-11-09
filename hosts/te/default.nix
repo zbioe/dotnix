@@ -3,6 +3,8 @@
   imports = [
     ../common.nix
     ./hardware-configuration.nix
+    # disk, password and Secure Boot of its install (dotnix-install)
+    ./install.nix
     inputs.hardware.nixosModules.lenovo-thinkpad-e14-amd
   ];
 
@@ -21,12 +23,8 @@
       };
     };
     storage = {
-      disk = {
-        enable = true;
-        luks = "/dev/disk/by-uuid/6809fd8d-bbe9-4415-b5f0-f57a64ce7443";
-        efi = "/dev/disk/by-uuid/BE46-97A6";
-        swap = "/dev/disk/by-partuuid/353ac003-1244-4840-973a-37c8911a2e3e";
-      };
+      # its partitions by label, as dotnix-install makes them
+      disk.enable = true;
       impermanence.enable = true;
       # the stick of the old keyfile: `sudo dotnix-key adopt /dev/sdX` once
       usbKey.enable = true;

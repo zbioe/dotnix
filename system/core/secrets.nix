@@ -128,11 +128,20 @@ let
       fi
       host=$(ssh -n "${user}@$1" uname -n)
       [[ $host =~ ^[a-z][a-z0-9-]*$ ]] || { echo "not a host name: $host" >&2; exit 1; }
-      [ ! -e "hosts/$host" ] || { echo "hosts/$host is here already" >&2; exit 1; }
-      scp -rq "${user}@$1:dotnix/hosts/$host" hosts/
+      if [ -e "hosts/$host" ]; then
+        # installed again: what dotnix-install wrote, its configuration as it was
+        [ -e "hosts/$host/install.nix" ] || { echo "hosts/$host is here already" >&2; exit 1; }
+        for f in install.nix hardware-configuration.nix hardware.nix facter.json; do
+          scp -q "${user}@$1:dotnix/hosts/$host/$f" "hosts/$host/$f"
+        done
+        what="reinstall $host"
+      else
+        scp -rq "${user}@$1:dotnix/hosts/$host" hosts/
+        what="add $host"
+      fi
       dotnix-enroll "$host" "$1"
       git add "hosts/$host" .sops.yaml secrets/common.yaml
-      git commit -qm "add $host"
+      git commit -qm "$what"
       read -rp "Push it? [y/N] " a
       if [ "$a" = y ]; then
         git push -q

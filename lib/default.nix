@@ -197,6 +197,19 @@ in
   # (evaluated when it runs: the hosts take GBs and builds to evaluate)
   legacyPackages.${system}.isoClosure = { inherit installed installedUnswapped; };
   apps.${system} = {
+    # dotnix-install from this flake, for a live system older than it: on the
+    # ISO, `nix run github:zbioe/dotnix#install`
+    install = {
+      type = "app";
+      program =
+        lib.getExe
+          (import ../iso/scripts.nix {
+            inherit lib pkgs username;
+            src = self;
+          }).install;
+      meta.description = "Install this setup on the machine running it (from a dotnix ISO)";
+    };
+
     iso-closure = {
       type = "app";
       program = lib.getExe (
