@@ -13,6 +13,12 @@ let
   # (cards as udev finishes with them, watched before looking at those there)
   waitForGpu = pkgs.writeShellScript "wait-for-gpu" ''
     exec {events}< <(exec ${config.boot.initrd.systemd.package}/bin/udevadm monitor --udev --subsystem-match=drm --property)
+    # gone with this script, and waited for: a monitor still in
+    # plymouth-start's cgroup when this ends (even one dying) makes systemd
+    # refuse to start plymouthd ("left-over process"), and the password is
+    # asked as text
+    monitor=$!
+    trap 'kill "$monitor" 2>/dev/null; wait "$monitor" 2>/dev/null' EXIT
     line=x
     until [ "$line" = "" ]; do read -r line <&"$events" || exit 0; done
     gpu() { [ -e "$1/device/vendor" ]; }

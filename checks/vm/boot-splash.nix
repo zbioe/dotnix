@@ -129,6 +129,8 @@ in
         target.wait_for_text("passphrase")
         target.send_chars("secret\n")
         target.wait_for_unit("multi-user.target")
+        # plymouthd started cleanly: nothing left behind in its unit (wait-for-gpu)
+        target.fail("journalctl -b -u plymouth-start.service | grep -q left-over")
 
     with subtest("the default theme's splash"):
         boot("#282828")

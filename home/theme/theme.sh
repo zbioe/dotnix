@@ -3,6 +3,16 @@
 mkdir -p "$state"
 cmd="theme $*"
 
+# home-manager's activation at boot has no session bus, and dconf needs one:
+# without it the first `dconf write` ended `apply`, before the icons, GTK, Qt
+# and the browsers. A private bus then, as home-manager's own dconf settings
+# get; before the lock, which the run inside it takes
+if [ "${1:-}" = apply ] && [ -z "${DBUS_SESSION_BUS_ADDRESS:-}" ] && [ -z "${THEME_PRIVATE_BUS:-}" ] &&
+  # (dconf finds the bus by DBUS_SESSION_BUS_ADDRESS or $XDG_RUNTIME_DIR/bus)
+  { [ -z "${XDG_RUNTIME_DIR:-}" ] || [ ! -S "$XDG_RUNTIME_DIR/bus" ]; }; then
+  THEME_PRIVATE_BUS=1 XDG_DATA_DIRS="$DCONF_SHARE:${XDG_DATA_DIRS:-}" exec dbus-run-session -- "$0" apply
+fi
+
 # one change at a time: a second `theme` waits for the first, so the
 # state (and the boot splash synced from it) ends at the last choice
 case "${1:-status}" in

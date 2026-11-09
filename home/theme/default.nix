@@ -134,6 +134,7 @@ let
       glib
       procps
       dconf
+      dbus # dbus-run-session: dconf with no session (activation at boot)
       gawk
       systemd
       util-linux # flock, logger
@@ -146,6 +147,8 @@ let
       THEME_SUNRISE=${cfg.auto.sunrise}
       THEME_SUNSET=${cfg.auto.sunset}
       GTK_SETTINGS=${gtkSettings}
+      # (its D-Bus service, for a private bus)
+      DCONF_SHARE=${pkgs.dconf}/share
       ${cfg.fonts.script}
       ${cfg.icons.script}
       ${builtins.readFile ./theme.sh}
