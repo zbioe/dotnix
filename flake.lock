@@ -83,11 +83,11 @@
         "systems": "systems_2"
       },
       "locked": {
-        "lastModified": 1793825220,
-        "narHash": "sha256-ZNqxpyeFw6GzcvYP2Vgeu7VOgfImTDZWbK7aIW3d6Tw=",
+        "lastModified": 1793890992,
+        "narHash": "sha256-0HdYgACHduhuC2WnLIOmo/pybHWp/Zcb6OLIGtiMx3I=",
         "owner": "zbioe",
         "repo": "chix",
-        "rev": "64d51c944ac3a0a5f70e6d45e179756cbb56ed5b",
+        "rev": "2f71a974b708aaf40f248b36a8e6f60e2df3da3b",
         "type": "github"
       },
       "original": {
