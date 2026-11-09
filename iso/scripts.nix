@@ -141,6 +141,8 @@ let
       ask() { local a; read -rp "$1 " a; echo "''${a:-$2}"; }
 
       [ "$(id -u)" = 0 ] || exec sudo "$0" "$@"
+      # (the directory it was started in may be one it replaces)
+      cd /
       [ -d /sys/firmware/efi ] || die "Boot this machine in UEFI mode (dotnix boots with GRUB EFI)."
 
       echo "''${bold}dotnix install''${off}: this setup on this machine. ''${red}The chosen disk is erased.''${off}"
@@ -252,7 +254,8 @@ let
       systemctl stop ollama open-webui docker.socket docker waydroid-container 2>/dev/null || true
 
       # the flake, with a host for this machine (its disk: system/storage/disk.nix)
-      flake=/tmp/dotnix
+      # (not /tmp/dotnix: where a copy of the flake this runs from may be)
+      flake=/tmp/dotnix-install
       rm -rf "$flake"
       cp -r ${src}/. "$flake"
       chmod -R u+w "$flake"
@@ -263,11 +266,6 @@ let
         [ "$(readlink -f "$id")" = "$(readlink -f "$disk")" ] && { disk=$id; break; }
       done
 
-      set -x
-      swapoff /dev/disk/by-partlabel/dotnix-swap 2>/dev/null || true
-      umount -R /mnt 2>/dev/null || true
-      cryptsetup close enc 2>/dev/null || true
-
       # the login password as a hash in /persist, outside the flake; none keeps weakPass
       password="core.user.passwordFile = null;" passwd=""
       if [ -n "$upw" ]; then
@@ -276,6 +274,17 @@ let
         password="core.user.passwordFile = \"/persist/secrets/${username}.passwd\";"
       fi
       unset upw upw2
+      # the disk's password for disko, in RAM until it is formatted
+      trap 'shred -u /tmp/dotnix-luks.key 2>/dev/null || true' EXIT
+      ( umask 077; printf '%s' "$pw" > /tmp/dotnix-luks.key )
+      unset pw pw2
+
+      # what it does from here, shown as it goes: no password past this point
+      set -x
+      swapoff /dev/disk/by-partlabel/dotnix-swap 2>/dev/null || true
+      umount -R /mnt 2>/dev/null || true
+      cryptsetup close enc 2>/dev/null || true
+
       secureboot=""
       if [ "$secure" = true ]; then
         secureboot="core.boot = { loader = \"limine\"; secureBoot.enable = true; };"
@@ -347,8 +356,6 @@ let
       fi
 
       # erase, partition, encrypt and mount on /mnt
-      ( umask 077; printf '%s' "$pw" > /tmp/dotnix-luks.key )
-      unset pw pw2
       format=$(nix build --no-link --print-out-paths "path:$flake#nixosConfigurations.$host.config.system.build.destroyFormatMount")
       "$format/bin/disko-destroy-format-mount" --yes-wipe-all-disks
       shred -u /tmp/dotnix-luks.key
