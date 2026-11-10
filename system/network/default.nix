@@ -11,6 +11,12 @@
     lib.mkEnableOption "DNSSEC validation on top of DNS over TLS";
 
   config = {
+    # NetworkManager does DHCP itself: dhcpcd beside it (facter turns DHCP on
+    # for each card it finds) fought it for the same interfaces and held the
+    # boot ~9s waiting for an address
+    hardware.facter.detected.dhcp.enable = false;
+    networking.dhcpcd.enable = false;
+
     networking.networkmanager = {
       enable = true;
       wifi.powersave = false;
