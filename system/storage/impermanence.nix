@@ -123,7 +123,12 @@ in
         "/var/lib/NetworkManager"
         # firmware updates waiting for the next boot
         "/var/lib/fwupd"
-      ];
+      ]
+      # enrolled fingerprints (fprintd comes on with a reader, see facter)
+      ++ lib.optional config.services.fprintd.enable {
+        directory = "/var/lib/fprint";
+        mode = "0700";
+      };
       files = [
         "/etc/hosts"
         "/etc/machine-id"
