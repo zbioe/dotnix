@@ -19,9 +19,10 @@
     core.homeActivation.enable = true;
     hardware.keyboard.layout = "br";
     storage = {
+      # its partitions by label; the device (and swap size) only matter to
+      # dotnix-install, which formats it
       disk = {
         enable = true;
-        device = "/dev/disk/by-id/nvme-KINGSTON_SNV3S1000G_50026B7283A752F6";
         swapSize = "62G";
       };
       impermanence.enable = true;
