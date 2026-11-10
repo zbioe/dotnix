@@ -263,12 +263,13 @@ in
             "clipboard" # history (also Super+V)
             "notifications" # bell; crossed out while do not disturb is on
             "tray"
-            "clock"
           ]
           # (hidden by itself where there's no battery)
           ++ lib.optional laptop "brightness"
           ++ [
             "battery"
+            # the clock at the far right, only the control center past it
+            "clock"
             "control-center"
           ];
         };
