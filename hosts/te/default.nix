@@ -59,6 +59,22 @@
         cacheDir = "/var/lib/nodatacow/backup";
       };
     };
+    services = {
+      # the 680M (gfx1035) as ROCm's nearest supported RDNA2
+      ai.ollama = {
+        rocm = "10.3.0";
+        integratedGpu = true;
+      };
+      # what it builds, for the other hosts (zbioe.cachix.org)
+      cache.push.enable = true;
+      # the phone, with AVNC's SSH tunnel
+      wayvnc = {
+        enable = true;
+        keys = [
+          "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBtFuMrQPdb+ExX6JkMlAkAauGPddbqGWAapIbQliHN/ avnc-phone"
+        ];
+      };
+    };
   };
 
   # the release it was installed with; do not change

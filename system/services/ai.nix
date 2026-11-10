@@ -25,6 +25,10 @@ in
         example = "11.0.0";
         description = "Run on an AMD GPU, overriding its gfx version.";
       };
+      integratedGpu = lib.mkEnableOption ''
+        the integrated GPU (an APU's), which Ollama skips by default; it shares
+        the RAM, so measure first (te's 680M: 29 against the CPU's 19 tokens/s
+        on llama3.2:3b)'';
     };
     openWebui.enable = dotlib.mkItem cfg "Open WebUI on localhost:3333";
   };
@@ -40,6 +44,7 @@ in
       services.ollama = {
         package = pkgs.ollama-rocm;
         rocmOverrideGfx = cfg.ollama.rocm;
+        environmentVariables = lib.mkIf cfg.ollama.integratedGpu { OLLAMA_IGPU_ENABLE = "1"; };
       };
     })
     (lib.mkIf cfg.openWebui.enable {
@@ -61,7 +66,14 @@ in
       environment.persistence."/persist".directories = [ (private "open-webui") ];
     })
     (lib.mkIf ((cfg.ollama.enable || cfg.openWebui.enable) && impermanence) {
-      systemd.tmpfiles.rules = [ "z /var/lib/private 0700 root root -" ];
+      # the persisted copies too: impermanence gives /var/lib/private their
+      # mode at every activation, and a 0755 one stops these services from
+      # starting again after a switch
+      systemd.tmpfiles.rules = map (root: "z ${root}/var/lib/private 0700 root root -") [
+        ""
+        "/persist"
+        "/var/lib/nodatacow"
+      ];
     })
   ];
 }
