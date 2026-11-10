@@ -144,6 +144,9 @@ in
 
         # Activate emacs shortcuts
         shell.readline_shortcuts = true;
+        # its own polkit agent: with none in the session, what asks for your
+        # password (fprintd-enroll, disks, network settings) was refused unasked
+        shell.polkit_agent = true;
 
         # Emacs keys too (C-n C-p C-f C-b), like GTK here: lists, the launcher,
         # tabs and menus of every noctalia surface
