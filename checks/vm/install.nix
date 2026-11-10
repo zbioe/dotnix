@@ -7,7 +7,7 @@
   specialArgs,
   nixpkgs,
 }:
-{ lib, ... }:
+{ lib, pkgs, ... }:
 let
   instrumentation = "${nixpkgs}/nixos/modules/testing/test-instrumentation.nix";
   answers = lib.concatStringsSep "\\n" [
@@ -96,11 +96,12 @@ in
         flake = "/mnt/home/zbioe/dotnix"
         host = installer.succeed(f"cat {flake}/hosts/vmtest/default.nix")
         print(host)
-        assert 'device = "/dev/disk/by-id/virtio-dotnix-target"' in host
+        # the kernel's name for the disk, not its serial (by-id)
+        assert 'device = "/dev/vda"' in host and "by-id" not in host
         assert 'swapSize = "16G"' in host
         assert "impermanence.enable = true" in host
         assert 'passwordFile = "/persist/secrets/zbioe.passwd"' in host
-        assert "secureBoot.enable = true; tpm2.enable = true;" in host
+        assert "secureBoot.enable = true;" in host and "tpm2.enable = true;" in host
         installer.succeed("test -f /mnt/persist/var/lib/sbctl/keys/db/db.key")
         # enrolled: out of Setup Mode
         assert installer.succeed("od -An -t u1 /sys/firmware/efi/efivars/SetupMode-*").split()[-1] == "0"
@@ -108,7 +109,10 @@ in
         # with it evaluates; for the first rebuild online: out of the offline
         # reinstall below
         facts = installer.succeed(f"cat {flake}/hosts/vmtest/facter.json")
-        assert '"serial"' not in facts and '"hardware"' in facts
+        assert '"serial"' not in facts and "/dev/disk/by-id/" not in facts and '"hardware"' in facts
+        # formatted as the flake wants it: nothing for its hooks to change
+        installer.succeed(f"${pkgs.nixfmt}/bin/nixfmt --check {flake}/hosts/vmtest/*.nix")
+        installer.fail(f"grep -q pkgs, {flake}/hosts/vmtest/hardware-configuration.nix")
         installer.succeed(f"grep -q 'dotlib.facter ./facter.json' {flake}/hosts/vmtest/hardware.nix")
         # (the whole system won't evaluate offline: the GTK4 swap builds)
         assert installer.succeed(f"nix eval --offline 'path:{flake}#nixosConfigurations.vmtest.config.hardware.facter.detected.virtualisation.qemu.enable'").strip() == "true"

@@ -134,6 +134,11 @@ let
       keys
       nixos-facter
       jq
+      # the build's progress, as nh shows it
+      nix-output-monitor
+      # what it writes passes the flake's own checks (dotnix-adopt commits it)
+      deadnix
+      nixfmt
     ];
     text = ''
       bold=$'\e[1m' red=$'\e[31m' off=$'\e[0m'
@@ -235,7 +240,10 @@ let
       # into kernel modules, firmware and nixos-hardware's modules from the
       # first rebuild on (the ISO carries a host without them)
       nixos-facter -o /tmp/dotnix-facter.json 2>/dev/null
-      facts=$(jq 'walk(if type == "object" then del(.serial, .uuid, .asset_tag) else . end)' /tmp/dotnix-facter.json)
+      # (and the device names made of them: /dev/disk/by-id, by-path)
+      facts=$(jq 'walk(if type == "object" then del(.serial, .uuid, .asset_tag)
+        elif type == "array" then map(select(type != "string" or (test("^/dev/disk/by-(id|path)/") | not)))
+        else . end)' /tmp/dotnix-facter.json)
       rm -f /tmp/dotnix-facter.json
       hw=$(jq -r '[(.hardware.cpu[0].vendor_name // empty), (.hardware.graphics_card[]?.vendor.name),
         (.smbios.chassis[0].chassis_type.name // empty)] | join(", ")' <<<"$facts")
@@ -260,11 +268,9 @@ let
       cp -r ${src}/. "$flake"
       chmod -R u+w "$flake"
       mkdir -p "$flake/hosts/$host"
-      # a stable name for the disk, as the host will know it
-      for id in /dev/disk/by-id/*; do
-        [[ $id == *-part* || $id == */nvme-eui.* || $id == */wwn-* ]] && continue
-        [ "$(readlink -f "$id")" = "$(readlink -f "$disk")" ] && { disk=$id; break; }
-      done
+      # (the disk by its kernel name: only formatting it, here and now, reads
+      # it; the installed host finds its partitions by label. A by-id name
+      # would put its serial number in the public flake)
 
       # the login password as a hash in /persist, outside the flake; none keeps weakPass
       password="core.user.passwordFile = null;" passwd=""
@@ -381,10 +387,25 @@ let
       mv "$flake" /mnt/home/${username}/dotnix
       flake=/mnt/home/${username}/dotnix
 
-      # offline: what the host needs is in this ISO's store (iso/live.nix), even
-      # what's marked to be built locally (wrappers, small files)
-      nixos-install --flake "path:$flake#$host" --no-root-passwd --no-channel-copy \
-        --option always-allow-substitutes true
+      # the system, built straight into the new disk's store, its progress on
+      # screen: first from this ISO's store alone (iso/live.nix holds what a
+      # host like this needs, even what's marked to be built locally), so no
+      # query goes out; what it lacks, then, from the caches online
+      system_build() {
+        nix build --store /mnt --no-link --out-link /tmp/dotnix-system \
+          --option always-allow-substitutes true --extra-substituters "auto?trusted=1" \
+          "path:$flake#nixosConfigurations.$host.config.system.build.toplevel" \
+          "$@" --log-format internal-json -v |& nom --json
+      }
+      set +x
+      if ! system_build --option substituters "auto?trusted=1"; then
+        echo "''${bold}This ISO lacks part of $host: the rest comes from the caches online.''${off}"
+        system_build --option connect-timeout 5 ||
+          die "Building $host failed: offline, the ISO lacks part of it; connect and run dotnix-install again"
+      fi
+      set -x
+      nixos-install --system "$(readlink /tmp/dotnix-system)" --no-root-passwd --no-channel-copy
+      rm -f /tmp/dotnix-system
 
       printf '%s\n' "$facts" > "$flake/hosts/$host/facter.json"
       cat > "$flake/hosts/$host/hardware.nix" <<EOF
@@ -394,6 +415,9 @@ let
         imports = [ (dotlib.facter ./facter.json) ];
       }
       EOF
+      # as the flake's pre-commit hooks want them (dotnix-adopt commits these)
+      deadnix --edit --quiet "$flake/hosts/$host"
+      nixfmt "$flake/hosts/$host"/*.nix
       # a checkout again (the flake is a store copy): offline, nothing fetched yet
       git -C "$flake" init -q -b main
       git -C "$flake" remote add origin https://github.com/zbioe/dotnix.git
