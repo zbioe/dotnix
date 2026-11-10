@@ -2,7 +2,8 @@
 {
   imports = [
     ../common.nix
-    ./hardware-configuration.nix
+    # its hardware, from nixos-facter (hardware-configuration.nix only
+    # served the install, before facter's report is applied)
     ./hardware.nix
   ];
 
@@ -17,7 +18,16 @@
     };
     # its home, the first time (then `nh home switch`)
     core.homeActivation.enable = true;
-    hardware.keyboard.layout = "br";
+    hardware = {
+      # ABNT2 ThinkPad: the console too, so the disk's password at boot
+      keyboard = {
+        layout = "br";
+        model = "thinkpad";
+        variant = "thinkpad";
+      };
+      # OpenCL on the Radeon 680M (ROCm)
+      graphics.amd.compute.enable = true;
+    };
     storage = {
       # its partitions by label; the device (and swap size) only matter to
       # dotnix-install, which formats it
