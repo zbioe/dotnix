@@ -36,6 +36,12 @@ func main() {
 		os.Exit(2)
 	}
 	cmd, args := os.Args[1], os.Args[2:]
+	// the stick's gap and the LUKS header are root's: say so before
+	// cryptsetup fails halfway with a misleading message
+	if cmd != "unlock" && os.Geteuid() != 0 {
+		fmt.Fprintf(os.Stderr, "dotnix-key: %s needs root: sudo dotnix-key %s\n", cmd, strings.Join(os.Args[1:], " "))
+		os.Exit(1)
+	}
 	var err error
 	switch cmd {
 	case "list":
