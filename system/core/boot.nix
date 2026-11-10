@@ -125,11 +125,19 @@ in
   };
 
   config = mkIf cfg.enable {
+    # systemd starts no mount while its watch on the mount table is over 5
+    # changes a second, until the second is up; the root's and the persisted
+    # paths' mounts go over it at every boot, holding the next mounts (and
+    # binfmt, behind its automount) a second in the initrd and after
+    systemd.managerEnvironment.SYSTEMD_DEFAULT_MOUNT_RATE_LIMIT_BURST = "50";
+
     boot = {
       kernelPackages = cfg.kernel;
       consoleLogLevel = 0;
       initrd = {
         systemd.enable = true;
+        # see systemd.managerEnvironment below
+        systemd.managerEnvironment.SYSTEMD_DEFAULT_MOUNT_RATE_LIMIT_BURST = "50";
         verbose = false;
         availableKernelModules = [
           "nvme"
