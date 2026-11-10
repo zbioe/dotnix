@@ -19,7 +19,9 @@ var (
 
 const usage = `usage:
   dotnix-key list
-  dotnix-key create [-pin | -pin-file FILE] [-luks DEVICE] [-yes] [-force] DISK
+  dotnix-key create [-pin | -pin-file FILE] [-luks DEVICE] [-keep UUID,...] [-yes] [-force] DISK
+                                                 -keep: another machine's key stays on
+                                                 the stick (its LUKS UUID: lsblk -no UUID)
   dotnix-key adopt [-offset 2048] [-luks DEVICE] [-yes] DISK
   dotnix-key export [-luks DEVICE] DISK > KEY    the stick's key, to put back
   dotnix-key import [-pin-file FILE] [-luks DEVICE] [-yes] [-force] DISK < KEY
@@ -74,6 +76,7 @@ func writeCmd(cmd string, args []string) error {
 	yes := fs.Bool("yes", false, "don't ask")
 	force := fs.Bool("force", false, "overwrite a gap holding other data")
 	offset := fs.Int64("offset", 2048, "where the old key is (adopt)")
+	keep := fs.String("keep", "", "other machines' LUKS UUIDs whose keys stay on the stick, comma-separated")
 	pos := parse(fs, args)
 	if len(pos) != 1 {
 		fs.Usage()
@@ -97,6 +100,9 @@ func writeCmd(cmd string, args []string) error {
 		out:   os.Stdout,
 		yes:   *yes,
 		force: *force,
+	}
+	if *keep != "" {
+		c.keep = strings.Split(*keep, ",")
 	}
 	switch cmd {
 	case "adopt":

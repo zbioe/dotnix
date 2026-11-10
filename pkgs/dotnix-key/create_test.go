@@ -267,3 +267,49 @@ func TestAdoptRejects(t *testing.T) {
 		t.Error("a refused adopt changed the stick")
 	}
 }
+
+// two machines, one stick: the second key is written beside the first,
+// which keeps opening its own volume
+func TestCreateKeepsAnotherMachinesKey(t *testing.T) {
+	r := newRig(t, 512, mbr)
+	r.mustCreate(false)
+	first, ok := find(r.read()[512:1<<20], luksUUID(t, r.luks))
+	if !ok {
+		t.Fatal("no first key")
+	}
+
+	// without -keep: refused, nothing touched
+	c, _ := r.creator()
+	err := c.create(r.dev("sda"), r.dev("nvme0n1p3"), false)
+	if err == nil || !strings.Contains(err.Error(), "-keep") {
+		t.Fatalf("another machine's key: %v", err)
+	}
+
+	// a UUID that has no key there: refused
+	c, _ = r.creator()
+	c.keep = []string{"00000000-0000-0000-0000-000000000000"}
+	if err := c.create(r.dev("sda"), r.dev("nvme0n1p3"), false); err == nil {
+		t.Fatal("a -keep with no key in the gap was accepted")
+	}
+
+	for range 20 {
+		c, _ = r.creator()
+		c.keep = []string{luksUUID(t, r.luks)}
+		if err := c.create(r.dev("sda"), r.dev("nvme0n1p3"), false); err != nil {
+			t.Fatal(err)
+		}
+		gap := r.read()[512 : 1<<20]
+		kept, ok := find(gap, luksUUID(t, r.luks))
+		if !ok || kept.Pos != first.Pos || !bytes.Equal(kept.Key, first.Key) {
+			t.Fatal("the first machine's key moved or went")
+		}
+		if _, ok := find(gap, luksUUID(t, r.other)); !ok {
+			t.Fatal("no second key")
+		}
+	}
+}
+
+func luksUUID(t *testing.T, path string) string {
+	t.Helper()
+	return sh(t, "", "cryptsetup", "luksUUID", path)
+}

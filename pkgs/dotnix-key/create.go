@@ -24,6 +24,8 @@ type creator struct {
 	out   io.Writer
 	yes   bool
 	force bool
+	// the LUKS volumes (UUIDs) of other machines whose keys stay on the stick
+	keep []string
 }
 
 // target is a stick being written and the LUKS volume its key is for.
@@ -168,25 +170,83 @@ func (c *creator) prepare(device, luksPath string) (target, error) {
 // checkGap refuses to overwrite what isn't ours (GRUB BIOS and Ventoy live there).
 func (c *creator) checkGap(t target) (found, bool, error) {
 	old, ok := find(t.cur, t.info.UUID)
-	if !ok && !allZero(t.cur) && !c.force {
-		return found{}, false, fmt.Errorf("the gap of %s holds data that is not a key for %s (a boot loader?): -force overwrites it", t.disk.Path, t.luks.Path)
+	kept, err := c.kept(t)
+	if err != nil {
+		return found{}, false, err
+	}
+	if !ok && len(kept) == 0 && !allZero(t.cur) && !c.force {
+		return found{}, false, fmt.Errorf("the gap of %s holds data that is not a key for %s (a boot loader, or another machine's key: -keep ITS-LUKS-UUID keeps that one; -force overwrites it all)", t.disk.Path, t.luks.Path)
 	}
 	return old, ok, nil
 }
 
-// write fills the gap with noise and puts key and tag at a random step.
+// kept finds the -keep keys in the gap, where they must be: a key asked to
+// stay that isn't there means a wrong UUID, not something to write over.
+func (c *creator) kept(t target) ([]found, error) {
+	var out []found
+	for _, uuid := range c.keep {
+		if uuid == t.info.UUID {
+			return nil, fmt.Errorf("-keep %s is %s itself", uuid, t.luks.Path)
+		}
+		f, ok := find(t.cur, uuid)
+		if !ok {
+			return nil, fmt.Errorf("the gap of %s holds no key for %s (-keep)", t.disk.Path, uuid)
+		}
+		out = append(out, f)
+	}
+	return out, nil
+}
+
+// overlaps: blocks at these two positions share a byte.
+func overlaps(a, b int) bool {
+	return a < b+blockSize && b < a+blockSize
+}
+
+// write fills the gap with noise and puts key and tag at a random step;
+// with -keep, the gap stays as it is but for this key, kept off theirs.
 func (c *creator) write(t target, key []byte, slot int, pin bool) error {
+	kept, err := c.kept(t)
+	if err != nil {
+		return err
+	}
 	buf := make([]byte, t.gap.size())
 	if _, err := rand.Read(buf); err != nil {
 		return err
 	}
-	n, err := rand.Int(rand.Reader, big.NewInt(int64((len(buf)-blockSize)/step+1)))
+	if len(kept) > 0 {
+		noise := buf
+		buf = append([]byte{}, t.cur...)
+		// this volume's old key goes: find() would take whichever comes first
+		if old, ok := find(t.cur, t.info.UUID); ok {
+			copy(buf[old.Pos:old.Pos+blockSize], noise[old.Pos:])
+		}
+	}
+	var free []int
+	for p := 0; p+blockSize <= len(buf); p += step {
+		clash := false
+		for _, k := range kept {
+			clash = clash || overlaps(p, k.Pos)
+		}
+		if !clash {
+			free = append(free, p)
+		}
+	}
+	if len(free) == 0 {
+		return fmt.Errorf("the gap of %s has no room left for another key", t.disk.Path)
+	}
+	n, err := rand.Int(rand.Reader, big.NewInt(int64(len(free))))
 	if err != nil {
 		return err
 	}
-	pos := int(n.Int64()) * step
+	pos := free[n.Int64()]
 	copy(buf[pos:], key)
 	copy(buf[pos+keySize:], tag(key, t.info.UUID, slot, pin))
+	// the other machines' keys where they were, before anything is written
+	for i, k := range kept {
+		if f, ok := find(buf, c.keep[i]); !ok || f.Pos != k.Pos {
+			return fmt.Errorf("the key of %s would not survive: nothing written", c.keep[i])
+		}
+	}
 
 	f, err := os.OpenFile(t.disk.Path, os.O_WRONLY|os.O_SYNC, 0)
 	if err != nil {

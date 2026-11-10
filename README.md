@@ -125,6 +125,7 @@ drive. No stick or a wrong PIN: the password.
 sudo dotnix-key create [-pin] /dev/sdX
 sudo dotnix-key list
 sudo dotnix-key export /dev/sdX | sudo dotnix-key import /dev/sdY   # same key, same slot
+sudo dotnix-key create -keep OTHER-LUKS-UUID /dev/sdX   # one stick for two machines
 ```
 
 ## Multiboot stick
