@@ -3,6 +3,7 @@
 keys:
   - &zbioe age16tz3z9a0jety6e2ydphgqs46apyg5r8qm4wgzu20mh9zlem98vlqzx2zqj
   - &bx age14hk6x0gjs7raz2d44d59vlrunw4zr8za8uw5nwaj0v3w4464nf5qud8jvv
+  - &te age1tlfh3c82m3x4tg9pvvec53qm88fg7649vlvvwznjnj8xxml69pas2hdtwq
 creation_rules:
   # yours only (home-manager): LibreWolf's private settings, mail passwords,
   # the Lichess token
@@ -15,3 +16,4 @@ creation_rules:
       - age:
           - *zbioe
           - *bx
+          - *te
