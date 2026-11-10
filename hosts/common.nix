@@ -80,6 +80,9 @@
       activity.enable = true;
     };
 
+    # SMART and a monthly scrub, on the Activity dashboard
+    storage.health.enable = true;
+
     services = {
       containers = {
         # the system's images and volumes stay in /var/lib/nodatacow/docker

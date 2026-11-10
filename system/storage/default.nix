@@ -4,6 +4,7 @@
     ./impermanence.nix
     ./snapshots.nix
     ./backup.nix
+    ./health.nix
     ./usb-key.nix
   ];
 

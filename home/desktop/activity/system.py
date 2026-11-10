@@ -28,6 +28,7 @@ STATE_INTERVAL = 30
 HEALTH_INTERVAL = 15 * 60
 BACKUP_DIR = Path(os.environ.get("AW_BACKUP_DIR", "/var/cache/backup"))
 UPDATES_DIR = Path.home() / ".local/state/flake-updates"
+DISK_HEALTH = Path("/var/lib/disk-health/status.json")
 METRICS = f"aw-watcher-system-metrics_{HOST}"
 STATE = f"aw-watcher-system-state_{HOST}"
 HEALTH = f"aw-watcher-health_{HOST}"
@@ -275,6 +276,12 @@ def health():
     except ValueError:
         firmware = None
     nix = psutil.disk_usage("/nix")
+    try:
+        disk = json.loads(DISK_HEALTH.read_text())
+    except (OSError, ValueError):
+        disk = {}
+    scrubs = disk.get("scrubs", [])
+    started = [s["started"] for s in scrubs if s.get("started")]
     return {
         "failed_system": [
             x.split()[0]
@@ -307,6 +314,12 @@ def health():
             lines("journalctl", "-b", "-p", "err", "-q", "-o", "cat", "--no-pager")
         ),
         "uptime_h": round((time.time() - psutil.boot_time()) / 3600, 1),
+        # system/storage/health.nix: SMART per disk and the last scrubs
+        "disks": disk.get("disks"),
+        "scrub_age_h": round((time.time() - min(started)) / 3600, 1)
+        if started and len(started) == len(scrubs)
+        else None,
+        "scrub_errors": sum(s.get("errors", 0) for s in scrubs) if scrubs else None,
     }
 
 

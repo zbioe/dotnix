@@ -979,6 +979,46 @@ let
         SELECT 'user', u.value FROM (${latestRow}), json_each(data, '$.failed_user') AS u
       '';
     })
+
+    # the disks (system/storage/health.nix)
+    (panel {
+      title = "Disks";
+      type = "table";
+      description = "SMART, checked hourly; wear is the share of the rated writes used";
+      x = 0;
+      y = 189;
+      w = 16;
+      h = 6;
+      sql = ''
+        SELECT json_extract(d.value, '$.name') AS disk, json_extract(d.value, '$.model') AS model,
+          CASE json_extract(d.value, '$.passed') WHEN 1 THEN 'ok' WHEN 0 THEN 'FAILING' ELSE '?' END AS health,
+          json_extract(d.value, '$.used_percent') AS "wear %", json_extract(d.value, '$.media_errors') AS "media errors",
+          json_extract(d.value, '$.temperature_c') AS "°C", json_extract(d.value, '$.power_on_hours') AS "hours on"
+        FROM (${latestRow}), json_each(data, '$.disks') AS d
+      '';
+    })
+    (panel {
+      title = "Last scrub";
+      type = "stat";
+      unit = "s";
+      description = "Time since the oldest filesystem's last btrfs scrub (monthly)";
+      options = stat;
+      x = 16;
+      y = 189;
+      w = 4;
+      h = 6;
+      sql = latest "json_extract(data, '$.scrub_age_h') * 3600";
+    })
+    (panel {
+      title = "Scrub errors";
+      type = "stat";
+      options = stat;
+      x = 20;
+      y = 189;
+      w = 4;
+      h = 6;
+      sql = latest "scrub_errors";
+    })
   ];
 in
 {
