@@ -12,6 +12,10 @@
   # the panel's self refresh (PSR) flashes white on bursts of redraws, like a
   # theme change
   boot.kernelParams = [ "amdgpu.dcdebugmask=0x10" ];
+  # the ACPI alarm device takes rtc0 (Linux 7.1+): chrony's RTC tracking
+  # runs on its alarm, whose expired status is never cleared and powers the
+  # laptop back on right after a shutdown. Without it the CMOS clock is rtc0
+  boot.blacklistedKernelModules = [ "acpi_tad" ];
 
   dotnix = {
     core.user.passwordFile = "/persist/secrets/zbioe.passwd";
