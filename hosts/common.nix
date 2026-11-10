@@ -82,6 +82,12 @@
 
     # SMART and a monthly scrub, on the Activity dashboard
     storage.health.enable = true;
+    # Albion's client (7.5G), downloaded again by its launcher; and Proton
+    # Bridge's copy of the mail, which is on Proton's servers
+    storage.backup.exclude = [
+      ".var/app/com.albiononline.AlbionOnline/.albiononline"
+      ".local/share/protonmail"
+    ];
 
     services = {
       containers = {

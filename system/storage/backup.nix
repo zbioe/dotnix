@@ -246,7 +246,8 @@ let
         status)
           running=$(systemctl list-units --no-legend --plain --state=activating,active 'backup@*' 'backup-*' 2>/dev/null | awk '$1 ~ /service$/ { print $1 }')
           for unit in $running; do
-            echo "running now: $unit, since $(systemctl show -p ActiveEnterTimestamp --value "$unit")"
+            # a oneshot stays "activating" until it ends: it has no ActiveEnter
+            echo "running now: $unit, since $(systemctl show -p InactiveExitTimestamp --value "$unit")"
           done
           [ -n "$running" ] || echo "not running"
           if [ -e ${stamp} ]; then echo "last backup: $(date -r ${stamp} '+%F %R')"; else echo "no backup yet"; fi
@@ -315,6 +316,37 @@ in
   };
 
   config = mkIf cfg.enable {
+    # what comes back by itself: caches, the trash, package managers'
+    # downloads and the projects' build outputs (restic's --exclude-caches only
+    # catches the folders tagged CACHEDIR.TAG)
+    dotnix.storage.backup.exclude = [
+      ".cache"
+      ".local/share/Trash"
+      ".npm"
+      ".cargo/registry"
+      ".cargo/git"
+      "go/pkg/mod"
+      # the browsers' and Electron apps' caches, in their profiles
+      ".config/**/Cache"
+      ".config/**/Code Cache"
+      ".config/**/GPUCache"
+      ".config/**/GrShaderCache"
+      ".config/**/ShaderCache"
+      ".config/**/Service Worker/CacheStorage"
+      ".config/**/component_crx_cache"
+      # flatpak apps' caches
+      ".var/app/*/cache"
+    ]
+    # the projects' build outputs and dependencies, rebuilt from them
+    ++ map (d: "dev/**/${d}") [
+      "node_modules"
+      "_build"
+      "deps"
+      "target"
+      ".venv"
+      "__pycache__"
+    ];
+
     environment.systemPackages = [
       backupCmd
       pkgs.restic
