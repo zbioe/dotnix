@@ -343,9 +343,11 @@ in
           };
         };
 
-        # both follow [location] (GeoClue, see noctalia-locate above)
+        # follows [location] (GeoClue, see noctalia-locate above)
         weather.enabled = true;
-        nightlight.enabled = true;
+        # off: its tint makes the desktop disagree with the boot splash and
+        # every themed app; on from the Monitor tab (brightness widget)
+        nightlight.enabled = false;
 
         # lock after 10 min, screen off a minute later (caffeine pauses both)
         idle.behavior = {
