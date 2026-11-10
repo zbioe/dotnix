@@ -82,11 +82,14 @@
 
     # SMART and a monthly scrub, on the Activity dashboard
     storage.health.enable = true;
-    # Albion's client (7.5G), downloaded again by its launcher; and Proton
-    # Bridge's copy of the mail, which is on Proton's servers
+    # Albion's client (7.5G), downloaded again by its launcher; Proton
+    # Bridge's copy of the mail, which is on Proton's servers; and what was
+    # downloaded (ISOs, ROMs), which can be fetched again
     storage.backup.exclude = [
       ".var/app/com.albiononline.AlbionOnline/.albiononline"
       ".local/share/protonmail"
+      "Downloads"
+      "android"
     ];
 
     services = {
