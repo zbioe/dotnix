@@ -150,8 +150,11 @@ apply() {
   dconf write /org/gnome/desktop/interface/gtk-theme "'nix-$name-$mode'"
   dconf write /org/gnome/desktop/interface/icon-theme "'$(icon_apps_theme "$mode")'"
 
-  # running terminals (foot directly, tmux panes via their own pty)
+  # running terminals (foot directly, tmux panes via their own pty); not the
+  # SSH logins, whose terminal is on the machine they come from
+  ssh_pts=" $(who 2>/dev/null | awk '$NF ~ /^\(/ { printf "%s ", $2 }')"
   for pts in /dev/pts/[0-9]*; do
+    case "$ssh_pts" in *" ${pts#/dev/}"*) continue ;; esac
     if [ -O "$pts" ] && [ -w "$pts" ]; then
       timeout 1 cp "$v/terminal.seq" "$pts" 2>/dev/null || true
     fi

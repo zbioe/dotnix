@@ -265,13 +265,15 @@ in
     };
     programs.alacritty.settings.general.import = [ "${stateDir}/current/alacritty.toml" ];
     # fish: colors of the active theme, reloaded live through `set -U __nix_theme`
-    # (see `theme apply`); new shells also re-send the terminal palette
+    # (see `theme apply`); new shells also re-send the terminal palette, but
+    # not over SSH: that terminal is another machine's, with its own theme
     programs.fish.interactiveShellInit = ''
       function __nix_theme_apply --on-variable __nix_theme
         test -r ${stateDir}/current/fish.fish; and source ${stateDir}/current/fish.fish
       end
       __nix_theme_apply
-      test -r ${stateDir}/current/terminal.seq; and isatty stdout; and cat ${stateDir}/current/terminal.seq
+      not set -q SSH_CONNECTION; and test -r ${stateDir}/current/terminal.seq; and isatty stdout
+      and cat ${stateDir}/current/terminal.seq
     '';
 
     # Chromium has no live theme API: GTK mode follows the GTK theme that
@@ -279,6 +281,15 @@ in
     # setting lives in each profile's Preferences, which the browser rewrites
     # on exit, so only touch it while closed.
     home.activation.chromiumGtkTheme = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+      # no profile yet (a new install): the first one starts on GTK too
+      profiles=0
+      for prefs in "$HOME"/.config/chromium/*/Preferences; do
+        [ -f "$prefs" ] && profiles=$((profiles + 1))
+      done
+      if [ "$profiles" = 0 ]; then
+        run mkdir -p "$HOME/.config/chromium/Default"
+        run sh -c 'echo "{\"extensions\":{\"theme\":{\"system_theme\":1,\"id\":\"\"}}}" > "$HOME/.config/chromium/Default/Preferences"'
+      fi
       for prefs in "$HOME"/.config/chromium/*/Preferences; do
         [ -f "$prefs" ] || continue
         if ${pkgs.procps}/bin/pgrep -u "$USER" -x chromium >/dev/null; then
