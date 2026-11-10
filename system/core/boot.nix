@@ -121,6 +121,14 @@ in
       default = pkgs.linuxPackages;
       example = lib.literalExpression "pkgs.linuxPackages_zen";
     };
+    # the kernel built here instead of cache.nixos.org's: the GitHub workflow
+    # (.github/workflows/kernel.yml) builds it into zbioe.cachix.org
+    fastKernel.enable = lib.mkEnableOption ''
+      the kernel's two slow boot steps made faster, without dropping any
+      protection: the RAM zeroed by init_on_free on all cores
+      (DEFERRED_STRUCT_PAGE_INIT, -1.7 s on te's 64 GB) and loading big
+      modules like amdgpu without ftrace's per-function symbol scan (Lawrence
+      Lin's fix, queued upstream; -2.5 s on te)'';
     plymouth.enable = dotlib.mkItem cfg "the boot splash";
   };
 
@@ -133,6 +141,19 @@ in
 
     boot = {
       kernelPackages = cfg.kernel;
+      kernelPatches = lib.optionals cfg.fastKernel.enable [
+        {
+          name = "deferred-struct-page-init";
+          patch = null;
+          structuredExtraConfig.DEFERRED_STRUCT_PAGE_INIT = lib.kernel.yes;
+        }
+        {
+          # v2 of "ftrace: Drop weak function locations of modules when
+          # loading them" (linux-trace-kernel, 2026-10-04); drop once merged
+          name = "ftrace-module-weak-locs";
+          patch = ./patches/ftrace-module-weak-locs.patch;
+        }
+      ];
       consoleLogLevel = 0;
       initrd = {
         systemd.enable = true;

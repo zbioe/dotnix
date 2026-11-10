@@ -104,6 +104,9 @@ local function headline()
   if r == "offline" then
     return "wifi-off", "on_surface_variant", "Couldn't check (offline?)"
   end
+  if r == "waiting-kernel" then
+    return "hourglass-empty", "on_surface_variant", "Waiting for CI to build the kernel"
+  end
   return "clock", "on_surface_variant", "Not checked yet"
 end
 

@@ -23,6 +23,9 @@
       loader = "limine";
       secureBoot.enable = true;
       tpm2.enable = true;
+      # its 64 GB zeroed on all cores and amdgpu loaded without ftrace's scan
+      # (-4 s); built by the kernel workflow, never here
+      fastKernel.enable = true;
     };
     # its home, the first time (then `nh home switch`)
     core.homeActivation.enable = true;

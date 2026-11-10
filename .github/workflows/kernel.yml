@@ -1,0 +1,55 @@
+# The kernel of the hosts on dotnix.core.boot.fastKernel (system/core/boot.nix),
+# built here and pushed to zbioe.cachix.org so no host compiles it: for the
+# locked nixpkgs and for the newest one, which flake-updates
+# (home/desktop/updates) picks up and waits on
+name: kernel
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - flake.lock
+      - system/core/boot.nix
+      - system/core/patches/**
+      - .github/workflows/kernel.yml
+  schedule:
+    - cron: "17 */6 * * *"
+  workflow_dispatch:
+
+jobs:
+  kernel:
+    runs-on: ubuntu-26.04
+    timeout-minutes: 360
+    strategy:
+      fail-fast: false
+      matrix:
+        nixpkgs: [locked, newest]
+    steps:
+      - uses: actions/checkout@v5
+      # the build tree of a kernel with all its modules: ~14 GB free is too little
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache \
+            /usr/local/share/boost /opt/microsoft /usr/share/swift /usr/local/share/powershell
+          sudo docker image prune -af >/dev/null
+          df -h /
+      - uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: system-features = nixos-test benchmark big-parallel kvm
+      - uses: cachix/cachix-action@v17
+        with:
+          name: zbioe
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      - name: Newest nixpkgs
+        if: matrix.nixpkgs == 'newest'
+        run: nix flake update nixpkgs
+      - name: Build the kernels
+        run: |
+          hosts=$(nix eval --json .#nixosConfigurations --apply \
+            'cs: builtins.filter (h: cs.${h}.config.dotnix.core.boot.fastKernel.enable or false) (builtins.attrNames cs)' |
+            jq -r '.[]')
+          for host in $hosts; do
+            echo "::group::$host"
+            nix build -L --no-link --print-out-paths ".#nixosConfigurations.$host.config.system.modulesTree"
+            echo "::endgroup::"
+          done

@@ -27,6 +27,19 @@ let
     ${sudoAskpass}/bin/sudo $snapper -c persist create -c number -d "before rebuild" || true
   '';
 
+  # a host on the fast kernel (system/core/boot.nix) takes it from
+  # zbioe.cachix.org, built by the kernel workflow: stop rather than spend an
+  # hour compiling it here
+  kernelCached = pkgs.writeShellScript "rebuild-kernel-cached" ''
+    flake=$1 host=$2
+    [ "$(nix eval "$flake#nixosConfigurations.$host.config.dotnix.core.boot.fastKernel.enable" 2>/dev/null)" = true ] || exit 0
+    kernel=$(nix eval --raw "$flake#nixosConfigurations.$host.config.system.modulesTree.outPath")
+    nix path-info "$kernel" >/dev/null 2>&1 && exit 0
+    nix path-info --store https://zbioe.cachix.org "$kernel" >/dev/null 2>&1 && exit 0
+    echo "the kernel isn't on zbioe.cachix.org yet: wait for the kernel workflow (gh run list -w kernel)" >&2
+    exit 1
+  '';
+
   rebuild = pkgs.writeShellApplication {
     name = "rebuild";
     runtimeInputs = with pkgs; [
@@ -50,7 +63,7 @@ let
       wait=15m
       flake=''${NH_FLAKE:-$HOME/dotnix}
       host=$(hostname -s)
-      steps="${snapshot} && nh os switch -H $host && nh home switch -c $host"
+      steps="${kernelCached} $flake $host && ${snapshot} && nh os switch -H $host && nh home switch -c $host"
 
       # without terminal control sequences (colors; the palette `theme apply`
       # sends to every terminal, this one too), lines redrawn with \r or

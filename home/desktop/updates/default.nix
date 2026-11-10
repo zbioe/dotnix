@@ -136,6 +136,17 @@ let
           return 0
         fi
 
+        # a host on the fast kernel (system/core/boot.nix) takes it from
+        # zbioe.cachix.org, built by the kernel workflow: no compiling it here
+        if [ "$(nix eval "path:$stage#nixosConfigurations.$host.config.dotnix.core.boot.fastKernel.enable" 2>/dev/null)" = true ]; then
+          kernel=$(nix eval --raw "path:$stage#nixosConfigurations.$host.config.system.modulesTree.outPath" 2>>"$state/update.log")
+          if ! nix path-info --store https://zbioe.cachix.org "$kernel" >/dev/null 2>&1; then
+            say "waiting for CI to build the kernel ($kernel)"
+            echo waiting-kernel > "$state/result"
+            return 0
+          fi
+        fi
+
         echo building > "$state/phase"
         echo "building $host with them..."
         if nix build --out-link "$state/system" "path:$stage#nixosConfigurations.$host.config.system.build.toplevel" \

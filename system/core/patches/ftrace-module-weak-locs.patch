@@ -1,0 +1,294 @@
+From d8284f6570d1158e93889ac8ae098ef96568827c Mon Sep 17 00:00:00 2001
+From: Lawrence Lin <deduce@gmail.com>
+Date: Sun, 4 Oct 2026 14:20:50 -0500
+Subject: [PATCH 1/2] module: Add module_kallsyms_on_each_addr()
+
+ftrace needs the addresses of the symbols of a module while the module is
+still being loaded: ftrace_module_init() runs before complete_formation(),
+while the module is MODULE_STATE_UNFORMED, and
+module_kallsyms_on_each_symbol() skips unformed modules. It also needs
+exactly the symbols that find_kallsyms_symbol() may resolve an address
+to, so that it agrees with kallsyms_lookup().
+
+Factor the symbol filter of find_kallsyms_symbol() into is_lookup_symbol()
+and add module_kallsyms_on_each_addr(), which calls a function with the
+address of each such symbol of a given module. Like find_kallsyms_symbol(),
+it reads mod->kallsyms under RCU, which add_kallsyms() has set up by then.
+
+No functional change to find_kallsyms_symbol().
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Lawrence Lin <deduce@gmail.com>
+---
+Carried until it lands; submitted upstream as v2 to
+linux-trace-kernel and linux-modules. Update this carry with its review
+and drop it once the base kernel includes the fix.
+
+ include/linux/module.h   | 10 +++++++++
+ kernel/module/kallsyms.c | 44 ++++++++++++++++++++++++++++++++--------
+ 2 files changed, 45 insertions(+), 9 deletions(-)
+
+diff --git a/include/linux/module.h b/include/linux/module.h
+index 96cc98568eea..8b1c06d1118c 100644
+--- a/include/linux/module.h
++++ b/include/linux/module.h
+@@ -971,6 +971,10 @@ unsigned long module_kallsyms_lookup_name(const char *name);
+ 
+ unsigned long find_kallsyms_symbol_value(struct module *mod, const char *name);
+ 
++void module_kallsyms_on_each_addr(struct module *mod,
++				  void (*fn)(void *, unsigned long),
++				  void *data);
++
+ #else	/* CONFIG_MODULES && CONFIG_KALLSYMS */
+ 
+ static inline int module_kallsyms_on_each_symbol(const char *modname,
+@@ -1014,6 +1018,12 @@ static inline unsigned long find_kallsyms_symbol_value(struct module *mod,
+ 	return 0;
+ }
+ 
++static inline void module_kallsyms_on_each_addr(struct module *mod,
++						void (*fn)(void *, unsigned long),
++						void *data)
++{
++}
++
+ #endif  /* CONFIG_MODULES && CONFIG_KALLSYMS */
+ 
+ /* Define __free(module_put) macro for struct module *. */
+diff --git a/kernel/module/kallsyms.c b/kernel/module/kallsyms.c
+index f23126d804b2..bccee4b8294c 100644
+--- a/kernel/module/kallsyms.c
++++ b/kernel/module/kallsyms.c
+@@ -246,6 +246,18 @@ static const char *kallsyms_symbol_name(struct mod_kallsyms *kallsyms, unsigned
+ 	return kallsyms->strtab + kallsyms->symtab[symnum].st_name;
+ }
+ 
++/*
++ * Whether find_kallsyms_symbol() may resolve an address to symbol @symnum.
++ * Unnamed symbols are ignored: they're uninformative and inserted at a whim.
++ */
++static bool is_lookup_symbol(struct mod_kallsyms *kallsyms, unsigned int symnum)
++{
++	const char *name = kallsyms_symbol_name(kallsyms, symnum);
++
++	return kallsyms->symtab[symnum].st_shndx != SHN_UNDEF &&
++	       *name != '\0' && !is_mapping_symbol(name);
++}
++
+ /*
+  * Given a module and address, find the corresponding symbol and return its name
+  * while providing its size and offset if needed.
+@@ -286,15 +298,7 @@ static const char *find_kallsyms_symbol(struct module *mod,
+ 		const Elf_Sym *sym = &kallsyms->symtab[i];
+ 		unsigned long thisval = kallsyms_symbol_value(sym);
+ 
+-		if (sym->st_shndx == SHN_UNDEF)
+-			continue;
+-
+-		/*
+-		 * We ignore unnamed symbols: they're uninformative
+-		 * and inserted at a whim.
+-		 */
+-		if (*kallsyms_symbol_name(kallsyms, i) == '\0' ||
+-		    is_mapping_symbol(kallsyms_symbol_name(kallsyms, i)))
++		if (!is_lookup_symbol(kallsyms, i))
+ 			continue;
+ 
+ 		if (thisval <= addr && thisval > bestval) {
+@@ -458,6 +462,28 @@ unsigned long find_kallsyms_symbol_value(struct module *mod, const char *name)
+ 	return __find_kallsyms_symbol_value(mod, name);
+ }
+ 
++/*
++ * Call @fn with the address of each symbol of @mod that find_kallsyms_symbol()
++ * may resolve an address to. Unlike module_kallsyms_on_each_symbol(), this
++ * also works while @mod is still being loaded.
++ */
++void module_kallsyms_on_each_addr(struct module *mod,
++				  void (*fn)(void *, unsigned long),
++				  void *data)
++{
++	struct mod_kallsyms *kallsyms;
++	unsigned int i;
++
++	guard(rcu)();
++	kallsyms = rcu_dereference(mod->kallsyms);
++
++	/* ELF starts real symbols at 1. */
++	for (i = 1; i < kallsyms->num_symtab; i++) {
++		if (is_lookup_symbol(kallsyms, i))
++			fn(data, kallsyms_symbol_value(&kallsyms->symtab[i]));
++	}
++}
++
+ int module_kallsyms_on_each_symbol(const char *modname,
+ 				   int (*fn)(void *, const char *, unsigned long),
+ 				   void *data)
+From c127208dd4a8bc2374d896241245293af739fc12 Mon Sep 17 00:00:00 2001
+From: Lawrence Lin <deduce@gmail.com>
+Date: Sun, 4 Oct 2026 14:20:51 -0500
+Subject: [PATCH 2/2] ftrace: Drop weak function locations of modules when
+ loading them
+
+Since commit b39181f7c690 ("ftrace: Add FTRACE_MCOUNT_MAX_OFFSET to avoid
+adding weak function"), ftrace_module_enable() calls test_for_valid_rec()
+for every ftrace record of a module being loaded. For a module address,
+kallsyms_lookup() scans the whole symbol table of the module, so loading a
+module costs O(records * symbols), all of it under ftrace_lock. amdgpu.ko
+has 16821 records and about 67000 symbols, and commit 4099b98203d6
+("ftrace: Fix softlockup in ftrace_module_enable") already had to add a
+cond_resched() to this loop because of it.
+
+Commit ef378c3b8233 ("scripts/sorttable: Zero out weak functions in
+mcount_loc table") fixed vmlinux at build time, noting that the real
+solution is to not add a weak function into the ftrace table in the first
+place. Modules are not covered by it, and still have such locations: a
+weak function in virt/kvm that arch/x86 overrides inside the same kvm.ko
+keeps its mcount location but has no symbol. In an x86_64 distribution
+build of v7.2.5, kvm.ko has 18 of them; none of the other 6483 modules has
+any.
+
+Do the same for modules when they are loaded. In ftrace_process_locs(),
+after the locations are sorted, find for each symbol of the module, by
+binary search, the locations at most FTRACE_MCOUNT_MAX_OFFSET after it,
+and zero the locations no symbol marked. ftrace_process_locs() already
+skips zeroed locations, so no record is created for them, and
+ftrace_module_enable() no longer has to test every record. This costs one
+bit per location, about 2 KB for amdgpu, and O(symbols * log(records))
+time.
+
+On a Ryzen 3 3200U (x86_64, v7.2.5, amdgpu loaded from the initramfs,
+three boots each), amdgpu finishes initializing 6.19 s into boot without
+this patch and 2.00 s with it, and the kernel part of boot reported by
+systemd-analyze drops from 6.65 s to 2.46 s. Loading radeon and nouveau,
+which have no hardware on that machine, goes from 137 ms to 64 ms and from
+457 ms to 118 ms. available_filter_functions loses the 18
+__ftrace_invalid_address___ entries of kvm; its module entries are
+otherwise unchanged.
+
+Fixes: b39181f7c690 ("ftrace: Add FTRACE_MCOUNT_MAX_OFFSET to avoid adding weak function")
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Lawrence Lin <deduce@gmail.com>
+---
+Carried until it lands; submitted upstream as v2 to
+linux-trace-kernel and linux-modules. Update this carry with its review
+and drop it once the base kernel includes the fix.
+
+ kernel/trace/ftrace.c | 82 ++++++++++++++++++++++++++++++++++++-------
+ 1 file changed, 70 insertions(+), 12 deletions(-)
+
+diff --git a/kernel/trace/ftrace.c b/kernel/trace/ftrace.c
+index 673a54fdf392..2e1a237ce901 100644
+--- a/kernel/trace/ftrace.c
++++ b/kernel/trace/ftrace.c
+@@ -4445,11 +4445,6 @@ static int print_rec(struct seq_file *m, unsigned long ip)
+ 	return ret == NULL ? -1 : 0;
+ }
+ #else
+-static inline int test_for_valid_rec(struct dyn_ftrace *rec)
+-{
+-	return 1;
+-}
+-
+ static inline int print_rec(struct seq_file *m, unsigned long ip)
+ {
+ 	seq_printf(m, "%ps", (void *)ip);
+@@ -7611,6 +7606,73 @@ static void test_is_sorted(unsigned long *start, unsigned long count)
+ }
+ #endif
+ 
++#ifdef FTRACE_MCOUNT_MAX_OFFSET
++struct ftrace_mod_locs {
++	unsigned long *start;
++	unsigned long count;
++	unsigned long *valid;
++};
++
++/* Mark the locations that lie at most FTRACE_MCOUNT_MAX_OFFSET after @addr. */
++static void ftrace_mark_valid_locs(void *data, unsigned long addr)
++{
++	struct ftrace_mod_locs *locs = data;
++	unsigned long lo = 0, hi = locs->count, mid, ip;
++
++	/*
++	 * ftrace_call_adjust() moves a location forward by at most
++	 * FTRACE_MCOUNT_MAX_OFFSET, so start looking that far before @addr.
++	 */
++	while (lo < hi) {
++		mid = lo + (hi - lo) / 2;
++		if (locs->start[mid] + FTRACE_MCOUNT_MAX_OFFSET < addr)
++			lo = mid + 1;
++		else
++			hi = mid;
++	}
++
++	for (; lo < locs->count; lo++) {
++		if (locs->start[lo] > addr + FTRACE_MCOUNT_MAX_OFFSET)
++			break;
++		ip = ftrace_call_adjust(locs->start[lo]);
++		if (ip >= addr && ip - addr <= FTRACE_MCOUNT_MAX_OFFSET)
++			__set_bit(lo, locs->valid);
++	}
++}
++
++/*
++ * A weak function overridden within its module keeps its mcount location but
++ * has no symbol. Zero such locations before they become records, as sorttable
++ * does for vmlinux: keep only those with a symbol at most
++ * FTRACE_MCOUNT_MAX_OFFSET before them.
++ */
++static int ftrace_zero_weak_locs(struct module *mod, unsigned long *start,
++				 unsigned long count)
++{
++	struct ftrace_mod_locs locs = { .start = start, .count = count };
++	unsigned long i;
++
++	locs.valid = bitmap_zalloc(count, GFP_KERNEL);
++	if (!locs.valid)
++		return -ENOMEM;
++
++	module_kallsyms_on_each_addr(mod, ftrace_mark_valid_locs, &locs);
++
++	for_each_clear_bit(i, locs.valid, count)
++		start[i] = 0;
++
++	bitmap_free(locs.valid);
++	return 0;
++}
++#else
++static inline int ftrace_zero_weak_locs(struct module *mod,
++					unsigned long *start,
++					unsigned long count)
++{
++	return 0;
++}
++#endif
++
+ static int ftrace_process_locs(struct module *mod,
+ 			       unsigned long *start,
+ 			       unsigned long *end)
+@@ -7644,6 +7706,9 @@ static int ftrace_process_locs(struct module *mod,
+ 		test_is_sorted(start, count);
+ 	}
+ 
++	if (mod && ftrace_zero_weak_locs(mod, start, count))
++		return -ENOMEM;
++
+ 	start_pg = ftrace_allocate_pages(count, &pages);
+ 	if (!start_pg)
+ 		return -ENOMEM;
+@@ -8049,13 +8114,6 @@ void ftrace_module_enable(struct module *mod)
+ 
+ 		cond_resched();
+ 
+-		/* Weak functions should still be ignored */
+-		if (!test_for_valid_rec(rec)) {
+-			/* Clear all other flags. Should not be enabled anyway */
+-			rec->flags = FTRACE_FL_DISABLED;
+-			continue;
+-		}
+-
+ 		cnt = 0;
+ 
+ 		/*
