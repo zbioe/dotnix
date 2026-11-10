@@ -38,7 +38,19 @@
       };
     };
 
-    # /etc/hosts is the host's own (persisted), edited by hand
+    # /etc/hosts is the host's own (persisted), edited by hand; a new install
+    # gets NixOS' default once, or it has none (the persisted link dangles)
+    # and what reads it, such as rootless Docker, fails
     environment.etc.hosts.enable = false;
+    systemd.tmpfiles.rules =
+      let
+        file = if config.dotnix.storage.impermanence.enable then "/persist/etc/hosts" else "/etc/hosts";
+        hosts = lib.concatStringsSep "\\n" [
+          "127.0.0.1 localhost"
+          "::1 localhost"
+          "127.0.0.2 ${config.networking.hostName}"
+        ];
+      in
+      [ "f ${file} 0644 root root - ${hosts}\\n" ];
   };
 }
