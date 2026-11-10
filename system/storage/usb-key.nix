@@ -42,11 +42,21 @@ in
 
     environment.systemPackages = [ dotnixKey ];
 
-    boot.initrd.availableKernelModules = [
+    # loaded up front, not when the stick shows up or cryptsetup asks:
+    # loading the GPU driver takes seconds (ftrace checks each of its
+    # functions) and other module loads queue behind it, holding the unlock
+    boot.initrd.kernelModules = [
       "usb_storage"
       "uas"
       "sd_mod"
+      "dm_crypt"
+      # cryptsetup decrypts the keyslot through the kernel's crypto API
+      "algif_skcipher"
+      "algif_hash"
+      "xts"
     ];
+    # sticks are scanned at once instead of a second later
+    boot.kernelParams = [ "usb-storage.delay_use=0" ];
     boot.initrd.systemd.storePaths = [
       (lib.getExe dotnixKey)
       (lib.getExe' pkgs.cryptsetup "cryptsetup")
