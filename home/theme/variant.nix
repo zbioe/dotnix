@@ -300,24 +300,10 @@ let
   # Discord itself is set to.
   discordCss =
     let
-      # past the background: the palette's own tints on light palettes; dark
-      # ones stay on base00 so every surface matches the desktop
-      beyond =
-        if mode == "dark" then
-          [ ]
-        else
-          [
-            [
-              78
-              c.base01
-            ]
-            [
-              100
-              c.base02
-            ]
-          ];
       # neutral index -> color, along Discord's use of the scale.
-      # Discord dark: text 1-27, popouts 60-62, chat 64, sidebars 66-78
+      # Discord dark: text 1-27, surfaces 60-64, chat and sidebars 66-73
+      # (darker and midnight up to 100); every background past 64 stays on
+      # base00, so Discord matches the desktop
       onDark = [
         [
           0
@@ -351,16 +337,16 @@ let
           64
           c.base00
         ]
-      ]
-      ++ beyond;
-      # Discord light: chat 1, sidebars 2-7, muted text 41-47, text 72-76
+      ];
+      # Discord light: surfaces 1, chat and sidebars 2-4 (all base00, as the
+      # desktop), muted text 41-47, text 72-76
       onLight = [
         [
           0
           c.base00
         ]
         [
-          1
+          4
           c.base00
         ]
         [
