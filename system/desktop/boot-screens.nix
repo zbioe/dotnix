@@ -543,6 +543,23 @@ in
       ""
       "${shutdownSplash}"
     ];
+    # to keep the splash up until power off, plymouth leaves a helper running
+    # that systemd-shutdown can't kill; started from /nix/store it keeps the
+    # root busy and the LUKS device open (errors printed over the splash).
+    # Moving plymouthd into the shutdown ramfs makes it start the helper
+    # from there; NixOS ships the unit but never enables it
+    systemd.shutdownRamfs.storePaths = [
+      "${config.boot.plymouth.package}/libexec/plymouth/plymouthd-fd-escrow"
+    ];
+    systemd.services.plymouth-switch-root-initramfs = {
+      wantedBy = [
+        "halt.target"
+        "kexec.target"
+        "poweroff.target"
+        "reboot.target"
+      ];
+      after = [ "generate-shutdown-ramfs.service" ];
+    };
 
     services.displayManager.sddm.settings.Theme.ThemeDir = "/var/lib/theme/sddm";
     systemd.tmpfiles.rules = [
