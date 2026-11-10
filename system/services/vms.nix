@@ -22,6 +22,8 @@ in
         enable = true;
         qemu.swtpm.enable = true;
       };
+      # its stop messages would land over the shutdown splash
+      systemd.services.libvirt-guests.serviceConfig.StandardOutput = "journal";
       virtualisation.spiceUSBRedirection.enable = true;
       environment.persistence = lib.mkIf config.dotnix.storage.impermanence.enable {
         # the VMs' disks, saved RAM and dumps: big, outside snapshots and backup
