@@ -12,6 +12,8 @@ _final: prev: {
       ./patches/noctalia-tray-menu.patch
       ./patches/noctalia-ctrl-h-backspace.patch
       ./patches/noctalia-glyph-override.patch
+      # night light switch on the Monitor tab (the brightness widget opens it)
+      ./patches/noctalia-monitor-nightlight.patch
     ];
   });
 }

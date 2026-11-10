@@ -1,0 +1,115 @@
+diff --git a/src/shell/control_center/control_center_panel.cpp b/src/shell/control_center/control_center_panel.cpp
+index b5634ee..e4f4eaa 100644
+--- a/src/shell/control_center/control_center_panel.cpp
++++ b/src/shell/control_center/control_center_panel.cpp
+@@ -67,7 +67,7 @@ ControlCenterPanel::ControlCenterPanel(const ControlCenterServices& services) {
+   m_tabs[tabIndex(TabId::Network)] =
+       std::make_unique<NetworkTab>(services.network, services.networkSecrets, services.externalIp, services.modem);
+   m_tabs[tabIndex(TabId::Bluetooth)] = std::make_unique<BluetoothTab>(services.bluetooth, services.bluetoothAgent);
+-  m_tabs[tabIndex(TabId::Monitor)] = std::make_unique<MonitorTab>(services.brightness, services.config);
++  m_tabs[tabIndex(TabId::Monitor)] = std::make_unique<MonitorTab>(services.brightness, services.nightLight, services.config);
+   m_tabs[tabIndex(TabId::System)] = std::make_unique<SystemTab>(services.sysmon);
+   m_tabs[tabIndex(TabId::ScreenTime)] = std::make_unique<ScreenTimeTab>(services.screenTime);
+   m_tabs[tabIndex(TabId::Power)] = std::make_unique<PowerTab>(services.upower, services.powerProfiles);
+diff --git a/src/shell/control_center/tabs/monitor_tab.cpp b/src/shell/control_center/tabs/monitor_tab.cpp
+index cb0c4b1..a59a7bf 100644
+--- a/src/shell/control_center/tabs/monitor_tab.cpp
++++ b/src/shell/control_center/tabs/monitor_tab.cpp
+@@ -5,8 +5,10 @@
+ #include "render/core/renderer.h"
+ #include "shell/panel/panel_button_style.h"
+ #include "system/brightness_service.h"
++#include "system/gamma_service.h"
+ #include "ui/builders.h"
+ #include "ui/controls/scroll_view.h"
++#include "ui/controls/toggle.h"
+ #include "ui/palette.h"
+ 
+ #include <algorithm>
+@@ -66,8 +68,8 @@ namespace {
+ 
+ } // namespace
+ 
+-MonitorTab::MonitorTab(BrightnessService* brightness, ConfigService* config)
+-    : m_brightness(brightness), m_configService(config) {}
++MonitorTab::MonitorTab(BrightnessService* brightness, GammaService* nightLight, ConfigService* config)
++    : m_brightness(brightness), m_nightLight(nightLight), m_configService(config) {}
+ 
+ std::unique_ptr<Flex> MonitorTab::create() {
+   const float scale = contentScale();
+@@ -78,6 +80,31 @@ std::unique_ptr<Flex> MonitorTab::create() {
+       .gap = Style::spaceMd * scale,
+   });
+ 
++  // night light schedule on/off, beside the brightness it tints
++  if (m_nightLight != nullptr) {
++    tab->addChild(ui::row(
++        {.align = FlexAlign::Center, .gap = Style::spaceSm * scale},
++        ui::label({
++            .text = i18n::tr("control-center.shortcuts.nightlight"),
++            .fontSize = Style::fontSizeBody * scale,
++            .color = colorSpecFromRole(ColorRole::OnSurface),
++            .flexGrow = 1.0F,
++        }),
++        ui::toggle({
++            .out = &m_nightLightToggle,
++            .checkedImmediate = m_nightLight->enabled(),
++            .toggleSize = ToggleSize::Small,
++            .scale = scale,
++            .onChange =
++                [this](bool checked) {
++                  if (m_nightLight != nullptr) {
++                    m_nightLight->setEnabled(checked);
++                  }
++                },
++        })
++    ));
++  }
++
+   auto cardsScroll = ui::scrollView({
+       .out = &m_cardsScroll,
+       .contentScale = scale,
+@@ -209,6 +236,11 @@ void MonitorTab::doUpdate(Renderer& renderer) {
+ 
+   syncHeaderActions();
+ 
++  if (m_nightLight != nullptr && m_nightLightToggle != nullptr &&
++      m_nightLightToggle->checked() != m_nightLight->enabled()) {
++    m_nightLightToggle->setChecked(m_nightLight->enabled());
++  }
++
+   if (m_brightness == nullptr) {
+     return;
+   }
+diff --git a/src/shell/control_center/tabs/monitor_tab.h b/src/shell/control_center/tabs/monitor_tab.h
+index c9f76e8..2bf2de1 100644
+--- a/src/shell/control_center/tabs/monitor_tab.h
++++ b/src/shell/control_center/tabs/monitor_tab.h
+@@ -11,15 +11,17 @@ class BrightnessService;
+ class Button;
+ class ConfigService;
+ class Flex;
++class GammaService;
+ class Glyph;
+ class Label;
+ class Renderer;
+ class ScrollView;
+ class Slider;
++class Toggle;
+ 
+ class MonitorTab : public Tab {
+ public:
+-  MonitorTab(BrightnessService* brightness, ConfigService* config);
++  MonitorTab(BrightnessService* brightness, GammaService* nightLight, ConfigService* config);
+ 
+   std::unique_ptr<Flex> create() override;
+   std::unique_ptr<Flex> createHeaderActions() override;
+@@ -36,6 +38,8 @@ private:
+   void flushPendingBrightness(bool force = false);
+ 
+   BrightnessService* m_brightness = nullptr;
++  GammaService* m_nightLight = nullptr;
++  Toggle* m_nightLightToggle = nullptr;
+   ConfigService* m_configService = nullptr;
+ 
+   struct DisplayCard {
