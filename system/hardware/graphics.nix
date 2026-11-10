@@ -21,6 +21,18 @@ in
     amd = {
       enable = lib.mkEnableOption "AMD GPUs";
       compute.enable = lib.mkEnableOption "OpenCL on AMD (ROCm)";
+      initrdFirmware = mkOption {
+        type = types.nullOr (types.listOf types.str);
+        default = null;
+        example = [ "yellow_carp_*" ];
+        description = ''
+          The amdgpu firmware files (shell patterns) the initrd keeps; null
+          keeps all of them, ~38M for every AMD GPU. The ones this GPU loads
+          show up in `dmesg` when booted with
+          `dyndbg="file drivers/base/firmware_loader/main.c +p"`. The
+          system keeps them all.
+        '';
+      };
     };
     nvidia = {
       enable = lib.mkEnableOption "NVIDIA GPUs (proprietary driver)";
@@ -42,6 +54,32 @@ in
     };
 
     services.xserver.videoDrivers = mkIf (drivers != [ ]) drivers;
+
+    # the initrd's modules and firmware as NixOS builds them (stage-1.nix),
+    # from a firmware tree without the other GPUs' amdgpu files: the
+    # bootloader reads the whole initrd before Linux starts
+    system.build.modulesClosure = mkIf (cfg.amd.initrdFirmware != null) (
+      lib.mkForce (
+        pkgs.makeModulesClosure {
+          rootModules = config.boot.initrd.availableKernelModules ++ config.boot.initrd.kernelModules;
+          kernel = config.system.modulesTree;
+          firmware = pkgs.runCommand "initrd-firmware" { } ''
+            mkdir $out
+            # links to each file, through the linked folders
+            cp -rLs ${config.hardware.firmware}/lib $out/
+            chmod -R u+w $out
+            for f in $out/lib/firmware/amdgpu/*; do
+              case "$(basename "$f")" in
+                ${lib.concatStringsSep "|" cfg.amd.initrdFirmware}) ;;
+                *) rm "$f" ;;
+              esac
+            done
+          '';
+          allowMissing = config.boot.initrd.allowMissingModules;
+          inherit (config.boot.initrd) extraFirmwarePaths;
+        }
+      )
+    );
 
     hardware.nvidia = mkIf cfg.nvidia.enable {
       modesetting.enable = true;

@@ -35,6 +35,8 @@
       };
       # OpenCL on the Radeon 680M (ROCm)
       graphics.amd.compute.enable = true;
+      # the 680M loads only these at boot (measured 2026-11-10)
+      graphics.amd.initrdFirmware = [ "yellow_carp_*" ];
     };
     storage = {
       # its partitions by label; the device (and swap size) only matter to
