@@ -346,7 +346,7 @@ func (c *creator) create(device, luksPath string, withPIN bool) error {
 	defer clear(key)
 
 	c.printf("Adding the key in slot %d of %s (asks an existing passphrase)...\n", slot, t.luks.Path)
-	if err := c.cs.addKey(t.luks.Path, secret(key, pinStr), slot); err != nil {
+	if err := c.cs.addKey(t.luks.Path, secret(key, pinStr), slot, withPIN); err != nil {
 		return err
 	}
 	if err := c.write(t, key, slot, withPIN); err != nil {

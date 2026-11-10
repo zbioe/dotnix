@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"os"
+	"slices"
 	"testing"
 )
 
@@ -86,5 +87,15 @@ func TestLUKSRejects(t *testing.T) {
 	}
 	if _, err := parseLUKS(bytes.NewReader(make([]byte, 100))); !errors.Is(err, errNotLUKS) {
 		t.Errorf("tiny non-LUKS: %v", err)
+	}
+}
+
+func TestKDFFollowsPIN(t *testing.T) {
+	cs := cryptsetup{}
+	if got := cs.kdfFor(false); !slices.Equal(got, randomKeyKDF) {
+		t.Errorf("no PIN: %v, want %v", got, randomKeyKDF)
+	}
+	if got := cs.kdfFor(true); got != nil {
+		t.Errorf("PIN: %v, want cryptsetup's default", got)
 	}
 }

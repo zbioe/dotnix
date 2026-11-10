@@ -47,10 +47,25 @@ func (c cryptsetup) run(secrets [][]byte, args ...string) error {
 
 func size(b []byte) string { return strconv.Itoa(len(b)) }
 
+// randomKeyKDF is for a slot opened by the bare random key: a slow KDF adds
+// nothing to 4096 random bytes, only seconds to each boot (systemd-cryptenroll
+// does the same for its tokens). A PIN is guessable: its slot keeps the default.
+var randomKeyKDF = []string{"--pbkdf", "pbkdf2", "--pbkdf-force-iterations", "1000"}
+
+func (c cryptsetup) kdfFor(pin bool) []string {
+	if c.kdf != nil {
+		return c.kdf
+	}
+	if pin {
+		return nil
+	}
+	return randomKeyKDF
+}
+
 // addKey asks an existing passphrase on the terminal.
-func (c cryptsetup) addKey(luks string, secret []byte, slot int) error {
+func (c cryptsetup) addKey(luks string, secret []byte, slot int, pin bool) error {
 	args := append([]string{"luksAddKey", "--batch-mode",
-		"--new-key-slot", strconv.Itoa(slot), "--new-keyfile-size", size(secret)}, c.kdf...)
+		"--new-key-slot", strconv.Itoa(slot), "--new-keyfile-size", size(secret)}, c.kdfFor(pin)...)
 	return c.run([][]byte{secret}, append(args, luks, "/dev/fd/3")...)
 }
 
