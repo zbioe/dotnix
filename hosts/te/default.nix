@@ -25,6 +25,12 @@
         swapSize = "62G";
       };
       impermanence.enable = true;
+      # a key on the stick (`sudo dotnix-key create /dev/sdX` once); without
+      # it, the TPM and PIN, then the passphrase. It shows up in ~3 s
+      usbKey = {
+        enable = true;
+        timeout = 5;
+      };
       snapshots.enable = true;
       # Proton Drive: `backup setup` once
       backup = {
