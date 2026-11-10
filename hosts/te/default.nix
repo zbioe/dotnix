@@ -9,6 +9,10 @@
 
   networking.hostName = "te";
 
+  # the panel's self refresh (PSR) flashes white on bursts of redraws, like a
+  # theme change
+  boot.kernelParams = [ "amdgpu.dcdebugmask=0x10" ];
+
   dotnix = {
     core.user.passwordFile = "/persist/secrets/zbioe.passwd";
     core.boot = {
