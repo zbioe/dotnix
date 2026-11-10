@@ -32,6 +32,23 @@ let
     exit 0
   '';
   inherit (lib) types mkOption mkIf;
+  # DRM drivers that bring up a real card in the initrd
+  gpuDrivers = [
+    "amdgpu"
+    "radeon"
+    "i915"
+    "xe"
+    "nouveau"
+    "nvidia"
+    "nvidia_drm"
+    "virtio_gpu"
+    "bochs"
+    "qxl"
+    "vmwgfx"
+  ];
+  gpuInInitrd = lib.any (m: lib.elem m gpuDrivers) (
+    config.boot.initrd.kernelModules ++ config.boot.initrd.availableKernelModules
+  );
   luks = config.boot.initrd.luks.devices.enc;
 
   # the disk opens with the TPM and a PIN while the boot chain is the signed
@@ -160,10 +177,12 @@ in
       # keeps it (boot messages on screen to the end). So it starts once a
       # real GPU (a DRM card on PCI, not the firmware's simpledrm) is there,
       # waiting at most 8s.
-      initrd.systemd = {
-        storePaths = [ waitForGpu ];
-        services.plymouth-start.serviceConfig.ExecStartPre = [ "${waitForGpu}" ];
-      };
+      # With no GPU driver in the initrd (a new install's first boot, before
+      # its hardware.nix) no card comes: no waiting then
+      initrd.systemd.storePaths = mkIf gpuInInitrd [ waitForGpu ];
+      initrd.systemd.services.plymouth-start.serviceConfig.ExecStartPre = mkIf gpuInInitrd [
+        "${waitForGpu}"
+      ];
       supportedFilesystems = {
         btrfs = true;
       };
