@@ -175,6 +175,12 @@ in
           ];
         };
 
+        # its systemctl calls would broadcast over the shutdown splash
+        shell.session.power = {
+          reboot = "systemctl reboot --no-wall";
+          shutdown = "systemctl poweroff --no-wall";
+        };
+
         # session menu (the power button of the control center): the defaults,
         # plus the system + home switch in a floating terminal (home/desktop/rebuild.nix)
         shell.session.actions = [

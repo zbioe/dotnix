@@ -560,6 +560,10 @@ in
       ];
       after = [ "generate-shutdown-ramfs.service" ];
     };
+    # "The system will power off now!" goes to every logged-in tty, the
+    # session's included, which shows it between the session closing and
+    # the splash. systemctl turns it back on unless given --no-wall
+    services.logind.settings.Login.WallMessages = false;
 
     services.displayManager.sddm.settings.Theme.ThemeDir = "/var/lib/theme/sddm";
     systemd.tmpfiles.rules = [
