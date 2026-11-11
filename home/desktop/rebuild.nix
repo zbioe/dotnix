@@ -40,6 +40,15 @@ let
     exit 1
   '';
 
+  # sudo once, up front: the fingerprint first (nothing shows while it
+  # waits, hence the notification), the password dialog if it times out;
+  # nh's own sudo calls then reuse it (system/core/security.nix)
+  authenticate = pkgs.writeShellScript "rebuild-authenticate" ''
+    ${pkgs.libnotify}/bin/notify-send -a rebuild -t 30000 -i fingerprint \
+      "System Update" "Touch the fingerprint reader (or wait for the password prompt)" || true
+    exec ${sudoAskpass}/bin/sudo -v
+  '';
+
   rebuild = pkgs.writeShellApplication {
     name = "rebuild";
     runtimeInputs = with pkgs; [
@@ -63,7 +72,7 @@ let
       wait=15m
       flake=''${NH_FLAKE:-$HOME/dotnix}
       host=$(hostname -s)
-      steps="${kernelCached} $flake $host && ${snapshot} && nh os switch -H $host && nh home switch -c $host"
+      steps="${kernelCached} $flake $host && ${authenticate} && ${snapshot} && nh os switch -H $host && nh home switch -c $host"
 
       # without terminal control sequences (colors; the palette `theme apply`
       # sends to every terminal, this one too), lines redrawn with \r or
