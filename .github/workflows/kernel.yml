@@ -11,6 +11,8 @@ on:
       - flake.lock
       - system/core/boot.nix
       - system/core/patches/**
+      - system/hardware/graphics.nix
+      - system/hardware/patches/**
       - .github/workflows/kernel.yml
   schedule:
     - cron: "17 */6 * * *"

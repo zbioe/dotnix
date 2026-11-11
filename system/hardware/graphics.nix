@@ -33,6 +33,13 @@ in
           system keeps them all.
         '';
       };
+      # DCN 3.1 (Radeon 660M/680M): a refresh rate or rotation change that
+      # grows the compressed buffer can hang the display, flickering until
+      # the cable is plugged again
+      compbufFix.enable = lib.mkEnableOption ''
+        the kernel's wait for the display buffers to resize before the
+        compressed buffer grows (an RFC fix, not merged yet); it needs
+        dotnix.core.boot.fastKernel, whose workflow builds the kernel'';
     };
     nvidia = {
       enable = lib.mkEnableOption "NVIDIA GPUs (proprietary driver)";
@@ -51,6 +58,11 @@ in
       enable = true;
       enable32Bit = true;
       extraPackages = lib.optional cfg.amd.compute.enable pkgs.rocmPackages.clr.icd;
+    };
+
+    boot.kernelPatches = lib.optional cfg.amd.compbufFix.enable {
+      name = "amdgpu-compbuf-det-wait";
+      patch = ./patches/amdgpu-compbuf-det-wait.patch;
     };
 
     services.xserver.videoDrivers = mkIf (drivers != [ ]) drivers;
@@ -97,7 +109,13 @@ in
       };
     };
 
-    assertions = lib.optionals cfg.nvidia.enable [
+    assertions = [
+      {
+        assertion = cfg.amd.compbufFix.enable -> config.dotnix.core.boot.fastKernel.enable;
+        message = "dotnix.hardware.graphics.amd.compbufFix needs dotnix.core.boot.fastKernel (built by CI, never here)";
+      }
+    ]
+    ++ lib.optionals cfg.nvidia.enable [
       {
         assertion = (cfg.nvidia.prime.amdgpuBusId != "") != (cfg.nvidia.prime.intelBusId != "");
         message = "dotnix.hardware.graphics.nvidia.prime: set amdgpuBusId or intelBusId, not both";
