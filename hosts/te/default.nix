@@ -18,6 +18,8 @@
   boot.blacklistedKernelModules = [ "acpi_tad" ];
 
   dotnix = {
+    # its reader: sudo takes the finger or the password, whichever comes first
+    core.sudo.fingerprintOrPassword.enable = true;
     core.user.passwordFile = "/persist/secrets/zbioe.passwd";
     core.boot = {
       loader = "limine";

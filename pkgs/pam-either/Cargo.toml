@@ -1,0 +1,17 @@
+[package]
+name = "pam-either"
+version = "0.1.0"
+edition = "2021"
+description = "PAM module: a password or a fingerprint, whichever comes first"
+publish = false
+
+[lib]
+name = "pam_either"
+crate-type = ["cdylib", "rlib"]
+
+[[bin]]
+name = "pam-either-helper"
+path = "src/bin/helper.rs"
+
+[dependencies]
+libc = "0.2"

@@ -163,9 +163,11 @@ in
     iso-minimal = self.nixosConfigurations.minimal-iso.config.system.build.isoImage;
     dotnix-key = pkgs.callPackage ../pkgs/dotnix-key { };
     usb-stick = pkgs.callPackage ../pkgs/usb-stick { };
+    pam-either = pkgs.callPackage ../pkgs/pam-either { };
     usb-key-test = pkgs.testers.runNixOSTest ../checks/vm/usb-key.nix;
     usb-stick-test = pkgs.testers.runNixOSTest ../checks/vm/usb-stick.nix;
     backup-test = pkgs.testers.runNixOSTest ../checks/vm/backup.nix;
+    pam-either-test = pkgs.testers.runNixOSTest ../checks/vm/pam-either.nix;
     disk-test = pkgs.testers.runNixOSTest (
       import ../checks/vm/disk.nix { inherit inputs dotlib unstable; }
     );

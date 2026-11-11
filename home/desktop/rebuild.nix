@@ -40,13 +40,17 @@ let
     exit 1
   '';
 
-  # sudo once, up front: the fingerprint first (nothing shows while it
-  # waits, hence the notification), the password dialog if it times out;
-  # nh's own sudo calls then reuse it (system/core/security.nix)
+  # sudo once, up front, in a terminal: there pam_either (system/core/
+  # security.nix) takes the fingerprint or the password, whichever comes
+  # first; a password dialog couldn't be closed by the fingerprint. nh's
+  # own sudo calls then reuse it (timestamp_type=global). In the background,
+  # a small foot window: closing it cancels the update
   authenticate = pkgs.writeShellScript "rebuild-authenticate" ''
-    ${pkgs.libnotify}/bin/notify-send -a rebuild -t 30000 -i fingerprint \
-      "System Update" "Touch the fingerprint reader (or wait for the password prompt)" || true
-    exec ${sudoAskpass}/bin/sudo -v
+    if [ -t 0 ]; then
+      exec /run/wrappers/bin/sudo -v
+    fi
+    exec ${lib.getExe pkgs.foot} --app-id=dotnix-rebuild --title="System Update: authenticate" \
+      --window-size-chars=72x8 /run/wrappers/bin/sudo -v
   '';
 
   rebuild = pkgs.writeShellApplication {
@@ -72,7 +76,7 @@ let
       wait=15m
       flake=''${NH_FLAKE:-$HOME/dotnix}
       host=$(hostname -s)
-      steps="${kernelCached} $flake $host && ${authenticate} && ${snapshot} && nh os switch -H $host && nh home switch -c $host"
+      steps="${snapshot} && nh os switch -H $host && nh home switch -c $host"
 
       # without terminal control sequences (colors; the palette `theme apply`
       # sends to every terminal, this one too), lines redrawn with \r or
@@ -104,9 +108,10 @@ let
         local start took ok=0
         start=$(date +%s)
         echo "running" > "$state/status"
-        # a pty for nh (its sudo caches the password per terminal); the
-        # password first, so it is not asked in the middle of a long build
-        if script -qefc "${sudoAskpass}/bin/sudo -v && $steps" "$log" </dev/null >/dev/null; then
+        # the kernel's in the cache, then sudo, first, so it isn't asked in
+        # the middle of a long build; a pty for nh
+        if ${kernelCached} "$flake" "$host" >"$log" 2>&1 && ${authenticate} &&
+          script -qefac "$steps" "$log" </dev/null >/dev/null; then
           ok=1
         fi
         took=$(( $(date +%s) - start ))
@@ -146,7 +151,7 @@ let
           echo "rebuild: already running"
           exit 1
         fi
-        if script -qefc "$steps" "$log"; then
+        if ${kernelCached} "$flake" "$host" && ${authenticate} && script -qefc "$steps" "$log"; then
           printf '\n\033[1;32m✔ system and home switched\033[0m\n'
         else
           printf '\n\033[1;31m✘ failed\033[0m · log: %s\n' "$log"
