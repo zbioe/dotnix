@@ -19,6 +19,7 @@
     ./updates
     ./kdeconnect.nix
     ./wayvnc.nix
+    ./displays.nix
     ./activity
   ];
 

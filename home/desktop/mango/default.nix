@@ -217,8 +217,8 @@ in
           "name:kanata-external,kb_layout:us,kb_variant:intl"
         ];
 
-        # a regex: unanchored, DP-1 is also te's eDP-1
-        monitor_rule = "name:^DP-1$,width:1920,height:1080,refresh:180,x:0,y:0,scale:1";
+        # monitors: arranged in the "Monitors" window and kept by shikane
+        # (home/desktop/displays.nix), not fixed here
 
         window_rule = [
           (onTag 2 "^librewolf$" "")
