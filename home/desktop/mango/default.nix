@@ -145,6 +145,10 @@ let
       (k "Windows" "SUPER+SHIFT,l" "exchange_client,right" "Swap with the window on the right")
       (k "Windows" "SUPER+SHIFT,k" "exchange_client,up" "Swap with the window above")
       (k "Windows" "SUPER+SHIFT,j" "exchange_client,down" "Swap with the window below")
+      (k "Monitors" "SUPER,comma" "focusmon,left" "Focus the monitor on the left")
+      (k "Monitors" "SUPER,period" "focusmon,right" "Focus the monitor on the right")
+      (k "Monitors" "SUPER+SHIFT,comma" "tagmon,left" "Move the window to the monitor on the left")
+      (k "Monitors" "SUPER+SHIFT,period" "tagmon,right" "Move the window to the monitor on the right")
       (k "Windows" "SUPER,f" "togglefullscreen" "Fullscreen")
       (k "Windows" "SUPER+SHIFT,q" "killclient" "Close the window")
       (k "Windows" "SUPER,minus" "minimized" "Minimize (hide) the window")
@@ -207,6 +211,9 @@ in
         default_master_factor = 0.5;
 
         sloppy_focus = 0;
+        # Super+h/l and Super+Shift+h/l go on to the next monitor's windows
+        focus_cross_monitor = 1;
+        exchange_cross_monitor = 1;
         cursor_size = config.home.pointerCursor.size;
         cursor_theme = config.home.pointerCursor.name;
 
