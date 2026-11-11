@@ -40,7 +40,7 @@ let
   '';
   tagBack = pkgs.writeShellScript "mango-tag-back" ''
     prev=$(cat "${prevTag}" 2>/dev/null) || prev=1
-    exec ${mmsg} dispatch "view,$prev"
+    exec ${mmsg} dispatch "view,$prev,1"
   '';
   mmsg = "${config.wayland.windowManager.mango.package}/bin/mmsg";
 
@@ -164,7 +164,7 @@ let
         key = toString (if n == 10 then 0 else n);
       in
       [
-        (k "Tags" "SUPER,${key}" "view,${toString n}" "Go to tag ${toString n}")
+        (k "Tags" "SUPER,${key}" "view,${toString n},1" "Go to tag ${toString n} (on every monitor)")
         (k "Tags" "SUPER+SHIFT,${key}" "tag,${toString n}" "Move the window to tag ${toString n}")
       ]
     ) (builtins.genList (i: i + 1) 10);
