@@ -15,17 +15,36 @@ let
   python = pkgs.python3.withPackages (p: [ p.tomli-w ]);
 
   # the arrangement now, as the profile of this set of monitors (replacing
-  # the one it had)
+  # the one it had). Read through a shikane of its own with no profiles,
+  # which applies nothing: the running one may be stopped (Monitors) or
+  # about to restore the old arrangement
   save = pkgs.writeScriptBin "displays-save" ''
     #!${python}/bin/python3
-    import subprocess, sys, tomllib, tomli_w
+    import os, subprocess, tempfile, tomllib, tomli_w
     from pathlib import Path
 
+    shikane = "${pkgs.shikane}/bin"
     path = Path("${configFile}")
-    out = subprocess.run(
-        ["${pkgs.shikane}/bin/shikanectl", "export", "--vendor", "--model", "--serial", "current"],
-        capture_output=True, text=True, check=True,
-    ).stdout
+    with tempfile.TemporaryDirectory(dir=os.environ.get("XDG_RUNTIME_DIR")) as tmp:
+        empty = Path(tmp, "empty.toml")
+        empty.touch()
+        sock = str(Path(tmp, "shikane.sock"))
+        reader = subprocess.Popen(
+            [f"{shikane}/shikane", "-c", str(empty), "-s", sock],
+            stderr=subprocess.PIPE, text=True,
+        )
+        try:
+            # listening once it reports its first state
+            for line in reader.stderr:
+                if "Initial daemon state" in line:
+                    break
+            out = subprocess.run(
+                [f"{shikane}/shikanectl", "-s", sock, "export", "--vendor", "--model", "--serial", "current"],
+                capture_output=True, text=True, check=True,
+            ).stdout
+        finally:
+            reader.terminate()
+            reader.wait()
     profile = tomllib.loads(out)["profile"][0]
 
     def label(output):
@@ -37,8 +56,9 @@ let
     profiles = [p for p in tomllib.loads(text).get("profile", []) if p.get("name") != profile["name"]]
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(tomli_w.dumps({"profile": profiles + [profile]}))
-    subprocess.run(["${pkgs.shikane}/bin/shikanectl", "reload"], check=False)
-    print(f"saved: {profile['name']}")
+    # the running shikane, if any, picks it up
+    subprocess.run([f"{shikane}/shikanectl", "reload"], capture_output=True, check=False)
+    print(profile["name"])
   '';
 
   monitors = pkgs.writeShellApplication {
@@ -46,12 +66,16 @@ let
     runtimeInputs = [
       pkgs.wdisplays
       pkgs.libnotify
+      pkgs.systemd
       save
     ];
     text = ''
+      # shikane would put the saved arrangement back while it's being changed
+      systemctl --user stop shikane
+      trap 'systemctl --user start shikane' EXIT
       wdisplays
       if name=$(displays-save); then
-        notify-send -a monitors -i video-display "Monitors" "''${name#saved: }"
+        notify-send -a monitors -i video-display "Monitors" "Saved: $name"
       else
         notify-send -a monitors -u critical -i dialog-error "Monitors" "Could not save the arrangement"
       fi
