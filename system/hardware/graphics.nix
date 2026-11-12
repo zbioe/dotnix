@@ -60,10 +60,14 @@ in
       extraPackages = lib.optional cfg.amd.compute.enable pkgs.rocmPackages.clr.icd;
     };
 
-    boot.kernelPatches = lib.optional cfg.amd.compbufFix.enable {
-      name = "amdgpu-compbuf-det-wait";
-      patch = ./patches/amdgpu-compbuf-det-wait.patch;
-    };
+    # upstream since 7.3 (7.3.4 has it, the patch no longer applies)
+    boot.kernelPatches =
+      lib.optional
+        (cfg.amd.compbufFix.enable && lib.versionOlder config.dotnix.core.boot.kernel.kernel.version "7.3")
+        {
+          name = "amdgpu-compbuf-det-wait";
+          patch = ./patches/amdgpu-compbuf-det-wait.patch;
+        };
 
     services.xserver.videoDrivers = mkIf (drivers != [ ]) drivers;
 
