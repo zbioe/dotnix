@@ -57,6 +57,53 @@
 
       bind e 'attach -c "#{pane_current_path}"; display "default path setted"'
       bind w run "tmux save-buffer - | wl-copy"
+
+      # Copy mode: Emacs keys first (C-n/p/f/b, C-a, M-f/b, C-v/M-v, M-</>,
+      # C-s/C-r, C-Space, C-g, M-w), plus the Vim ones that don't take an
+      # Emacs key, like evil's normal state. Every copy also goes to the
+      # clipboard
+      set -s copy-command 'wl-copy'
+      # a line or half a page at a time (evil's C-e/C-y, C-d/C-u); the end
+      # of the line stays on End and $
+      bind -T copy-mode C-e send -X scroll-down
+      bind -T copy-mode C-y send -X scroll-up
+      bind -T copy-mode C-d send -X halfpage-down
+      bind -T copy-mode C-u send -X halfpage-up
+      bind -T copy-mode h send -X cursor-left
+      bind -T copy-mode j send -X cursor-down
+      bind -T copy-mode k send -X cursor-up
+      bind -T copy-mode l send -X cursor-right
+      bind -T copy-mode w send -X next-word
+      bind -T copy-mode b send -X previous-word
+      bind -T copy-mode e send -X next-word-end
+      bind -T copy-mode W send -X next-space
+      bind -T copy-mode B send -X previous-space
+      bind -T copy-mode E send -X next-space-end
+      bind -T copy-mode 0 send -X start-of-line
+      bind -T copy-mode ^ send -X back-to-indentation
+      bind -T copy-mode $ send -X end-of-line
+      bind -T copy-mode H send -X top-line
+      bind -T copy-mode M send -X middle-line
+      bind -T copy-mode L send -X bottom-line
+      bind -T copy-mode G send -X history-bottom
+      bind -T copy-mode \{ send -X previous-paragraph
+      bind -T copy-mode \} send -X next-paragraph
+      bind -T copy-mode % send -X next-matching-bracket
+      bind -T copy-mode \; send -X jump-again
+      # gg to the top; g's goto-line moves to : (Vim's :N)
+      bind -T copy-mode g switch-client -T copy-mode-g
+      bind -T copy-mode-g g send -X history-top
+      bind -T copy-mode : command-prompt -p "(goto line)" { send -X goto-line -- "%%" }
+      bind -T copy-mode / command-prompt -i -I "#{pane_search_string}" -T search -p "(search down)" { send -X search-forward-incremental -- "%%" }
+      bind -T copy-mode ? command-prompt -i -I "#{pane_search_string}" -T search -p "(search up)" { send -X search-backward-incremental -- "%%" }
+      # select (v, a whole line V) and copy (y); Escape drops a selection
+      # before leaving, i leaves like Vim's insert
+      bind -T copy-mode v send -X begin-selection
+      bind -T copy-mode V send -X select-line
+      bind -T copy-mode y send -X copy-pipe-and-cancel
+      bind -T copy-mode Y send -X copy-pipe-end-of-line-and-cancel
+      bind -T copy-mode Escape if -F "#{selection_present}" { send -X clear-selection } { send -X cancel }
+      bind -T copy-mode i send -X cancel
       bind r 'source-file ~/.config/tmux/tmux.conf; display "reloaded"'
       bind ^R send-keys 'direnv reload' Enter
     '';
