@@ -1,11 +1,66 @@
-{ config, ... }:
+{ config, pkgs, ... }:
+let
+  # the last command's output: from the last output mark down to the prompt
+  # under it (starship's: a blank line, its info line and the ≻ line),
+  # wrapped lines joined
+  copyOutput = pkgs.writeShellScript "tmux-copy-output" ''
+    pane=$1
+    cy=$(tmux display -p -t "$pane" '#{cursor_y}')
+    out=$(tmux capture-pane -p -F -S - -E "$cy" -t "$pane" | ${pkgs.gawk}/bin/awk '
+      { i = index($0, " "); f[NR] = substr($0, 1, i - 1); t[NR] = substr($0, i + 1)
+        if (f[NR] ~ /O/) start = NR }
+      END {
+        if (!start) exit 1
+        last = NR - 3
+        while (last >= start && t[last] ~ /^[[:space:]]*$/) last--
+        if (last < start) exit 1
+        for (n = start; n <= last; n++)
+          printf "%s%s", t[n], (n == last || f[n] ~ /W/) ? "" : "\n"
+      }') || { tmux display "no command output here"; exit 0; }
+    printf '%s' "$out" | ${pkgs.wl-clipboard}/bin/wl-copy
+    tmux display "copied the last output ($(printf '%s\n' "$out" | wc -l) lines)"
+  '';
+in
 {
   programs.tmux = {
     enable = config.dotnix.shell.tmux.enable;
     sensibleOnTop = false;
     shortcut = "q";
-    terminal = "screen-256color";
+    # inside: tmux's own terminfo; outside, what each terminal can do below
+    terminal = "tmux-256color";
     resizeAmount = 8;
+    # wheel scrolls (into copy mode), click focuses a pane, drag resizes
+    mouse = true;
+    plugins = with pkgs.tmuxPlugins; [
+      # prefix F: letters over the URLs, paths, hashes and IPs on screen;
+      # its letter copies one, the capital letter opens it
+      {
+        plugin = tmux-thumbs;
+        extraConfig = ''
+          set -g @thumbs-key F
+          set -g @thumbs-command 'echo -n {} | wl-copy && tmux display "copied {}"'
+          set -g @thumbs-upcase-command 'xdg-open {} >/dev/null 2>&1 &'
+        '';
+      }
+      # prefix C-s saves the sessions (windows, panes, folders), prefix R
+      # brings them back after a reboot; never by itself, start-tmux.sh
+      # makes the usual ones
+      {
+        plugin = resurrect;
+        extraConfig = ''
+          set -g @resurrect-save 'C-s'
+          set -g @resurrect-restore 'R'
+        '';
+      }
+      # and saves them every 15 minutes (last: it hooks the status line)
+      {
+        plugin = continuum;
+        extraConfig = ''
+          set -g @continuum-save-interval '15'
+          set -g @continuum-restore 'off'
+        '';
+      }
+    ];
     extraConfig = ''
       set-option -g set-titles on
       set-option -g set-titles-string "Tmux - #S #T"
@@ -13,12 +68,12 @@
       set-option -sg escape-time 10
       set-option -g focus-events on
 
-      set -as terminal-features 'alacritty:sixel'
+      # 24-bit color, images and the clipboard through the outer terminal
+      set -as terminal-features 'foot*:RGB:sixel:clipboard:extkeys:usstyle:hyperlinks'
+      set -as terminal-features 'alacritty*:RGB:sixel:clipboard:usstyle:hyperlinks'
+      set -as terminal-features 'xterm-kitty:RGB:clipboard:usstyle:hyperlinks'
+      set -as terminal-features 'xterm-ghostty:RGB:clipboard:usstyle:hyperlinks'
       set -g allow-passthrough on
-
-      set -g default-terminal "alacritty"
-      set-environment -gu TERMINFO
-      set-option -ga terminal-overrides ",alacritty:Tc"
 
       # Color
       set -g status-bg black
@@ -106,6 +161,26 @@
       bind -T copy-mode i send -X cancel
       bind r 'source-file ~/.config/tmux/tmux.conf; display "reloaded"'
       bind ^R send-keys 'direnv reload' Enter
+
+      # floating windows over the panes, in the pane's folder: lazygit, a
+      # shell; prefix s picks a session or window with fzf
+      bind g display-popup -E -w 90% -h 90% -d "#{pane_current_path}" lazygit
+      bind P display-popup -E -w 80% -h 80% -d "#{pane_current_path}"
+      bind s display-popup -E -w 60% -h 60% "tmux list-windows -a -F '#S:#I  #W  #{b:pane_current_path}' | fzf --reverse | cut -d' ' -f1 | xargs -r tmux switch-client -t"
+
+      # prefix S types into every pane of the window at once (on/off); prefix
+      # m marks a pane, prefix @ brings the marked one into this window
+      bind S setw synchronize-panes \; display "synchronized panes: #{?synchronize-panes,on,off}"
+      bind @ join-pane
+
+      # Commands' outputs, as fish marks their start (OSC 133 C; its prompt
+      # marks don't survive the prompt's redraw): [ and ] (or M-p, M-n) jump
+      # between them in copy mode; prefix y copies the last one
+      bind -T copy-mode [ send -X previous-prompt -o
+      bind -T copy-mode ] send -X next-prompt -o
+      bind -T copy-mode M-p send -X previous-prompt -o
+      bind -T copy-mode M-n send -X next-prompt -o
+      bind y run-shell "${copyOutput} '#{pane_id}'"
     '';
   };
 }
