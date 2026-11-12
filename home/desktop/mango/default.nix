@@ -20,8 +20,8 @@ let
   inherit (import ./session.nix { inherit pkgs term; }) terminal toggleMic annotate;
   stateDir = "${config.xdg.stateHome}/theme";
 
-  # Super+W, back to the previous tag (on its monitor); Super+Ctrl+W, the
-  # focused monitor's own previous tag. mango's own `view,-1` counts the
+  # Super+W, the focused monitor's own previous tag; Super+Ctrl+W, back to
+  # the previous tag (on its monitor). mango's own `view,-1` counts the
   # special (scratch) tag as a tag and lands on it; these remember the
   # previous normal one instead (the IPC never reports the special tag
   # active, so it never gets in), and the special tag stays Super+S only
@@ -257,8 +257,8 @@ let
       (k "Windows" "SUPER,minus" "minimized" "Minimize (hide) the window")
       (k "Windows" "SUPER+SHIFT,minus" "restore_minimized" "Bring back a minimized window, one per press")
 
-      (k "Tags" "SUPER,w" "spawn,${tagBack}" "Back to the previous tag (never the special one)")
-      (k "Tags" "SUPER+CTRL,w" "spawn,${monitorBack}" "Back to this monitor's previous tag")
+      (k "Tags" "SUPER+CTRL,w" "spawn,${tagBack}" "Back to the previous tag (never the special one)")
+      (k "Tags" "SUPER,w" "spawn,${monitorBack}" "Back to this monitor's previous tag")
       (k "Tags" "SUPER,s" "toggle_special_tag" "Show/hide the special (scratch) tag")
       (k "Tags" "SUPER+SHIFT,s" "tag_special_tag" "Move the window to the special tag")
     ]
