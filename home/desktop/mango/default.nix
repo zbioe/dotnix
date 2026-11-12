@@ -40,7 +40,7 @@ let
   '';
   tagBack = pkgs.writeShellScript "mango-tag-back" ''
     prev=$(cat "${prevTag}" 2>/dev/null) || prev=1
-    exec ${mmsg} dispatch "view,$prev,1"
+    exec ${mmsg} dispatch "view,$prev"
   '';
   mmsg = "${config.wayland.windowManager.mango.package}/bin/mmsg";
 
@@ -145,10 +145,8 @@ let
       (k "Windows" "SUPER+SHIFT,l" "exchange_client,right" "Swap with the window on the right")
       (k "Windows" "SUPER+SHIFT,k" "exchange_client,up" "Swap with the window above")
       (k "Windows" "SUPER+SHIFT,j" "exchange_client,down" "Swap with the window below")
-      (k "Monitors" "SUPER,comma" "focusmon,left" "Focus the monitor on the left")
-      (k "Monitors" "SUPER,period" "focusmon,right" "Focus the monitor on the right")
-      (k "Monitors" "SUPER+SHIFT,comma" "tagmon,left" "Move the window to the monitor on the left")
-      (k "Monitors" "SUPER+SHIFT,period" "tagmon,right" "Move the window to the monitor on the right")
+      (k "Monitors" "SUPER,Tab" "focusmon,next" "Focus the other monitor")
+      (k "Monitors" "SUPER+SHIFT,Tab" "tagmon,next" "Move the window to the other monitor")
       (k "Windows" "SUPER,f" "togglefullscreen" "Fullscreen")
       (k "Windows" "SUPER+SHIFT,q" "killclient" "Close the window")
       (k "Windows" "SUPER,minus" "minimized" "Minimize (hide) the window")

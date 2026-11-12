@@ -272,7 +272,24 @@ in
             "clock"
             "control-center"
           ];
+
+          # the AOC turned sideways (1080 wide): the full bar doesn't fit
+          monitor.aoc = {
+            match = "24G4";
+            start = [
+              "launcher"
+              "workspaces"
+            ];
+            center = [ "active_window" ];
+            end = [
+              "battery"
+              "clock"
+            ];
+          };
         };
+
+        # toasts on the laptop's screen only, not on the AOC
+        notification.monitors = [ "eDP-1" ];
 
         widget = {
           launcher = {
