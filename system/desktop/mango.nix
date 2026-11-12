@@ -2,6 +2,7 @@
 {
   config,
   lib,
+  options,
   pkgs,
   ...
 }:
@@ -9,6 +10,12 @@ lib.mkIf config.dotnix.desktop.mango.enable {
   programs.mango = {
     enable = true;
     addLoginEntry = false;
+    # a monitor placed at 0,0 (shikane, wlr-randr) stays where mango put it
+    # when it comes back after sleeping: upstream compares with a position
+    # it hasn't set yet
+    package = options.programs.mango.package.default.overrideAttrs (old: {
+      patches = (old.patches or [ ]) ++ [ ../../overlays/patches/mango-output-position-hotplug.patch ];
+    });
   };
   programs.uwsm.enable = true;
   # X11 apps through Xwayland

@@ -1,0 +1,21 @@
+--- a/src/manage/monitor.c
++++ b/src/manage/monitor.c
+@@ -1268,9 +1268,16 @@
+ 
+ 		/* Don't move monitors if position wouldn't change, this to avoid
+ 		 * wlroots marking the output as manually configured.
+-		 * wlr_output_layout_add does not like disabled outputs */
++		 * wlr_output_layout_add does not like disabled outputs.
++		 * Compare with the layout, not m->m: right after a hotplug m->m is
++		 * still zeroed while the output sits where it was auto-placed, so a
++		 * monitor configured at 0,0 would stay there */
++		struct wlr_output_layout_output *l_output =
++			wlr_output_layout_get(server.output_layout, wlr_output);
+ 		if (!test && wlr_output->enabled &&
+-			(m->m.x != config_head->state.x || m->m.y != config_head->state.y))
++			(!l_output || l_output->auto_configured ||
++			 l_output->x != config_head->state.x ||
++			 l_output->y != config_head->state.y))
+ 			wlr_output_layout_add(server.output_layout, wlr_output,
+ 								  config_head->state.x, config_head->state.y);
+ 
