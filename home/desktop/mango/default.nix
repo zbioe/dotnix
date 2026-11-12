@@ -383,6 +383,8 @@ in
           desc = "Macro mode (private binds in ~/.config/mango/priv.conf; Esc leaves)";
         }
       ]
+      # tmux's (home/shell/tmux.nix), PREFIX being C-q
+      ++ lib.optionals config.dotnix.shell.tmux.enable config.dotnix.shell.tmux.keys
     );
 
     # the tag history of Super+W, for the whole session (restarted if mango's

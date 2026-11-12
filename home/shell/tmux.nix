@@ -1,5 +1,81 @@
-{ config, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 let
+  # the binds worth remembering, for prefix ? (below) and the Super+/
+  # shortcuts panel (home/desktop/mango): "MODS,key" like mango's, PREFIX
+  # being C-q
+  k = group: key: desc: { inherit group key desc; };
+  keys = [
+    (k "tmux" "PREFIX,c" "New window (in the pane's folder)")
+    (k "tmux" "PREFIX,h" "Split side by side")
+    (k "tmux" "PREFIX,v" "Split one above the other")
+    (k "tmux" "PREFIX+CTRL,b" "Pane on the left (C-n down, C-p up, C-f right)")
+    (k "tmux" "PREFIX+ALT,b" "Resize the pane (M-b/n/p/f)")
+    (k "tmux" "PREFIX,a" "Last window (also C-a)")
+    (k "tmux" "PREFIX,k" "Close the window (K: without asking)")
+    (k "tmux" "PREFIX,j" "Close the pane (J: without asking)")
+    (k "tmux" "PREFIX,s" "Pick a session or window (fzf)")
+    (k "tmux" "PREFIX,g" "lazygit, floating")
+    (k "tmux" "PREFIX+SHIFT,p" "A shell, floating")
+    (k "tmux" "PREFIX+SHIFT,f" "Hints over URLs, paths, hashes: letter copies, capital opens")
+    (k "tmux" "PREFIX,y" "Copy the last command's output")
+    (k "tmux" "PREFIX,w" "Copy tmux's buffer to the clipboard")
+    (k "tmux" "PREFIX+CTRL,y" "Paste tmux's buffer")
+    (k "tmux" "PREFIX+SHIFT,s" "Type into every pane of the window (on/off)")
+    (k "tmux" "PREFIX,m" "Mark the pane (@ brings it into this window)")
+    (k "tmux" "PREFIX+CTRL,s" "Save the sessions (also every 15 min)")
+    (k "tmux" "PREFIX+SHIFT,r" "Restore the saved sessions")
+    (k "tmux" "PREFIX,e" "This folder as the session's default")
+    (k "tmux" "PREFIX,r" "Reload the config")
+    (k "tmux" "PREFIX+CTRL,r" "direnv reload in the pane")
+    (k "tmux" "PREFIX,?" "This list")
+    (k "tmux copy mode" "PREFIX+CTRL,[" "Enter copy mode (or the mouse wheel)")
+    (k "tmux copy mode" "CTRL,e" "Scroll a line down (C-y up)")
+    (k "tmux copy mode" "CTRL,d" "Half a page down (C-u up)")
+    (k "tmux copy mode" "CTRL,v" "A page down (M-v up)")
+    (k "tmux copy mode" ",[" "Previous command's output (] next; M-p, M-n)")
+    (k "tmux copy mode" ",g g" "Top (G bottom, :N line N)")
+    (k "tmux copy mode" ",/" "Search down (? up; C-s, C-r; n, N again)")
+    (k "tmux copy mode" ",v" "Select (V the line, C-Space too; R rectangle)")
+    (k "tmux copy mode" ",y" "Copy to the clipboard (Y to the line's end; M-w)")
+    (k "tmux copy mode" ",Escape" "Drop the selection, or leave (q, i)")
+    (k "tmux copy mode" ",h" "Move: h j k l, w b e, 0 ^ $, H M L, { } %; and C-n/p/f/b")
+  ];
+  # the same as tmux writes binds: C-q S, C-q C-s, C-e
+  tmuxKey =
+    key:
+    let
+      parts = lib.splitString "," key;
+      mods = lib.filter (m: m != "") (lib.splitString "+" (lib.head parts));
+      base = lib.concatStringsSep "," (lib.tail parts);
+      has = m: lib.elem m mods;
+      letter = if has "SHIFT" then lib.toUpper base else base;
+      named = { Escape = "Esc"; }.${letter} or letter;
+      chord =
+        if has "CTRL" then
+          "C-${named}"
+        else if has "ALT" then
+          "M-${named}"
+        else
+          named;
+    in
+    if has "PREFIX" then "C-q ${chord}" else chord;
+  pad = n: s: s + lib.concatStrings (lib.genList (_: " ") (n - lib.stringLength s));
+  cheatsheet = pkgs.writeText "tmux-keys" (
+    lib.concatMapStrings (
+      group:
+      "${group}\n"
+      + lib.concatMapStrings (b: "  ${pad 10 (tmuxKey b.key)}  ${b.desc}\n") (
+        lib.filter (b: b.group == group) keys
+      )
+      + "\n"
+    ) (lib.unique (map (b: b.group) keys))
+  );
+
   # the last command's output: from the last output mark down to the prompt
   # under it (starship's: a blank line, its info line and the ≻ line),
   # wrapped lines joined
@@ -22,7 +98,14 @@ let
   '';
 in
 {
-  programs.tmux = {
+  options.dotnix.shell.tmux.keys = lib.mkOption {
+    type = lib.types.listOf lib.types.attrs;
+    readOnly = true;
+    default = keys;
+    description = "tmux's binds worth remembering, for the shortcuts panel.";
+  };
+
+  config.programs.tmux = {
     enable = config.dotnix.shell.tmux.enable;
     sensibleOnTop = false;
     shortcut = "q";
@@ -181,6 +264,10 @@ in
       bind -T copy-mode M-p send -X previous-prompt -o
       bind -T copy-mode M-n send -X next-prompt -o
       bind y run-shell "${copyOutput} '#{pane_id}'"
+
+      # the list above (prefix / keeps tmux's own, every bind)
+      bind ? display-popup -E -w 90 -h 90% "less -R ${cheatsheet}"
+      bind / list-keys -N
     '';
   };
 }

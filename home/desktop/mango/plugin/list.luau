@@ -8,12 +8,14 @@ local query = ""
 
 local render
 
-local modNames = { SUPER = "Super", SHIFT = "Shift", CTRL = "Ctrl", ALT = "Alt" }
+-- PREFIX: tmux's prefix (home/shell/tmux.nix)
+local modNames = { SUPER = "Super", SHIFT = "Shift", CTRL = "Ctrl", ALT = "Alt", PREFIX = "Ctrl+Q ▸" }
 local keyNames = {
   Return = "Enter",
   slash = "/",
   Print = "Print",
   Escape = "Esc",
+  ["g g"] = "g g",
   XF86AudioRaiseVolume = "Volume +",
   XF86AudioLowerVolume = "Volume −",
   XF86AudioMute = "Mute",
