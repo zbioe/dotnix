@@ -282,6 +282,7 @@ in
             ];
             center = [ "active_window" ];
             end = [
+              "brightness"
               "battery"
               "clock"
             ];

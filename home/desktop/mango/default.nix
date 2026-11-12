@@ -132,9 +132,19 @@ let
         "Toggle mute"
       )
       (k "Audio and brightness" "NONE,XF86AudioMicMute" "spawn,${toggleMic}" "Toggle microphone mute")
-      (k "Audio and brightness" "NONE,XF86MonBrightnessUp" "spawn,brightnessctl s +5%" "Brightness up")
-      (k "Audio and brightness" "NONE,XF86MonBrightnessDown" "spawn,brightnessctl s 5%-"
-        "Brightness down"
+      # the focused monitor's (the laptop's backlight or DDC/CI); with Shift
+      # every monitor's
+      (k "Audio and brightness" "NONE,XF86MonBrightnessUp" "spawn,noctalia msg brightness-up"
+        "Brightness up (focused monitor)"
+      )
+      (k "Audio and brightness" "NONE,XF86MonBrightnessDown" "spawn,noctalia msg brightness-down"
+        "Brightness down (focused monitor)"
+      )
+      (k "Audio and brightness" "SHIFT,XF86MonBrightnessUp" "spawn,noctalia msg brightness-up *"
+        "Brightness up (every monitor)"
+      )
+      (k "Audio and brightness" "SHIFT,XF86MonBrightnessDown" "spawn,noctalia msg brightness-down *"
+        "Brightness down (every monitor)"
       )
 
       (k "Windows" "SUPER,h" "focusdir,left" "Focus the window on the left")
