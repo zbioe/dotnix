@@ -726,11 +726,11 @@
         "twist": "twist"
       },
       "locked": {
-        "lastModified": 1793746538,
-        "narHash": "sha256-Os44MoSkja8s2kznlBsVQedfyxrmLxeP1ZwTQWsaPvY=",
+        "lastModified": 1794445843,
+        "narHash": "sha256-GopDNIqTXPu9Lzvb6Z5UFuaojoAbsjpbZQacfhwm97w=",
         "owner": "zbioe",
         "repo": "zmacs",
-        "rev": "43dee3dc3eaa16e6962a9bf2fa5f6e90307ccf3a",
+        "rev": "fbacb9b2975571b44cd3149c78f533ca252916d9",
         "type": "github"
       },
       "original": {
