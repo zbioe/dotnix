@@ -20,21 +20,28 @@ let
   inherit (import ./session.nix { inherit pkgs term; }) terminal toggleMic annotate;
   stateDir = "${config.xdg.stateHome}/theme";
 
-  # Super+W, back to the previous tag. mango's own `view,-1` counts the
-  # special (scratch) tag as a tag and lands on it; this remembers the
+  # Super+W, back to the previous tag (on its monitor); Super+Ctrl+W, the
+  # focused monitor's own previous tag. mango's own `view,-1` counts the
+  # special (scratch) tag as a tag and lands on it; these remember the
   # previous normal one instead (the IPC never reports the special tag
   # active, so it never gets in), and the special tag stays Super+S only
   prevTag = "$XDG_RUNTIME_DIR/mango-prev-tag";
   tagHistory = pkgs.writeShellScript "mango-tag-history" ''
-    # the focused monitor's tags: as they are, then on every change (also
-    # before it has a monitor, early in the session)
-    cur=""
+    # every monitor's tags, and the focused one's: as they are, then on every
+    # change (also before there's a monitor, early in the session)
+    declare -A cur
+    focused=""
     ${mmsg} watch all-monitors |
-      ${pkgs.jq}/bin/jq --unbuffered -r '[.monitors[] | select(.active)][0] // empty | [.tags[] | select(.is_active) | .index] | map(tostring) | join("|")' |
-      while read -r tags; do
-        if [ -n "$tags" ] && [ "$tags" != "$cur" ]; then
-          [ -n "$cur" ] && echo "$cur" > "${prevTag}"
-          cur=$tags
+      ${jq} --unbuffered -r '.monitors[] | "\(.name) \(.active) \([.tags[] | select(.is_active) | .index] | map(tostring) | join("|"))"' |
+      while read -r mon active tags; do
+        [ -n "$tags" ] || continue
+        if [ "''${cur[$mon]:-}" != "$tags" ]; then
+          [ -n "''${cur[$mon]:-}" ] && echo "''${cur[$mon]}" > "${prevTag}.$mon"
+          cur[$mon]=$tags
+        fi
+        if [ "$active" = true ] && [ "$tags" != "$focused" ]; then
+          [ -n "$focused" ] && echo "$focused" > "${prevTag}"
+          focused=$tags
         fi
       done
   '';
@@ -42,42 +49,67 @@ let
     prev=$(cat "${prevTag}" 2>/dev/null) || prev=1
     exec ${tagGo} "$prev"
   '';
+  monitorBack = pkgs.writeShellScript "mango-monitor-back" ''
+    here=$(${mmsg} get all-monitors | ${jq} -r '.monitors[] | select(.active) | .name')
+    prev=$(cat "${prevTag}.$here" 2>/dev/null) || exit 0
+    exec ${mmsg} dispatch "view,$prev" >/dev/null
+  '';
   jq = "${pkgs.jq}/bin/jq";
 
-  # Tags live on a monitor: Super+N goes to the monitor holding tag N's
-  # windows (the focused one when both or neither do), and only that one
-  # switches. Super+Shift+N sends the window there; Super+Shift+A takes the
-  # whole tag to the other monitor
-  tagWhere = ''
-    here=$(${mmsg} get all-monitors | ${jq} -r '.monitors[] | select(.active) | .name')
-    there=$(${mmsg} get all-clients | ${jq} -r --arg here "$here" --argjson n "$1" '
-      [.clients[] | select((.tags | index($n)) and (.is_scratchpad | not)) | .monitor] as $ms
-      | if ($ms | index($here)) then $here else ($ms[0] // $here) end')
+  # Tags live on a monitor: the one holding the tag's windows, else the one
+  # showing it. Super+N goes there and only that monitor switches (the
+  # focused one when both or neither have it); Super+Shift+N sends the
+  # window there; Super+Shift+A takes the whole tag to the other monitor
+  state = ''
+    clients=$(${mmsg} get all-clients)
+    monitors=$(${mmsg} get all-monitors)
+    q() { ${jq} -n -r --argjson c "$clients" --argjson m "$monitors" "$@"; }
+    here=$(q '$m.monitors[] | select(.active) | .name')
+  '';
+  owner = ''
+    there=$(q --arg here "$here" --argjson n "$1" '
+      def first_or_here: if index($here) then $here else (.[0] // null) end;
+      ([$c.clients[] | select((.tags | index($n)) and (.is_scratchpad | not)) | .monitor] | first_or_here)
+      // ([$m.monitors[] | select(.active_tags | index($n)) | .name] | first_or_here)
+      // $here')
   '';
   tagGo = pkgs.writeShellScript "mango-tag-go" ''
-    ${tagWhere}
+    ${state}
+    ${owner}
     if [ "$there" = "$here" ]; then
       exec ${mmsg} dispatch "view,$1" >/dev/null
     fi
     exec ${mmsg} dispatch "viewcrossmon,$1,$there" >/dev/null
   '';
   tagSend = pkgs.writeShellScript "mango-tag-send" ''
-    ${tagWhere}
+    ${state}
+    ${owner}
     if [ "$there" = "$here" ]; then
       exec ${mmsg} dispatch "tag,$1" >/dev/null
     fi
     exec ${mmsg} dispatch "tagcrossmon,$1,$there" >/dev/null
   '';
   tagMove = pkgs.writeShellScript "mango-tag-move" ''
-    monitors=$(${mmsg} get all-monitors)
-    here=$(${jq} -r '.monitors[] | select(.active) | .name' <<<"$monitors")
-    tag=$(${jq} -r '.monitors[] | select(.active) | .active_tags[0]' <<<"$monitors")
+    ${state}
+    tag=$(q '$m.monitors[] | select(.active) | .active_tags[0]')
     # the next monitor in the list, by name: "next" would turn around once
     # the first window moved the focus over
-    other=$(${jq} -r '[.monitors[].name] as $ns | $ns[(($ns | index("'"$here"'")) + 1) % ($ns | length)]' <<<"$monitors")
+    other=$(q --arg here "$here" '[$m.monitors[].name] as $ns | $ns[(($ns | index($here)) + 1) % ($ns | length)]')
     [ "$other" != "$here" ] || exit 0
-    ids=$(${mmsg} get all-clients | ${jq} -r --arg here "$here" --argjson t "$tag" '
-      .clients[] | select(.monitor == $here and (.tags | index($t)) and (.is_scratchpad | not)) | .id')
+    # what this monitor shows after: a tag with its windows, else one nobody
+    # has, else one of the other's that it isn't showing (from the last)
+    next=$(q --arg here "$here" --arg other "$other" --argjson t "$tag" '
+      def tags(mon): [$c.clients[] | select(.monitor == mon and (.is_scratchpad | not)) | .tags[]] | unique;
+      ($m.monitors[] | select(.name == $other) | .active_tags) as $shown
+      | (tags($here) - [$t])
+        + ([range(1; 11)] - tags($here) - tags($other) - $shown - [$t])
+        + (tags($other) - $shown - [$t] | reverse)
+      | .[0] // empty')
+    ids=$(q -r --arg here "$here" --argjson t "$tag" '
+      $c.clients[] | select(.monitor == $here and (.tags | index($t)) and (.is_scratchpad | not)) | .id')
+    if [ -n "$next" ]; then
+      ${mmsg} dispatch "view,$next" >/dev/null
+    fi
     if [ -z "$ids" ]; then
       exec ${mmsg} dispatch "viewcrossmon,$tag,$other" >/dev/null
     fi
@@ -226,6 +258,7 @@ let
       (k "Windows" "SUPER+SHIFT,minus" "restore_minimized" "Bring back a minimized window, one per press")
 
       (k "Tags" "SUPER,w" "spawn,${tagBack}" "Back to the previous tag (never the special one)")
+      (k "Tags" "SUPER+CTRL,w" "spawn,${monitorBack}" "Back to this monitor's previous tag")
       (k "Tags" "SUPER,s" "toggle_special_tag" "Show/hide the special (scratch) tag")
       (k "Tags" "SUPER+SHIFT,s" "tag_special_tag" "Move the window to the special tag")
     ]
