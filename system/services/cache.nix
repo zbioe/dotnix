@@ -23,15 +23,26 @@ let
     config.environment.systemPackages ++ lib.optionals (hostHome != null) hostHome.config.home.packages
   );
   unfreeRe = "^/nix/store/[a-z0-9]{32}-(${
-    lib.concatMapStringsSep "|" lib.escapeRegex (lib.unique (map lib.getName unfree))
+    lib.concatMapStringsSep "|" lib.escapeRegex (lib.unique (map lib.getName unfree ++ cfg.skip))
   })([-.]|$)";
 in
 {
   options.dotnix.services.cache = {
     push.enable = lib.mkEnableOption "pushing this host's builds to zbioe.cachix.org";
+    skip = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      # downloaded data, nothing built: fetching it again costs nothing
+      default = [
+        "mbrola-voices" # speech synthesis voices (~590 MB)
+        "index-x86_64-linux" # nix-index's database (~110 MB)
+        "t1-256x10-distilled-swa-2432500.pb.gz" # lc0's network (~40 MB)
+      ];
+      description = "Store path names (before the version) kept off the cache, with what refers to them, like the unfree packages.";
+    };
     warnAt = lib.mkOption {
       type = lib.types.ints.positive;
-      default = 4000;
+      # under the 5 GB: room for the kernel workflow's kernels
+      default = 3500;
       description = "MB this host's system and home take on the cache (compressed) above which the user is told; the free plan has 5 GB.";
     };
   };
