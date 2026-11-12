@@ -40,7 +40,64 @@ let
   '';
   tagBack = pkgs.writeShellScript "mango-tag-back" ''
     prev=$(cat "${prevTag}" 2>/dev/null) || prev=1
-    exec ${mmsg} dispatch "view,$prev"
+    exec ${tagGo} "$prev"
+  '';
+  jq = "${pkgs.jq}/bin/jq";
+
+  # Tags live on a monitor: Super+N goes to the monitor holding tag N's
+  # windows (the focused one when both or neither do), and only that one
+  # switches. Super+Shift+N sends the window there; Super+Shift+A takes the
+  # whole tag to the other monitor
+  tagWhere = ''
+    here=$(${mmsg} get all-monitors | ${jq} -r '.monitors[] | select(.active) | .name')
+    there=$(${mmsg} get all-clients | ${jq} -r --arg here "$here" --argjson n "$1" '
+      [.clients[] | select((.tags | index($n)) and (.is_scratchpad | not)) | .monitor] as $ms
+      | if ($ms | index($here)) then $here else ($ms[0] // $here) end')
+  '';
+  tagGo = pkgs.writeShellScript "mango-tag-go" ''
+    ${tagWhere}
+    if [ "$there" = "$here" ]; then
+      exec ${mmsg} dispatch "view,$1" >/dev/null
+    fi
+    exec ${mmsg} dispatch "viewcrossmon,$1,$there" >/dev/null
+  '';
+  tagSend = pkgs.writeShellScript "mango-tag-send" ''
+    ${tagWhere}
+    if [ "$there" = "$here" ]; then
+      exec ${mmsg} dispatch "tag,$1" >/dev/null
+    fi
+    exec ${mmsg} dispatch "tagcrossmon,$1,$there" >/dev/null
+  '';
+  tagMove = pkgs.writeShellScript "mango-tag-move" ''
+    monitors=$(${mmsg} get all-monitors)
+    here=$(${jq} -r '.monitors[] | select(.active) | .name' <<<"$monitors")
+    tag=$(${jq} -r '.monitors[] | select(.active) | .active_tags[0]' <<<"$monitors")
+    # the next monitor in the list, by name: "next" would turn around once
+    # the first window moved the focus over
+    other=$(${jq} -r '[.monitors[].name] as $ns | $ns[(($ns | index("'"$here"'")) + 1) % ($ns | length)]' <<<"$monitors")
+    [ "$other" != "$here" ] || exit 0
+    ids=$(${mmsg} get all-clients | ${jq} -r --arg here "$here" --argjson t "$tag" '
+      .clients[] | select(.monitor == $here and (.tags | index($t)) and (.is_scratchpad | not)) | .id')
+    if [ -z "$ids" ]; then
+      exec ${mmsg} dispatch "viewcrossmon,$tag,$other" >/dev/null
+    fi
+    for id in $ids; do
+      ${mmsg} dispatch "tagmon,$other,1" "client,$id" >/dev/null
+    done
+  '';
+  # Super+Shift+H/L: swap with the window on that side, or past the
+  # monitor's edge, onto the next monitor
+  shove = pkgs.writeShellScript "mango-shove" ''
+    edge=$(${jq} -n -r --arg dir "$1" --argjson c "$(${mmsg} get focusing-client)" \
+      --argjson m "$(${mmsg} get all-monitors)" '
+      ($m.monitors[] | select(.active)) as $mon
+      | if $c.id == null then "no"
+        elif $dir == "left" then (if $c.x <= $mon.x then "yes" else "no" end)
+        else (if $c.x + $c.width >= $mon.x + $mon.width then "yes" else "no" end) end')
+    if [ "$edge" = yes ]; then
+      exec ${mmsg} dispatch "tagmon,$1" >/dev/null
+    fi
+    exec ${mmsg} dispatch "exchange_client,$1" >/dev/null
   '';
   mmsg = "${config.wayland.windowManager.mango.package}/bin/mmsg";
 
@@ -151,12 +208,18 @@ let
       (k "Windows" "SUPER,l" "focusdir,right" "Focus the window on the right")
       (k "Windows" "SUPER,k" "focusdir,up" "Focus the window above")
       (k "Windows" "SUPER,j" "focusdir,down" "Focus the window below")
-      (k "Windows" "SUPER+SHIFT,h" "exchange_client,left" "Swap with the window on the left")
-      (k "Windows" "SUPER+SHIFT,l" "exchange_client,right" "Swap with the window on the right")
+      (k "Windows" "SUPER+SHIFT,h" "spawn,${shove} left"
+        "Swap with the window on the left (at the edge: to the monitor there)"
+      )
+      (k "Windows" "SUPER+SHIFT,l" "spawn,${shove} right"
+        "Swap with the window on the right (at the edge: to the monitor there)"
+      )
       (k "Windows" "SUPER+SHIFT,k" "exchange_client,up" "Swap with the window above")
       (k "Windows" "SUPER+SHIFT,j" "exchange_client,down" "Swap with the window below")
       (k "Monitors" "SUPER,a" "focusmon,next" "Focus the other monitor")
-      (k "Monitors" "SUPER+SHIFT,a" "tagmon,next" "Move the window to the other monitor")
+      (k "Monitors" "SUPER+SHIFT,a" "spawn,${tagMove}"
+        "Take the tag (all its windows) to the other monitor"
+      )
       (k "Windows" "SUPER,f" "togglefullscreen" "Fullscreen")
       (k "Windows" "SUPER+SHIFT,q" "killclient" "Close the window")
       (k "Windows" "SUPER,minus" "minimized" "Minimize (hide) the window")
@@ -172,8 +235,10 @@ let
         key = toString (if n == 10 then 0 else n);
       in
       [
-        (k "Tags" "SUPER,${key}" "view,${toString n},1" "Go to tag ${toString n} (on every monitor)")
-        (k "Tags" "SUPER+SHIFT,${key}" "tag,${toString n}" "Move the window to tag ${toString n}")
+        (k "Tags" "SUPER,${key}" "spawn,${tagGo} ${toString n}" "Go to tag ${toString n} (on its monitor)")
+        (k "Tags" "SUPER+SHIFT,${key}" "spawn,${tagSend} ${toString n}"
+          "Move the window to tag ${toString n} (on its monitor)"
+        )
       ]
     ) (builtins.genList (i: i + 1) 10);
 
