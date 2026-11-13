@@ -474,15 +474,10 @@ in
                       show_keyboard_layout = false;
                     };
                   };
-                  # an analog clock: a round face like the field's round ends
-                  "lockscreen-clock@${name}" = at name (w / 2.0) (h / 2.0 - 190.0) 240.0 240.0 "clock" {
-                    clock_style = "analog";
-                    circle = true;
-                    show_seconds = false;
-                    color = "on_surface";
-                    background = false;
-                    shadow = false;
-                  };
+                  # the time large and light in the accent, nothing around it
+                  "lockscreen-clock@${name}" = at name (w / 2.0) (h / 2.0 - 150.0) 560.0 180.0 "clock" (
+                    clock "{:%H:%M}" "Geist Light" "primary"
+                  );
                   "lockscreen-date@${name}" = at name (w / 2.0) (h / 2.0 + 10.0) 560.0 40.0 "clock" (
                     clock "{:%A, %d de %B}" "Geist" "on_surface"
                   );
