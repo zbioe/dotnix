@@ -59,7 +59,6 @@ in
 lib.mkIf (cfg.enable && cfg.greeter == "gdm") {
   services.displayManager.gdm = {
     enable = true;
-    wayland = true;
     # the greeter only looks in these (and gnome-shell's own) data dirs
     extraPackages = [ mode ];
   };
