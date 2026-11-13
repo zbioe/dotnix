@@ -439,30 +439,38 @@ in
               background = false;
               color = "on_surface";
             };
+            # one centered column: the time, the date, the field to type in
+            # (just the pill, no bar around it) and how to unlock under it;
+            # what's playing floats at the bottom while something plays
             screen = name: w: h: {
               "lockscreen-login-box@${name}" = {
                 type = "login_box";
                 output = name;
                 cx = w / 2.0;
-                cy = h * 0.7;
-                settings = pill // {
+                cy = h / 2.0 + 120.0;
+                settings = {
                   layout = "compact";
-                  input_opacity = 1.0;
+                  background_opacity = 0.0;
+                  input_opacity = 0.92;
                   input_radius = 32.0;
                   center_password_text = true;
                   show_password_reveal = false;
+                  show_login_button = false;
                 };
               };
-              "lockscreen-finger@${name}" = at name (w / 2.0) (h * 0.7 + 72.0) 260.0 40.0 "button" (
-                icon "fingerprint" "" // { label = "Senha ou digital"; }
+              "lockscreen-hint@${name}" = at name (w / 2.0) (h / 2.0 + 190.0) 360.0 40.0 "label" {
+                title = "Senha ou digital";
+                color = "on_surface_variant";
+                background = false;
+                shadow = true;
+              };
+              "lockscreen-clock@${name}" = at name (w / 2.0) (h / 2.0 - 150.0) 640.0 200.0 "clock" (
+                clock "{:%H:%M}" "" "on_surface"
               );
-              "lockscreen-clock@${name}" = at name (w / 2.0) (h * 0.26) 760.0 240.0 "clock" (
-                clock "{:%H:%M}" "Atkinson Hyperlegible Next ExtraLight" "on_surface"
-              );
-              "lockscreen-date@${name}" = at name (w / 2.0) (h * 0.26 + 150.0) 640.0 48.0 "clock" (
+              "lockscreen-date@${name}" = at name (w / 2.0) (h / 2.0 - 30.0) 560.0 44.0 "clock" (
                 clock "{:%A, %d de %B}" "" "on_surface_variant"
               );
-              "lockscreen-media@${name}" = at name 250.0 (h - 80.0) 440.0 96.0 "media_player" (
+              "lockscreen-media@${name}" = at name (w / 2.0) (h - 110.0) 460.0 96.0 "media_player" (
                 pill // { hide_when_no_media = true; }
               );
               "lockscreen-suspend@${name}" = at name (w - 168.0) (h - 56.0) 48.0 48.0 "button" (
@@ -475,10 +483,12 @@ in
                 icon "power" "systemctl poweroff"
               );
             };
+            widget = screen "eDP-1" 1920.0 1200.0 // screen "HDMI-A-1" 1080.0 1920.0;
           in
           {
             enabled = true;
-            widget = screen "eDP-1" 1920.0 1200.0 // screen "HDMI-A-1" 1080.0 1920.0;
+            inherit widget;
+            widget_order = lib.attrNames widget;
           };
 
         # the desktop monitor has no kernel backlight: DDC/CI (system/desktop)
