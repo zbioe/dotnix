@@ -393,6 +393,55 @@ in
         # links such as Proton's); credentials stay in the keyring, not here
         calendar.enabled = true;
 
+        # the lock screen over the wallpaper exactly as it is (its colors never
+        # leave the palette: no blur, no tint) and one quick fade in and out
+        lockscreen = {
+          blur_intensity = 0.0;
+          tint_intensity = 0.0;
+          transition = [ "fade" ];
+          transition_duration = 400;
+        };
+
+        # a large clock and the date up top, a slim pill to type in below:
+        # placed per output (the laptop's, the AOC turned sideways)
+        lockscreen_widgets =
+          let
+            loginBox = output: cx: cy: {
+              type = "login_box";
+              inherit output cx cy;
+              settings = {
+                layout = "compact";
+                background_color = "surface_container";
+                background_opacity = 0.9;
+                background_radius = 32.0;
+                input_opacity = 1.0;
+                input_radius = 32.0;
+                center_password_text = true;
+                show_password_reveal = false;
+              };
+            };
+            clock = output: cx: cy: w: h: format: {
+              type = "clock";
+              inherit output cx cy;
+              box_width = w;
+              box_height = h;
+              rotation = 0.0;
+              settings = {
+                inherit format;
+                center_text = true;
+              };
+            };
+            screen = name: w: h: {
+              "lockscreen-login-box@${name}" = loginBox name (w / 2.0) (h * 0.78);
+              "lockscreen-clock@${name}" = clock name (w / 2.0) (h * 0.3) 640.0 220.0 "{:%H:%M}";
+              "lockscreen-date@${name}" = clock name (w / 2.0) (h * 0.3 + 140.0) 640.0 56.0 "{:%A, %d de %B}";
+            };
+          in
+          {
+            enabled = true;
+            widget = screen "eDP-1" 1920.0 1200.0 // screen "HDMI-A-1" 1080.0 1920.0;
+          };
+
         # the desktop monitor has no kernel backlight: DDC/CI (system/desktop)
         brightness.enable_ddcutil = true;
 
