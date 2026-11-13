@@ -168,6 +168,7 @@ in
     usb-stick-test = pkgs.testers.runNixOSTest ../checks/vm/usb-stick.nix;
     backup-test = pkgs.testers.runNixOSTest ../checks/vm/backup.nix;
     pam-either-test = pkgs.testers.runNixOSTest ../checks/vm/pam-either.nix;
+    gdm-theme-test = pkgs.testers.runNixOSTest ../checks/vm/gdm-theme.nix;
     disk-test = pkgs.testers.runNixOSTest (
       import ../checks/vm/disk.nix { inherit inputs dotlib unstable; }
     );
