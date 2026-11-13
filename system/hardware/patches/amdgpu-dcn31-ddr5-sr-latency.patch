@@ -1,0 +1,69 @@
+Subject: [PATCH] drm/amd/display: Increase DCN31 DDR5 SR enter/exit latency
+
+[Why & How]
+On a Rembrandt laptop (Ryzen 7 7735HS, Radeon 680M, 2x32 GB DDR5-4800
+SODIMM) the eDP panel flickers faintly on some desktop contents; screen
+captures don't show it, and forcing the DPM level high or disabling
+stutter (amdgpu.dcdebugmask=0x2) makes it rarer. Same as on DCN35 and
+DCN314 with DDR5/LPDDR5, the self refresh latencies look too short: raise
+DCN31's DDR5 ones by 3us, as commit 318917e1d8ec ("drm/amd/display:
+Increase DCN35 SR enter/exit latency") did.
+
+Not upstream; carried by dotnix while it's tested.
+---
+--- a/drivers/gpu/drm/amd/display/dc/clk_mgr/dcn31/dcn31_clk_mgr.c
++++ b/drivers/gpu/drm/amd/display/dc/clk_mgr/dcn31/dcn31_clk_mgr.c
+@@ -351,32 +351,32 @@
+ 			.wm_inst = WM_A,
+ 			.wm_type = WM_TYPE_PSTATE_CHG,
+ 			.pstate_latency_us = 11.72,
+-			.sr_exit_time_us = 9,
+-			.sr_enter_plus_exit_time_us = 11,
++			.sr_exit_time_us = 12,
++			.sr_enter_plus_exit_time_us = 14,
+ 			.valid = true,
+ 		},
+ 		{
+ 			.wm_inst = WM_B,
+ 			.wm_type = WM_TYPE_PSTATE_CHG,
+ 			.pstate_latency_us = 11.72,
+-			.sr_exit_time_us = 9,
+-			.sr_enter_plus_exit_time_us = 11,
++			.sr_exit_time_us = 12,
++			.sr_enter_plus_exit_time_us = 14,
+ 			.valid = true,
+ 		},
+ 		{
+ 			.wm_inst = WM_C,
+ 			.wm_type = WM_TYPE_PSTATE_CHG,
+ 			.pstate_latency_us = 11.72,
+-			.sr_exit_time_us = 9,
+-			.sr_enter_plus_exit_time_us = 11,
++			.sr_exit_time_us = 12,
++			.sr_enter_plus_exit_time_us = 14,
+ 			.valid = true,
+ 		},
+ 		{
+ 			.wm_inst = WM_D,
+ 			.wm_type = WM_TYPE_PSTATE_CHG,
+ 			.pstate_latency_us = 11.72,
+-			.sr_exit_time_us = 9,
+-			.sr_enter_plus_exit_time_us = 11,
++			.sr_exit_time_us = 12,
++			.sr_enter_plus_exit_time_us = 14,
+ 			.valid = true,
+ 		},
+ 	}
+--- a/drivers/gpu/drm/amd/display/dc/dml/dcn31/dcn31_fpu.c
++++ b/drivers/gpu/drm/amd/display/dc/dml/dcn31/dcn31_fpu.c
+@@ -167,8 +167,8 @@
+ 		},
+ 	},
+ 	.num_states = 5,
+-	.sr_exit_time_us = 9.0,
+-	.sr_enter_plus_exit_time_us = 11.0,
++	.sr_exit_time_us = 12.0,
++	.sr_enter_plus_exit_time_us = 14.0,
+ 	.sr_exit_z8_time_us = 442.0,
+ 	.sr_enter_plus_exit_z8_time_us = 560.0,
+ 	.writeback_latency_us = 12.0,

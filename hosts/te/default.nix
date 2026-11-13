@@ -11,13 +11,9 @@
 
   # the panel's self refresh (PSR) flashes white on bursts of redraws, like a
   # theme change
-  # testing, 2026-11-12: the panel flickers faintly on some pages; less with
-  # the memory's self refresh off during scanout (stutter, 0x2), and scanout
-  # from VRAM only (no scatter/gather through system memory)
-  boot.kernelParams = [
-    "amdgpu.dcdebugmask=0x12"
-    "amdgpu.sg_display=0"
-  ];
+  # the panel's self refresh (PSR) flashes white on bursts of redraws, like a
+  # theme change
+  boot.kernelParams = [ "amdgpu.dcdebugmask=0x10" ];
   # the ACPI alarm device takes rtc0 (Linux 7.1+): chrony's RTC tracking
   # runs on its alarm, whose expired status is never cleared and powers the
   # laptop back on right after a shutdown. Without it the CMOS clock is rtc0
@@ -48,8 +44,8 @@
       graphics.amd.compute.enable = true;
       # the 680M loads only these at boot (measured 2026-11-10)
       graphics.amd.initrdFirmware = [ "yellow_carp_*" ];
-      # the AOC flickered until replugged after rotating it at 180 Hz
-      graphics.amd.compbufFix.enable = true;
+      # its panel flickered faintly on some pages (2x32 GB DDR5 SODIMM)
+      graphics.amd.srLatencyFix.enable = true;
     };
     storage = {
       # its partitions by label; the device (and swap size) only matter to

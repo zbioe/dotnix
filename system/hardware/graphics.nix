@@ -33,12 +33,12 @@ in
           system keeps them all.
         '';
       };
-      # DCN 3.1 (Radeon 660M/680M): a refresh rate or rotation change that
-      # grows the compressed buffer can hang the display, flickering until
-      # the cable is plugged again
-      compbufFix.enable = lib.mkEnableOption ''
-        the kernel's wait for the display buffers to resize before the
-        compressed buffer grows (an RFC fix, not merged yet); it needs
+      # DCN 3.1 (Radeon 660M/680M) with DDR5: the panel flickers faintly on
+      # some contents, the display underflowing as the memory leaves self
+      # refresh later than the driver assumes
+      srLatencyFix.enable = lib.mkEnableOption ''
+        3 us more of memory self refresh latency in the display's DDR5
+        watermarks (as AMD did for DCN35, not upstream); it needs
         dotnix.core.boot.fastKernel, whose workflow builds the kernel'';
     };
     nvidia = {
@@ -60,14 +60,10 @@ in
       extraPackages = lib.optional cfg.amd.compute.enable pkgs.rocmPackages.clr.icd;
     };
 
-    # upstream since 7.3 (7.3.4 has it, the patch no longer applies)
-    boot.kernelPatches =
-      lib.optional
-        (cfg.amd.compbufFix.enable && lib.versionOlder config.dotnix.core.boot.kernel.kernel.version "7.3")
-        {
-          name = "amdgpu-compbuf-det-wait";
-          patch = ./patches/amdgpu-compbuf-det-wait.patch;
-        };
+    boot.kernelPatches = lib.optional cfg.amd.srLatencyFix.enable {
+      name = "amdgpu-dcn31-ddr5-sr-latency";
+      patch = ./patches/amdgpu-dcn31-ddr5-sr-latency.patch;
+    };
 
     services.xserver.videoDrivers = mkIf (drivers != [ ]) drivers;
 
@@ -115,8 +111,8 @@ in
 
     assertions = [
       {
-        assertion = cfg.amd.compbufFix.enable -> config.dotnix.core.boot.fastKernel.enable;
-        message = "dotnix.hardware.graphics.amd.compbufFix needs dotnix.core.boot.fastKernel (built by CI, never here)";
+        assertion = cfg.amd.srLatencyFix.enable -> config.dotnix.core.boot.fastKernel.enable;
+        message = "dotnix.hardware.graphics.amd.srLatencyFix needs dotnix.core.boot.fastKernel (built by CI, never here)";
       }
     ]
     ++ lib.optionals cfg.nvidia.enable [
