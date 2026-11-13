@@ -402,39 +402,78 @@ in
           transition_duration = 400;
         };
 
-        # a large clock and the date up top, a slim pill to type in below:
-        # placed per output (the laptop's, the AOC turned sideways)
+        # The lock screen, per output (the laptop's, the AOC turned sideways):
+        # a large thin clock with the date under it up top, a slim pill to
+        # type in with a hint that the finger works too, what's playing at
+        # the bottom left (only while something plays) and suspend, restart
+        # and power off as plain icons at the bottom right
         lockscreen_widgets =
           let
-            loginBox = output: cx: cy: {
-              type = "login_box";
-              inherit output cx cy;
-              settings = {
-                layout = "compact";
-                background_color = "surface_container";
-                background_opacity = 0.9;
-                background_radius = 32.0;
-                input_opacity = 1.0;
-                input_radius = 32.0;
-                center_password_text = true;
-                show_password_reveal = false;
-              };
+            pill = {
+              background_color = "surface_container";
+              background_opacity = 0.9;
+              background_radius = 32.0;
             };
-            clock = output: cx: cy: w: h: format: {
-              type = "clock";
-              inherit output cx cy;
+            at = output: cx: cy: w: h: type: settings: {
+              inherit
+                output
+                cx
+                cy
+                type
+                settings
+                ;
               box_width = w;
               box_height = h;
               rotation = 0.0;
-              settings = {
-                inherit format;
-                center_text = true;
-              };
+            };
+            clock = format: font: color: {
+              inherit format color;
+              font_family = font;
+              center_text = true;
+              background = false;
+              shadow = true;
+            };
+            icon = glyph: command: {
+              inherit glyph command;
+              variant = "ghost";
+              background = false;
+              color = "on_surface";
             };
             screen = name: w: h: {
-              "lockscreen-login-box@${name}" = loginBox name (w / 2.0) (h * 0.78);
-              "lockscreen-clock@${name}" = clock name (w / 2.0) (h * 0.3) 640.0 220.0 "{:%H:%M}";
-              "lockscreen-date@${name}" = clock name (w / 2.0) (h * 0.3 + 140.0) 640.0 56.0 "{:%A, %d de %B}";
+              "lockscreen-login-box@${name}" = {
+                type = "login_box";
+                output = name;
+                cx = w / 2.0;
+                cy = h * 0.7;
+                settings = pill // {
+                  layout = "compact";
+                  input_opacity = 1.0;
+                  input_radius = 32.0;
+                  center_password_text = true;
+                  show_password_reveal = false;
+                };
+              };
+              "lockscreen-finger@${name}" = at name (w / 2.0) (h * 0.7 + 72.0) 260.0 40.0 "button" (
+                icon "fingerprint" "" // { label = "Senha ou digital"; }
+              );
+              "lockscreen-clock@${name}" = at name (w / 2.0) (h * 0.26) 760.0 240.0 "clock" (
+                clock "{:%H:%M}" "Atkinson Hyperlegible Next ExtraLight" "on_surface"
+              );
+              "lockscreen-date@${name}" = at name (w / 2.0) (h * 0.26 + 150.0) 640.0 48.0 "clock" (
+                clock "{:%A, %d de %B}" "" "on_surface_variant"
+              );
+              "lockscreen-media@${name}" = at name 250.0 (h - 80.0) 440.0 96.0 "media_player" (
+                pill // { hide_when_no_media = true; }
+              );
+              "lockscreen-suspend@${name}" = at name (w - 168.0) (h - 56.0) 48.0 48.0 "button" (
+                icon "moon" "systemctl suspend"
+              );
+              "lockscreen-reboot@${name}" = at name (w - 112.0) (h - 56.0) 48.0 48.0 "button" (
+                icon "refresh" "systemctl reboot"
+              );
+              "lockscreen-poweroff@${name}" = at name (w - 56.0) (h - 56.0) 48.0 48.0 "button" (
+                icon "power" "systemctl poweroff"
+              );
             };
           in
           {
