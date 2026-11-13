@@ -9,11 +9,9 @@
 
   networking.hostName = "te";
 
-  # the panel's self refresh (PSR, 0x10) flashes white on bursts of redraws,
-  # like a theme change; the memory's self refresh while scanning out
-  # (stutter, 0x2) underflows the display, a faint flicker on both screens
-  # that screen recordings don't show (worse with the AOC at 180 Hz)
-  boot.kernelParams = [ "amdgpu.dcdebugmask=0x12" ];
+  # the panel's self refresh (PSR) flashes white on bursts of redraws, like a
+  # theme change
+  boot.kernelParams = [ "amdgpu.dcdebugmask=0x10" ];
   # the ACPI alarm device takes rtc0 (Linux 7.1+): chrony's RTC tracking
   # runs on its alarm, whose expired status is never cleared and powers the
   # laptop back on right after a shutdown. Without it the CMOS clock is rtc0
