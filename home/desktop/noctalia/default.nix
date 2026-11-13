@@ -474,16 +474,16 @@ in
                       show_keyboard_layout = false;
                     };
                   };
-                  # the time on a card shaped like the field (Geist)
-                  "lockscreen-clock@${name}" = at name (w / 2.0) (h / 2.0 - 140.0) 460.0 180.0 "clock" (
-                    clock "{:%H:%M}" "Geist Medium" "on_surface"
-                    // pill
-                    // {
-                      background = true;
-                      background_padding = 24.0;
-                    }
-                  );
-                  "lockscreen-date@${name}" = at name (w / 2.0) (h / 2.0 - 10.0) 560.0 40.0 "clock" (
+                  # an analog clock: a round face like the field's round ends
+                  "lockscreen-clock@${name}" = at name (w / 2.0) (h / 2.0 - 190.0) 240.0 240.0 "clock" {
+                    clock_style = "analog";
+                    circle = true;
+                    show_seconds = false;
+                    color = "on_surface";
+                    background = false;
+                    shadow = false;
+                  };
+                  "lockscreen-date@${name}" = at name (w / 2.0) (h / 2.0 + 10.0) 560.0 40.0 "clock" (
                     clock "{:%A, %d de %B}" "Geist" "on_surface"
                   );
                   "lockscreen-media@${name}" = at name (w / 2.0) (h - 110.0) 460.0 96.0 "media_player" (
