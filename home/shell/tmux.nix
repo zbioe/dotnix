@@ -34,7 +34,7 @@ let
     (k "tmux" "PREFIX+CTRL,r" "direnv reload in the pane")
     (k "tmux" "PREFIX,?" "This list")
     (k "tmux copy mode" "PREFIX+CTRL,[" "Enter copy mode (or the mouse wheel)")
-    (k "tmux copy mode" "CTRL,e" "Scroll a line down (C-y up)")
+    (k "tmux copy mode" "CTRL,e" "Scroll a line down (C-y up); at the bottom, end of line")
     (k "tmux copy mode" "CTRL,d" "Half a page down (C-u up)")
     (k "tmux copy mode" "CTRL,v" "A page down (M-v up)")
     (k "tmux copy mode" ",[" "Previous command's output (] next; M-p, M-n)")
@@ -201,9 +201,9 @@ in
       # Emacs key, like evil's normal state. Every copy also goes to the
       # clipboard
       set -s copy-command 'wl-copy'
-      # a line or half a page at a time (evil's C-e/C-y, C-d/C-u); the end
-      # of the line stays on End and $
-      bind -T copy-mode C-e send -X scroll-down
+      # a line or half a page at a time (evil's C-e/C-y, C-d/C-u); C-e at
+      # the bottom, with nothing below, is Emacs' end of line (also End, $)
+      bind -T copy-mode C-e if -F "#{==:#{scroll_position},0}" { send -X end-of-line } { send -X scroll-down }
       bind -T copy-mode C-y send -X scroll-up
       bind -T copy-mode C-d send -X halfpage-down
       bind -T copy-mode C-u send -X halfpage-up
