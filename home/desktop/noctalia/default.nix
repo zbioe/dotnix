@@ -478,8 +478,8 @@ in
                   "lockscreen-clock@${name}" = at name (w / 2.0) (h / 2.0 - 150.0) 560.0 180.0 "clock" (
                     clock "{:%H:%M}" "Geist Light" "primary"
                   );
-                  "lockscreen-date@${name}" = at name (w / 2.0) (h / 2.0 + 10.0) 560.0 40.0 "clock" (
-                    clock "{:%A, %d de %B}" "Geist" "on_surface"
+                  "lockscreen-date@${name}" = at name (w / 2.0) (h / 2.0 - 30.0) 560.0 40.0 "clock" (
+                    clock "{:%A, %d de %B}" "Geist" "on_surface_variant"
                   );
                   "lockscreen-media@${name}" = at name (w / 2.0) (h - 110.0) 460.0 96.0 "media_player" (
                     pill // { hide_when_no_media = true; }
