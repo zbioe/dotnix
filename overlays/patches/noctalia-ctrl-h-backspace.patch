@@ -1,9 +1,10 @@
---- a/src/ui/controls/input.cpp
-+++ b/src/ui/controls/input.cpp
-@@ -1300,18 +1300,19 @@ void Input::handleKey(std::uint32_t sym, std::uint32_t utf32, std::uint32_t modi
-         m_selectionAnchor = m_cursorPos;
-         changed = true;
-       }
+diff --git a/lib/ui/controls/input.cpp b/lib/ui/controls/input.cpp
+index cc55d4b..85680b7 100644
+--- a/lib/ui/controls/input.cpp
++++ b/lib/ui/controls/input.cpp
+@@ -1425,14 +1425,15 @@ void Input::handleKey(std::uint32_t sym, std::uint32_t utf32, std::uint32_t modi
+       });
+       return;
      }
 -  } else if (KeySymbol::isBackspace(sym)) {
 +  } else if (KeySymbol::isBackspace(sym) || utf32 == 0x08) {
@@ -19,6 +20,3 @@
        m_value.erase(prev, m_cursorPos - prev);
        m_cursorPos = prev;
        m_selectionAnchor = prev;
-       changed = true;
-     }
-   } else if (KeySymbol::isDelete(sym)) {

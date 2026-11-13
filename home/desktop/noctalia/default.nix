@@ -136,7 +136,8 @@ in
           inherit (config.dotnix.theme.default) mode;
         };
 
-        # app_icon_colorize comes from `theme icons tint` (home/theme/icons)
+        # the app icons' tint (each colorize_icons) comes from `theme icons tint`
+        # (home/theme/icons)
 
         # everything here is declared: no first-run wizard (it shows on every
         # fresh home: the live ISO, a new install)

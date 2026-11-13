@@ -1,15 +1,16 @@
-diff -ru a/src/app/application_ipc.cpp b/src/app/application_ipc.cpp
---- a/src/app/application_ipc.cpp	2026-10-11 15:02:06.229365911 -0300
-+++ b/src/app/application_ipc.cpp	2026-10-11 15:02:06.359338024 -0300
-@@ -34,6 +34,7 @@
- #include "dbus/system_bus.h"
- #include "dbus/system_bus_poll_source.h"
- #include "dbus/tray/tray_service.h"
+diff --git a/src/app/application_ipc.cpp b/src/app/application_ipc.cpp
+index 69db224..72f1fad 100644
+--- a/src/app/application_ipc.cpp
++++ b/src/app/application_ipc.cpp
+@@ -35,6 +35,7 @@
+ #include "shell/setup_wizard/setup_wizard_panel.h"
+ #include "shell/tooltip/tooltip_manager.h"
+ #include "shell/tray/tray_drawer_panel.h"
 +#include "shell/tray/tray_identifier.h"
- #include "dbus/upower/upower_service.h"
- #include "debug/debug_service.h"
- #include "i18n/i18n.h"
-@@ -140,6 +141,28 @@
+ #include "shell/wallpaper/panel/wallpaper_panel.h"
+ #include "system/brightness_service.h"
+ #include "system/easyeffects_service.h"
+@@ -85,6 +86,28 @@ void Application::initIpc() {
        IpcService::HandlerOptions{.actionEditorVisibility = IpcService::ActionEditorVisibility::Hidden}
    );
  
@@ -24,7 +25,7 @@ diff -ru a/src/app/application_ipc.cpp b/src/app/application_ipc.cpp
 +      return "error: tray unavailable\n";
 +    }
 +    for (const auto& item : m_trayService->items()) {
-+      if (item.id == parts[0] || tray::tokenMatchesItem(parts[0], item)) {
++      if (item.id == parts[0] || tray::hiddenTokenMatchesItem(parts[0], item)) {
 +        if (!m_trayService->itemUsesDBusMenu(item.id)) {
 +          return "error: tray item has no menu\n";
 +        }
@@ -38,10 +39,11 @@ diff -ru a/src/app/application_ipc.cpp b/src/app/application_ipc.cpp
    m_ipcService.bind(
        noctalia::cli::msg::logLevelSet,
        [](const std::string& args) -> std::string {
-diff -ru a/src/cli/schema_msg.h b/src/cli/schema_msg.h
---- a/src/cli/schema_msg.h	2026-10-11 15:02:06.231413322 -0300
-+++ b/src/cli/schema_msg.h	2026-10-11 15:02:06.358663759 -0300
-@@ -171,6 +171,9 @@
+diff --git a/src/cli/schema_msg.h b/src/cli/schema_msg.h
+index dda5a24..fcf27e9 100644
+--- a/src/cli/schema_msg.h
++++ b/src/cli/schema_msg.h
+@@ -184,6 +184,9 @@ namespace noctalia::cli {
        Positional{"id", {}, {}, true, false, false},
        Positional{"context", {}, {}, false, false, false},
    };
@@ -51,7 +53,7 @@ diff -ru a/src/cli/schema_msg.h b/src/cli/schema_msg.h
    inline constexpr std::array kMsgPanelTogglePositionals{
        Positional{"id", {}, {}, true, false, false},
        Positional{"context", {}, {}, false, false, false},
-@@ -716,6 +719,14 @@
+@@ -819,6 +822,14 @@ namespace noctalia::cli {
      inline constexpr Command themeModeToggle{
          "theme-mode-toggle", "Toggle theme mode between dark and light", {}, {}, {}, {}, {}, false
      };
@@ -66,7 +68,7 @@ diff -ru a/src/cli/schema_msg.h b/src/cli/schema_msg.h
      inline constexpr Command volumeDown{
          "volume-down", "Decrease speaker volume", {}, {}, {}, kMsgVolumeDownPositionals, {}, false
      };
-@@ -923,6 +934,7 @@
+@@ -1030,6 +1041,7 @@ namespace noctalia::cli {
        msg::themeModeGet,
        msg::themeModeSet,
        msg::themeModeToggle,

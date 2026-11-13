@@ -55,15 +55,19 @@ icon_bar() {
     | "\(.name)\t\($m[.name])\t\($k.glyphs[$m[.name]])"' "$ICON_INDEX"
 }
 
-# noctalia merges every *.toml of its folder: the tags' labels and font, and
-# the bar's glyphs from the pack's font (overlays/patches/noctalia-glyph-override.patch)
+# noctalia merges every *.toml of its folder: the tags' labels and font, the
+# bar's glyphs from the pack's font (overlays/patches/noctalia-glyph-override.patch)
+# and the tint of app icons, wherever noctalia shows them
 icon_write() {
   local p map glyphs
   p=$(icon_pack)
   map=$(icon_tags "$p" | awk -F'\t' '{ printf "%s%s=%s", (NR > 1 ? "," : ""), $1, $3 }')
   glyphs=$(icon_bar "$p" | awk -F'\t' '{ printf "%s%s=U+%X", (NR > 1 ? "," : ""), $1, $3 }')
   jq -r --arg p "$p" --arg map "$map" --arg glyphs "$glyphs" --argjson tint "$([ "$(icon_get tint)" = on ] && echo true || echo false)" '.packs[$p] |
-    "[shell]\nglyph_font = \"\(.font)\"\nglyph_map = \"\($glyphs)\"\napp_icon_colorize = \($tint)\n" +
+    "[shell]\nglyph_font = \"\(.font)\"\nglyph_map = \"\($glyphs)\"\n" +
+    "polkit_colorize_icons = \($tint)\nscreen_time_colorize_icons = \($tint)\n" +
+    "[shell.launcher]\ncolorize_icons = \($tint)\n[shell.window_switcher]\ncolorize_icons = \($tint)\n" +
+    "[notification]\ncolorize_icons = \($tint)\n[audio]\ncolorize_icons = \($tint)\n[dock]\ncolorize_icons = \($tint)\n" +
     "[widget.workspaces]\nfont_family = \"\(.family)\"\nfont_weight = \(.weight)\nlabel_map = \"\($map)\""' \
     "$ICON_INDEX" | font_file "$HOME/.config/noctalia/icons.toml"
 }
