@@ -11,10 +11,11 @@
 
   # the panel's self refresh (PSR) flashes white on bursts of redraws, like a
   # theme change
-  # scanout from VRAM only (no scatter/gather through system memory): the
-  # panel flickers faintly on some pages otherwise (testing, 2026-11-12)
+  # testing, 2026-11-12: the panel flickers faintly on some pages; less with
+  # the memory's self refresh off during scanout (stutter, 0x2), and scanout
+  # from VRAM only (no scatter/gather through system memory)
   boot.kernelParams = [
-    "amdgpu.dcdebugmask=0x10"
+    "amdgpu.dcdebugmask=0x12"
     "amdgpu.sg_display=0"
   ];
   # the ACPI alarm device takes rtc0 (Linux 7.1+): chrony's RTC tracking
