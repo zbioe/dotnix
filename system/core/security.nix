@@ -35,6 +35,15 @@ in
       };
     }
 
+    # login (SDDM, the console, noctalia's lock screen) checks the password
+    # before the reader: a typed password goes in at once, an empty one
+    # falls to the finger. With the reader first, the password waited for
+    # it to time out; the lock screen also drives the reader itself
+    (lib.mkIf config.services.fprintd.enable {
+      security.pam.services.login.rules.auth.fprintd.order =
+        config.security.pam.services.login.rules.auth.unix.order + 10;
+    })
+
     (lib.mkIf cfg.fingerprintOrPassword.enable {
       assertions = [
         {
