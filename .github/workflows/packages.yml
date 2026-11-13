@@ -1,0 +1,35 @@
+# The packages of the hosts that no public cache has (ours, patched or too
+# new: noctalia, mango, ai-memory), built here and pushed to zbioe.cachix.org
+# so `rebuild` downloads them instead of compiling them on the laptop
+name: packages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - flake.lock
+      - overlays/**
+      - system/desktop/mango.nix
+      - home/dev/ai-memory.nix
+      - .github/workflows/packages.yml
+  workflow_dispatch:
+
+jobs:
+  packages:
+    runs-on: ubuntu-26.04
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v5
+      - uses: cachix/install-nix-action@v31
+      - uses: cachix/cachix-action@v17
+        with:
+          name: zbioe
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      - name: Build them
+        run: |
+          ai_memory=$(nix eval --raw .#homeConfigurations.te.config.home.packages --apply \
+            'ps: (builtins.head (builtins.filter (p: builtins.match "ai-memory.*" (p.name or "") != null) ps)).drvPath')
+          nix build -L --no-link --print-out-paths \
+            .#homeConfigurations.te.config.programs.noctalia.package \
+            .#nixosConfigurations.te.config.programs.mango.package \
+            "$ai_memory^out"

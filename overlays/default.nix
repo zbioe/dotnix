@@ -14,6 +14,9 @@ _final: prev: {
       ./patches/noctalia-glyph-override.patch
       # night light switch on the Monitor tab (the brightness widget opens it)
       ./patches/noctalia-monitor-nightlight.patch
+      # the lock screen's password field: the accent ring while typing, red
+      # after a wrong password
+      ./patches/noctalia-lock-input-state.patch
     ];
   });
 }

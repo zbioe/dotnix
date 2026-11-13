@@ -1,0 +1,72 @@
+diff --git a/lib/ui/controls/input.cpp b/lib/ui/controls/input.cpp
+index 85680b7..9d73742 100644
+--- a/lib/ui/controls/input.cpp
++++ b/lib/ui/controls/input.cpp
+@@ -546,6 +546,15 @@ void Input::setMultiline(bool enabled) {
+   markTextContentChanged();
+ }
+ 
++void Input::setFocusRingRole(ColorRole role) {
++  if (m_focusRingRole == role) {
++    return;
++  }
++  m_focusRingRole = role;
++  applyVisualState();
++  markPaintDirty();
++}
++
+ void Input::setInvalid(bool invalid) {
+   if (m_invalid == invalid) {
+     return;
+@@ -1663,7 +1672,7 @@ void Input::applyVisualState() {
+         focused ? resolved(ColorRole::Surface, m_surfaceOpacity) : resolved(m_surfaceRole, m_surfaceOpacity);
+     const Color border = m_invalid
+         ? resolved(ColorRole::Error)
+-        : (focused ? resolveColorSpec(focusRingColorSpec())
++        : (focused ? (m_focusRingRole ? resolved(*m_focusRingRole) : resolveColorSpec(focusRingColorSpec()))
+                    : (inputHovered ? resolved(ColorRole::Hover) : resolved(ColorRole::OutlineVariant)));
+ 
+     float resolvedBorderWidth = 0.0F;
+diff --git a/lib/ui/controls/input.h b/lib/ui/controls/input.h
+index 85c3097..2fe9f2a 100644
+--- a/lib/ui/controls/input.h
++++ b/lib/ui/controls/input.h
+@@ -8,6 +8,7 @@
+ #include "ui/style.h"
+ #include "ui/text_input_client.h"
+ 
++#include <optional>
+ #include <chrono>
+ #include <cstddef>
+ #include <cstdint>
+@@ -52,6 +53,8 @@ public:
+   /// the single-line control height. Mutually exclusive with password mode.
+   void setMultiline(bool enabled);
+   void setInvalid(bool invalid);
++  // the focus ring in this role instead of the shared focus ring color
++  void setFocusRingRole(ColorRole role);
+   void setFrameVisible(bool visible);
+   /// When the frame is hidden, treat the field as sitting on a solid Primary fill (e.g. segmented control center).
+   void setEmbeddedOnSolidPrimary(bool embedded);
+@@ -270,6 +273,7 @@ private:
+   bool m_passwordRevealed = false;
+   bool m_multiline = false;
+   bool m_invalid = false;
++  std::optional<ColorRole> m_focusRingRole;
+   bool m_frameVisible = true;
+   bool m_embeddedOnSolidPrimary = false;
+   ColorRole m_surfaceRole = ColorRole::SurfaceContainer;
+diff --git a/src/shell/lockscreen/lock_surface.cpp b/src/shell/lockscreen/lock_surface.cpp
+index 87de82e..19a2f63 100644
+--- a/src/shell/lockscreen/lock_surface.cpp
++++ b/src/shell/lockscreen/lock_surface.cpp
+@@ -1651,6 +1651,9 @@ void LockSurface::layoutScene(std::uint32_t width, std::uint32_t height) {
+   }
+ 
+   m_passwordField->setSurfaceOpacity(loginStyle.inputOpacity);
++  // the accent while typing; red after a wrong password, until typing again
++  m_passwordField->setFocusRingRole(ColorRole::Primary);
++  m_passwordField->setInvalid(m_error && m_password.empty());
+   m_passwordField->setFrameRadius(loginStyle.inputRadius);
+   m_passwordField->setTextAlign(loginStyle.centerPasswordText ? TextAlign::Center : TextAlign::Start);
+   m_passwordField->setControlHeight(controlHeight);
