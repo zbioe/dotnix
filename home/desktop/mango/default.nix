@@ -316,6 +316,10 @@ in
         new_is_master = 0;
         default_master_factor = 0.5;
 
+        # testing, 2026-11-12: the laptop panel flickers faintly on some
+        # pages; the cursor drawn by the renderer instead of its own plane
+        env = [ "WLR_NO_HARDWARE_CURSORS,1" ];
+
         sloppy_focus = 0;
         # Super+h/l and Super+Shift+h/l go on to the next monitor's windows
         focus_cross_monitor = 1;
