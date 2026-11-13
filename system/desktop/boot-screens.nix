@@ -373,7 +373,7 @@ let
   shutdownSplash = pkgs.writeShellScript "plymouth-shutdown" ''
     # the state as it is now, even if a change never got synced
     ${lib.getExe sync} || true
-    ${pkgs.coreutils}/bin/timeout 5 ${pkgs.procps}/bin/pidwait -x 'mango|sddm-greeter.*' || true
+    ${pkgs.coreutils}/bin/timeout 5 ${pkgs.procps}/bin/pidwait -x 'mango|sddm-greeter.*|.gnome-shell-wr' || true
     id=$(${pkgs.coreutils}/bin/basename "$(${pkgs.coreutils}/bin/readlink /var/lib/theme/current)")
     cmdline=$(${pkgs.gnused}/bin/sed 's/plymouth\.splash=[^ ]*//' /proc/cmdline)
     exec ${config.boot.plymouth.package}/sbin/plymouthd --mode=shutdown --attach-to-session \

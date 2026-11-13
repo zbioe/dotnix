@@ -15,6 +15,7 @@ in
   imports = [
     ./mango.nix
     ./sddm.nix
+    ./gdm.nix
     ./fonts.nix
     ./browsers
     ./boot-screens.nix
@@ -26,7 +27,12 @@ in
     mango.enable = dotlib.mkItem cfg "the mango session";
     default = dotlib.mkMain [ "mango" ] "session logged into";
     greeter = mkOption {
-      type = types.nullOr (types.enum [ "sddm" ]);
+      type = types.nullOr (
+        types.enum [
+          "sddm"
+          "gdm"
+        ]
+      );
       default = null;
     };
     autoLogin = lib.mkEnableOption "logging into the default session without the greeter";

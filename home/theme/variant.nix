@@ -187,6 +187,60 @@ let
     }
   );
   # mango (home/desktop/mango sources this); colors are 0xRRGGBBAA
+  # GDM's login screen (system/desktop/gdm.nix copies it there), over
+  # gnome-shell's own stylesheet: nothing painted over the wallpaper, the
+  # rest in the palette with round shapes like noctalia's
+  gdmCss = with c; ''
+    @import url("resource:///org/gnome/shell/theme/gnome-shell-${mode}.css");
+
+    #lockDialogGroup { background-color: ${base00}; }
+    .login-dialog { background-color: transparent; color: ${base05}; }
+    #panel, #panel.login-screen { background-color: transparent; }
+    #panel .panel-button { color: ${base05}; }
+
+    .login-dialog-prompt-entry {
+      background-color: ${base00};
+      color: ${base05};
+      border: 2px solid ${base02};
+      border-radius: 999px;
+      padding: 10px 18px;
+      caret-color: ${base0D};
+      selection-background-color: ${base0D};
+      selected-color: ${base00};
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.18);
+    }
+    .login-dialog-prompt-entry:focus { border-color: ${base0D}; }
+    .login-dialog-prompt-label { color: ${base04}; }
+
+    .login-dialog-button,
+    .login-dialog-session-list-button {
+      background-color: ${base01};
+      color: ${base05};
+      border-radius: 999px;
+    }
+    .login-dialog-button:hover,
+    .login-dialog-session-list-button:hover { background-color: ${base02}; }
+    .login-dialog-button:focus,
+    .login-dialog-session-list-button:focus { box-shadow: inset 0 0 0 2px ${base0D}; }
+    .login-dialog-button.default-button { background-color: ${base0D}; color: ${base00}; }
+
+    .login-dialog-user-list-item {
+      background-color: transparent;
+      color: ${base05};
+      border-radius: 24px;
+    }
+    .login-dialog-user-list-item:hover { background-color: ${base01}; }
+    .login-dialog-user-list-item:focus,
+    .login-dialog-user-list-item:selected { background-color: ${base02}; }
+    .login-dialog-username { color: ${base05}; }
+    .login-dialog-not-listed-label { color: ${base04}; }
+
+    .login-dialog-message,
+    .login-dialog-message-hint { color: ${base04}; }
+    .login-dialog-message-warning { color: ${base08}; }
+    .caps-lock-warning-label { color: ${base08}; }
+  '';
+
   mangoConf = with colors; ''
     root_color=0x${base00}ff
     border_color=0x${base02}ff
@@ -612,6 +666,9 @@ pkgs.runCommandLocal "theme-${id}" { } ''
   ''}
 
   cp ${wallpaper} $out/wallpaper.png
+  cat > $out/gdm.css <<'EOF'
+  ${gdmCss}
+  EOF
   cat > $out/mango.conf <<'EOF'
   ${mangoConf}
   EOF
