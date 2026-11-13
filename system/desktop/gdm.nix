@@ -75,12 +75,6 @@ lib.mkIf (cfg.enable && cfg.greeter == "gdm") {
   programs.dconf.profiles.gdm.databases = [
     {
       settings = {
-        # the user's wallpaper, exactly as it is
-        "org/gnome/desktop/background" = {
-          picture-uri = "file://${dir}/wallpaper.png";
-          picture-uri-dark = "file://${dir}/wallpaper.png";
-          picture-options = "zoom";
-        };
         # the laptop's layout first, the external keyboard's a switch away
         # (Super+Space): one layout for every keyboard there
         "org/gnome/desktop/input-sources".sources = [

@@ -193,7 +193,13 @@ let
   gdmCss = with c; ''
     @import url("resource:///org/gnome/shell/theme/gnome-shell-${mode}.css");
 
-    #lockDialogGroup { background-color: ${base00}; }
+    /* the greeter draws no wallpaper of its own: the theme's, unchanged */
+    #lockDialogGroup {
+      background-color: ${base00};
+      background-image: url("file:///var/lib/dotnix-gdm/wallpaper.png");
+      background-size: cover;
+      background-position: center;
+    }
     .login-dialog { background-color: transparent; color: ${base05}; }
     #panel, #panel.login-screen { background-color: transparent; }
     #panel .panel-button { color: ${base05}; }
