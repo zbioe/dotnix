@@ -431,7 +431,7 @@ in
               font_family = font;
               center_text = true;
               background = false;
-              shadow = true;
+              shadow = false;
             };
             icon = glyph: command: {
               inherit glyph command;
@@ -442,47 +442,63 @@ in
             # one centered column: the time, the date, the field to type in
             # (just the pill, no bar around it) and how to unlock under it;
             # what's playing floats at the bottom while something plays
-            screen = name: w: h: {
-              "lockscreen-login-box@${name}" = {
-                type = "login_box";
-                output = name;
-                cx = w / 2.0;
-                cy = h / 2.0 + 120.0;
-                settings = {
-                  layout = "compact";
-                  background_opacity = 0.0;
-                  input_opacity = 0.92;
-                  input_radius = 32.0;
-                  center_password_text = true;
-                  show_password_reveal = false;
-                  show_login_button = false;
+            # placed for this output's size: without it noctalia rescales them
+            # and saves its own copy, which then wins over this config
+            screen =
+              name: w: h:
+              lib.mapAttrs
+                (
+                  _: v:
+                  v
+                  // {
+                    placement_width = w;
+                    placement_height = h;
+                  }
+                )
+                {
+                  "lockscreen-login-box@${name}" = {
+                    type = "login_box";
+                    output = name;
+                    cx = w / 2.0;
+                    cy = h / 2.0 + 120.0;
+                    settings = {
+                      layout = "compact";
+                      background_opacity = 0.0;
+                      input_opacity = 0.92;
+                      input_radius = 32.0;
+                      center_password_text = true;
+                      show_password_reveal = false;
+                      show_login_button = false;
+                      # no hints nor layout chip: errors and Caps Lock still show
+                      show_unlock_hint = false;
+                      show_keyboard_layout = false;
+                    };
+                  };
+                  # the time on a card shaped like the field (Geist)
+                  "lockscreen-clock@${name}" = at name (w / 2.0) (h / 2.0 - 140.0) 460.0 180.0 "clock" (
+                    clock "{:%H:%M}" "Geist Medium" "on_surface"
+                    // pill
+                    // {
+                      background = true;
+                      background_padding = 24.0;
+                    }
+                  );
+                  "lockscreen-date@${name}" = at name (w / 2.0) (h / 2.0 - 10.0) 560.0 40.0 "clock" (
+                    clock "{:%A, %d de %B}" "Geist" "on_surface"
+                  );
+                  "lockscreen-media@${name}" = at name (w / 2.0) (h - 110.0) 460.0 96.0 "media_player" (
+                    pill // { hide_when_no_media = true; }
+                  );
+                  "lockscreen-suspend@${name}" = at name (w - 168.0) (h - 56.0) 48.0 48.0 "button" (
+                    icon "moon" "systemctl suspend"
+                  );
+                  "lockscreen-reboot@${name}" = at name (w - 112.0) (h - 56.0) 48.0 48.0 "button" (
+                    icon "refresh" "systemctl reboot"
+                  );
+                  "lockscreen-poweroff@${name}" = at name (w - 56.0) (h - 56.0) 48.0 48.0 "button" (
+                    icon "power" "systemctl poweroff"
+                  );
                 };
-              };
-              "lockscreen-hint@${name}" = at name (w / 2.0) (h / 2.0 + 190.0) 360.0 40.0 "label" {
-                title = "Senha ou digital";
-                color = "on_surface_variant";
-                background = false;
-                shadow = true;
-              };
-              "lockscreen-clock@${name}" = at name (w / 2.0) (h / 2.0 - 150.0) 640.0 200.0 "clock" (
-                clock "{:%H:%M}" "" "on_surface"
-              );
-              "lockscreen-date@${name}" = at name (w / 2.0) (h / 2.0 - 30.0) 560.0 44.0 "clock" (
-                clock "{:%A, %d de %B}" "" "on_surface_variant"
-              );
-              "lockscreen-media@${name}" = at name (w / 2.0) (h - 110.0) 460.0 96.0 "media_player" (
-                pill // { hide_when_no_media = true; }
-              );
-              "lockscreen-suspend@${name}" = at name (w - 168.0) (h - 56.0) 48.0 48.0 "button" (
-                icon "moon" "systemctl suspend"
-              );
-              "lockscreen-reboot@${name}" = at name (w - 112.0) (h - 56.0) 48.0 48.0 "button" (
-                icon "refresh" "systemctl reboot"
-              );
-              "lockscreen-poweroff@${name}" = at name (w - 56.0) (h - 56.0) 48.0 48.0 "button" (
-                icon "power" "systemctl poweroff"
-              );
-            };
             widget = screen "eDP-1" 1920.0 1200.0 // screen "HDMI-A-1" 1080.0 1920.0;
           in
           {
