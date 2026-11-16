@@ -26,6 +26,7 @@ let
     librewolf = "librewolf.desktop";
   };
   keyboard = config.services.xserver.xkb;
+  source = keyboard.layout + lib.optionalString (keyboard.variant != "") "+${keyboard.variant}";
   wallpapers = pkgs.nixos-artwork.wallpapers;
   logo = "${pkgs.nixos-icons}/share/icons/hicolor/scalable/apps/nix-snowflake.svg";
   pinned = lib.optional (cfg.browsers.default != null) browsers.${cfg.browsers.default} ++ [
@@ -135,6 +136,13 @@ in
 
     programs.dconf.profiles.${profile}.databases = [
       {
+        # what makes it this layout holds even over what the extensions
+        # saved on their first run; the rest are defaults
+        locks = [
+          "/org/gnome/shell/extensions/dash-to-panel/panel-element-positions"
+          "/org/gnome/shell/extensions/arcmenu/menu-layout"
+          "/org/gnome/shell/extensions/arcmenu/menu-button-icon"
+        ];
         settings = {
           "org/gnome/shell" = {
             enabled-extensions = map (e: e.extensionUuid) extensions;
@@ -151,6 +159,8 @@ in
           "org/gnome/shell/extensions/arcmenu" = {
             # (its own layout is the menu Zorin's came from)
             menu-layout = "arcmenu";
+            # the categories first, then their apps
+            default-menu-view = "Categories_List";
             menu-button-icon = logo;
             menu-button-icon-size = lib.gvariant.mkInt32 28;
             pinned-apps = map (id: [ (lib.gvariant.mkDictionaryEntry "id" id) ]) (
@@ -167,6 +177,7 @@ in
             gtk-theme = "adw-gtk3";
             icon-theme = "Tela";
             cursor-theme = "Bibata-Modern-Classic";
+            cursor-size = lib.gvariant.mkInt32 16;
             font-name = "Inter 11";
             document-font-name = "Inter 11";
           };
@@ -179,7 +190,7 @@ in
           "org/gnome/desktop/input-sources".sources = [
             (lib.gvariant.mkTuple [
               "xkb"
-              (keyboard.layout + lib.optionalString (keyboard.variant != "") "+${keyboard.variant}")
+              source
             ])
           ];
         };
@@ -204,7 +215,7 @@ in
       ) notStarted
       ++ [
         # the session the login screen picks for them (not kept across boots)
-        "f /var/lib/AccountsService/users/${name} 0600 root root - [User]\\nSession=gnome\\n"
+        "f /var/lib/AccountsService/users/${name} 0600 root root - [User]\\nSession=gnome\\n\\n[InputSource0]\\nxkb=${source}\\n"
       ]
     ) cfg.gnome.windowsLike;
   };
