@@ -23,6 +23,16 @@
     # its reader: sudo takes the finger or the password, whichever comes first
     core.sudo.fingerprintOrPassword.enable = true;
     core.user.passwordFile = "/persist/secrets/zbioe.passwd";
+    # Amanda's account (`mkpasswd | sudo tee /persist/secrets/amanda.passwd`
+    # once), in GNOME laid out like the Zorin OS she used
+    core.user.others.amanda = {
+      description = "Amanda";
+      passwordFile = "/persist/secrets/amanda.passwd";
+    };
+    desktop.gnome = {
+      enable = true;
+      windowsLike = [ "amanda" ];
+    };
     core.boot = {
       loader = "limine";
       secureBoot.enable = true;
