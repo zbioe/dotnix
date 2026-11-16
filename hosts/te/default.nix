@@ -1,4 +1,5 @@
 # te: installed by dotnix-install on 2026-11-09
+{ unstable, ... }:
 {
   imports = [
     ../common.nix
@@ -24,10 +25,12 @@
     core.sudo.fingerprintOrPassword.enable = true;
     core.user.passwordFile = "/persist/secrets/zbioe.passwd";
     # Amanda's account (`mkpasswd | sudo tee /persist/secrets/amanda.passwd`
-    # once), in GNOME laid out like the Zorin OS she used
+    # once), in GNOME laid out like the Zorin OS she used, with its browser
+    # as it comes: no Dark Reader, no theme bridge
     core.user.others.amanda = {
       description = "Amanda";
       passwordFile = "/persist/secrets/amanda.passwd";
+      packages = [ unstable.brave ];
     };
     desktop.gnome = {
       enable = true;
@@ -49,6 +52,8 @@
         layout = "br";
         model = "thinkpad";
         variant = "thinkpad";
+        # her caps lock is a caps lock
+        kanata.offFor = [ "amanda" ];
       };
       # OpenCL on the Radeon 680M (ROCm)
       graphics.amd.compute.enable = true;

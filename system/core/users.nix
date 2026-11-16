@@ -41,6 +41,11 @@ in
               type = lib.types.str;
               description = "Hashed password (mkpasswd), outside the flake.";
             };
+            packages = lib.mkOption {
+              type = lib.types.listOf lib.types.package;
+              default = [ ];
+              description = "Programs only this account has.";
+            };
           };
         }
       );
@@ -52,7 +57,7 @@ in
     users.users = lib.mkMerge [
       (lib.mapAttrs (_: other: {
         isNormalUser = true;
-        inherit (other) description;
+        inherit (other) description packages;
         hashedPasswordFile = other.passwordFile;
         extraGroups = [
           "users"

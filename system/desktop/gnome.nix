@@ -51,6 +51,19 @@ in
       gnome-contacts
     ];
 
+    # links open in the desktop's browser (their own choice wins)
+    environment.etc."xdg/gnome-mimeapps.list" = lib.mkIf (cfg.browsers.default != null) {
+      text = ''
+        [Default Applications]
+        ${lib.concatMapStrings (type: "${type}=${browsers.${cfg.browsers.default}}\n") [
+          "x-scheme-handler/http"
+          "x-scheme-handler/https"
+          "text/html"
+          "application/xhtml+xml"
+        ]}
+      '';
+    };
+
     programs.dconf.profiles.${profile}.databases = [
       {
         settings = {
