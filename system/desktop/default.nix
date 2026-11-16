@@ -8,7 +8,10 @@
 }:
 let
   cfg = config.dotnix.desktop;
-  sessions.mango = "mango-uwsm";
+  sessions = {
+    mango = "mango-uwsm";
+    gnome = "gnome";
+  };
   inherit (lib) mkIf mkOption types;
 in
 {
@@ -16,6 +19,7 @@ in
     ./mango.nix
     ./sddm.nix
     ./gdm.nix
+    ./gnome.nix
     ./fonts.nix
     ./browsers
     ./boot-screens.nix
@@ -25,7 +29,10 @@ in
   options.dotnix.desktop = {
     enable = lib.mkEnableOption "the graphical desktop";
     mango.enable = dotlib.mkItem cfg "the mango session";
-    default = dotlib.mkMain [ "mango" ] "session logged into";
+    default = dotlib.mkMain [
+      "mango"
+      "gnome"
+    ] "session logged into";
     greeter = mkOption {
       type = types.nullOr (
         types.enum [
@@ -66,17 +73,6 @@ in
     };
 
     services.gnome.gnome-keyring.enable = cfg.secrets == "gnome-keyring";
-    # its keyrings without a password broke on secrets holding a newline (Proton VPN's)
-    nixpkgs.overlays = lib.optional (cfg.secrets == "gnome-keyring") (
-      _: prev: {
-        gnome-keyring = prev.gnome-keyring.overrideAttrs (old: {
-          patches = (old.patches or [ ]) ++ [
-            ../../overlays/patches/gnome-keyring-textual-secret-escape.patch
-          ];
-        });
-      }
-    );
-
     services.displayManager.defaultSession = mkIf (cfg.default != null) sessions.${cfg.default};
     services.displayManager.autoLogin = mkIf cfg.autoLogin {
       enable = true;
@@ -97,10 +93,21 @@ in
     };
     # GTK4 reloads its gtk.css when it changes, so libadwaita apps follow `theme`
     # live; swapped into the closure without rebuilding the apps
-    system.replaceDependencies.replacements = import ../../overlays/gtk4-live.nix [
-      pkgs.gtk4
-      unstable.gtk4
-    ];
+    system.replaceDependencies.replacements =
+      import ../../overlays/gtk4-live.nix [
+        pkgs.gtk4
+        unstable.gtk4
+      ]
+      # its keyrings without a password broke on secrets holding a newline
+      # (Proton VPN's); swapped in too: as an overlay it rebuilt gnome-shell
+      ++ lib.optional (cfg.secrets == "gnome-keyring") {
+        oldDependency = pkgs.gnome-keyring;
+        newDependency = pkgs.gnome-keyring.overrideAttrs (old: {
+          patches = (old.patches or [ ]) ++ [
+            ../../overlays/patches/gnome-keyring-textual-secret-escape.patch
+          ];
+        });
+      };
 
     # location from nearby Wi-Fi, for noctalia's weather and sunrise/sunset
     services.geoclue2 = {
