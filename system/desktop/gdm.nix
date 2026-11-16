@@ -38,15 +38,25 @@ let
       pkgs.jq
     ];
     text = ''
-      theme=$(readlink -f ${themeState}/current) || exit 0
+      umask 022
+      # never a bare login screen: GNOME's own look until a theme is copied
+      [ -e ${dir}/gnome-shell.css ] ||
+        echo '@import url("resource:///org/gnome/shell/theme/gnome-shell-dark.css");' > ${dir}/gnome-shell.css
+      [ -x ${home} ] || { echo "cannot read ${home}" >&2; exit 1; }
+      # (no theme picked yet)
+      [ -e ${themeState}/current ] || exit 0
+      theme=$(readlink -f ${themeState}/current)
       case "$theme" in /nix/store/*) ;; *) echo "not a store path: $theme" >&2; exit 1 ;; esac
-      [ -f "$theme/gdm.css" ] && [ -f "$theme/wallpaper.png" ] || exit 0
+      [ -f "$theme/gdm.css" ] && [ -f "$theme/wallpaper.png" ] || {
+        echo "no gdm.css or wallpaper.png in $theme" >&2
+        exit 1
+      }
       font=$(jq -r '.font.ui // empty' ${themeState}/font.json 2>/dev/null || true)
       [[ "$font" =~ ^[A-Za-z0-9\ ._-]{1,64}$ ]] || font=""
       tmp=$(mktemp -d ${dir}/.sync.XXXXXX)
       {
         cat "$theme/gdm.css"
-        [ -n "$font" ] && printf '\nstage { font-family: "%s"; }\n' "$font"
+        if [ -n "$font" ]; then printf '\nstage { font-family: "%s"; }\n' "$font"; fi
       } > "$tmp/gnome-shell.css"
       cp "$theme/wallpaper.png" "$tmp/wallpaper.png"
       chmod 0644 "$tmp"/*
@@ -106,7 +116,8 @@ lib.mkIf (cfg.enable && cfg.greeter == "gdm") {
       PrivateNetwork = true;
       PrivateTmp = true;
       NoNewPrivileges = true;
-      CapabilityBoundingSet = "";
+      # root, but only to read the user's (0700) home
+      CapabilityBoundingSet = "CAP_DAC_READ_SEARCH";
       RestrictAddressFamilies = "none";
       SystemCallFilter = "@system-service";
     };
