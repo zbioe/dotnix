@@ -70,7 +70,10 @@ lib.mkIf (cfg.enable && cfg.greeter == "gdm") {
   services.displayManager.gdm = {
     enable = true;
     # the greeter only looks in these (and gnome-shell's own) data dirs
-    extraPackages = [ mode ];
+    extraPackages = [
+      mode
+      pkgs.bibata-cursors
+    ];
   };
   security.pam.services.gdm-password.enableGnomeKeyring = cfg.secrets == "gnome-keyring";
 
@@ -86,6 +89,11 @@ lib.mkIf (cfg.enable && cfg.greeter == "gdm") {
       settings = {
         # the laptop's layout first, the external keyboard's a switch away
         # (Super+Space): one layout for every keyboard there
+        # the session's cursor (home/desktop), not GNOME's larger one
+        "org/gnome/desktop/interface" = {
+          cursor-theme = "Bibata-Modern-Ice";
+          cursor-size = lib.gvariant.mkInt32 16;
+        };
         "org/gnome/desktop/input-sources".sources = [
           (lib.gvariant.mkTuple [
             "xkb"

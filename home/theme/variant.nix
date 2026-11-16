@@ -200,11 +200,64 @@ let
       background-size: cover;
       background-position: center;
     }
-    .login-dialog { background-color: transparent; color: ${base05}; }
     #panel, #panel.login-screen { background-color: transparent; }
-    #panel .panel-button { color: ${base05}; }
+    #panel .panel-button, #panel.login-screen .panel-button { color: ${base05}; }
 
-    .login-dialog-prompt-entry {
+    /* gnome-shell paints the dialog for a dark screen whatever the
+       stylesheet (near-white text): the palette's, with its selectors so
+       these win */
+    .login-dialog, .unlock-dialog { background-color: transparent; color: ${base05}; }
+    .login-dialog .user-widget .user-widget-label,
+    .unlock-dialog .user-widget .user-widget-label { color: ${base05}; }
+    .login-dialog .user-widget .user-icon,
+    .unlock-dialog .user-widget .user-icon { background-color: ${base02}; color: ${base05}; }
+    .login-dialog-message-hint, .login-dialog-message,
+    .login-dialog-banner-view .login-dialog-banner { color: ${base04}; }
+    .login-dialog .caps-lock-warning-label,
+    .login-dialog .login-dialog-message-warning,
+    .unlock-dialog .caps-lock-warning-label,
+    .unlock-dialog .login-dialog-message-warning { color: ${base08}; }
+
+    /* the accounts: cards on the wallpaper */
+    .login-dialog-user-list-view .login-dialog-user-list .login-dialog-user-list-item,
+    .login-dialog .login-dialog-auth-list-item {
+      color: ${base05};
+      background-color: ${base01};
+      border-radius: 18px;
+      padding: 12px 16px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.18);
+    }
+    .login-dialog-user-list-view .login-dialog-user-list .login-dialog-user-list-item:hover,
+    .login-dialog-user-list-view .login-dialog-user-list .login-dialog-user-list-item:active,
+    .login-dialog .login-dialog-auth-list-item:hover,
+    .login-dialog .login-dialog-auth-list-item:active {
+      color: ${base05};
+      background-color: ${base02};
+    }
+    .login-dialog-user-list-view .login-dialog-user-list .login-dialog-user-list-item:selected,
+    .login-dialog-user-list-view .login-dialog-user-list .login-dialog-user-list-item:focus,
+    .login-dialog-user-list-view .login-dialog-user-list .login-dialog-user-list-item:focus:hover,
+    .login-dialog .login-dialog-auth-list-item:selected,
+    .login-dialog .login-dialog-auth-list-item:focus {
+      color: ${base05};
+      background-color: ${base02};
+      box-shadow: inset 0 0 0 2px ${base0D} !important;
+    }
+    .login-dialog-user-list-view .login-dialog-user-list .login-dialog-user-list-item:logged-in .user-icon {
+      border-color: ${base0D};
+    }
+    .login-dialog-not-listed-button,
+    .login-dialog-not-listed-button:hover,
+    .login-dialog-not-listed-button:focus,
+    .login-dialog-not-listed-button:active {
+      color: ${base04};
+      background-color: transparent;
+    }
+    .login-dialog-not-listed-button:hover,
+    .login-dialog-not-listed-button:focus { color: ${base05}; }
+
+    .login-dialog .login-dialog-prompt-entry,
+    .unlock-dialog .login-dialog-prompt-entry {
       background-color: ${base00};
       color: ${base05};
       border: 2px solid ${base02};
@@ -215,36 +268,47 @@ let
       selected-color: ${base00};
       box-shadow: 0 2px 10px rgba(0, 0, 0, 0.18);
     }
-    .login-dialog-prompt-entry:focus { border-color: ${base0D}; }
-    .login-dialog-prompt-label { color: ${base04}; }
+    .login-dialog .login-dialog-prompt-entry:hover,
+    .unlock-dialog .login-dialog-prompt-entry:hover { background-color: ${base00}; }
+    .login-dialog .login-dialog-prompt-entry:focus,
+    .unlock-dialog .login-dialog-prompt-entry:focus {
+      background-color: ${base00};
+      border-color: ${base0D};
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.18) !important;
+    }
+    .login-dialog .login-dialog-prompt-entry StLabel.hint-text,
+    .unlock-dialog .login-dialog-prompt-entry StLabel.hint-text { color: ${base04}; }
 
-    .login-dialog-button,
-    .login-dialog-session-list-button {
+    .login-dialog-button.a11y-button,
+    .login-dialog-button.cancel-button,
+    .login-dialog-button.switch-user-button,
+    .login-dialog-button.login-dialog-session-list-button {
       background-color: ${base01};
       color: ${base05};
       border-radius: 999px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.18);
     }
-    .login-dialog-button:hover,
-    .login-dialog-session-list-button:hover { background-color: ${base02}; }
-    .login-dialog-button:focus,
-    .login-dialog-session-list-button:focus { box-shadow: inset 0 0 0 2px ${base0D}; }
-    .login-dialog-button.default-button { background-color: ${base0D}; color: ${base00}; }
-
-    .login-dialog-user-list-item {
-      background-color: transparent;
+    .login-dialog-button.a11y-button:hover,
+    .login-dialog-button.cancel-button:hover,
+    .login-dialog-button.switch-user-button:hover,
+    .login-dialog-button.login-dialog-session-list-button:hover,
+    .login-dialog-button.a11y-button:active,
+    .login-dialog-button.cancel-button:active,
+    .login-dialog-button.switch-user-button:active,
+    .login-dialog-button.login-dialog-session-list-button:active,
+    .login-dialog-button.a11y-button:checked,
+    .login-dialog-button.login-dialog-session-list-button:checked {
+      background-color: ${base02};
       color: ${base05};
-      border-radius: 24px;
     }
-    .login-dialog-user-list-item:hover { background-color: ${base01}; }
-    .login-dialog-user-list-item:focus,
-    .login-dialog-user-list-item:selected { background-color: ${base02}; }
-    .login-dialog-username { color: ${base05}; }
-    .login-dialog-not-listed-label { color: ${base04}; }
-
-    .login-dialog-message,
-    .login-dialog-message-hint { color: ${base04}; }
-    .login-dialog-message-warning { color: ${base08}; }
-    .caps-lock-warning-label { color: ${base08}; }
+    .login-dialog-button.a11y-button:focus,
+    .login-dialog-button.cancel-button:focus,
+    .login-dialog-button.switch-user-button:focus,
+    .login-dialog-button.login-dialog-session-list-button:focus {
+      background-color: ${base02};
+      color: ${base05};
+      box-shadow: inset 0 0 0 2px ${base0D} !important;
+    }
   '';
 
   mangoConf = with colors; ''
