@@ -41,15 +41,37 @@ in
   config = lib.mkIf (cfg.enable && cfg.gnome.enable) {
     services.desktopManager.gnome.enable = true;
     environment.systemPackages = extensions;
-    # (the browsers and the mail are the desktop's own)
-    environment.gnome.excludePackages = with pkgs; [
-      gnome-tour
-      epiphany
-      geary
-      gnome-music
-      gnome-maps
-      gnome-contacts
+    # only the session is the system's: GNOME's apps (and their file
+    # associations) go to the accounts below, and what it would run or
+    # open for every account stays off
+    services.gnome.core-apps.enable = false;
+    services.avahi.enable = false;
+    services.dleyna.enable = false;
+    services.gnome = {
+      rygel.enable = false;
+      gnome-user-share.enable = false;
+      gnome-remote-desktop.enable = false;
+      gnome-initial-setup.enable = false;
+      gnome-browser-connector.enable = false;
+    };
+    environment.gnome.excludePackages = [
+      pkgs.gnome-tour
+      pkgs.orca
     ];
+    users.users = lib.genAttrs cfg.gnome.windowsLike (_: {
+      packages = with pkgs; [
+        nautilus # files
+        gnome-text-editor
+        gnome-calculator
+        loupe # images
+        papers # PDFs
+        showtime # videos
+        file-roller # archives
+        gnome-system-monitor
+        gnome-console
+        snapshot # camera
+      ];
+    });
 
     # links open in the desktop's browser (their own choice wins)
     environment.etc."xdg/gnome-mimeapps.list" = lib.mkIf (cfg.browsers.default != null) {
