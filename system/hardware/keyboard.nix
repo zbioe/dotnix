@@ -13,9 +13,10 @@ let
     name = "dotnix-kanata-allowed";
     runtimeInputs = [ config.systemd.package ];
     text = ''
-      session=$(loginctl show-seat seat0 -p ActiveSession --value)
+      # (no seat or session yet, as at boot: they stay)
+      session=$(loginctl show-seat seat0 -p ActiveSession --value 2>/dev/null) || exit 0
       [ -n "$session" ] || exit 0
-      user=$(loginctl show-session "$session" -p Name --value)
+      user=$(loginctl show-session "$session" -p Name --value 2>/dev/null) || exit 0
       off=(${lib.escapeShellArgs cfg.kanata.offFor})
       for name in "''${off[@]}"; do
         [ "$user" != "$name" ] || exit 1
