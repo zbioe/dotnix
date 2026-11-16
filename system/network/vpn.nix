@@ -110,7 +110,10 @@ in
         cloudflared # cloudflare tunnel
         cloudflare-cli # cloudflare api from the terminal
       ];
-      systemd.user.services.warp-taskbar.wantedBy = [ "graphical.target" ];
+      systemd.user.services.warp-taskbar = {
+        wantedBy = [ "graphical.target" ];
+        unitConfig.ConditionUser = config.dotnix.core.user.name;
+      };
       fileSystems."/var/lib/cloudflare-warp" = {
         device = "/var/lib/nodatacow/cloudflare-warp";
         fsType = "none";

@@ -53,6 +53,8 @@ in
         setSocketVariable = true;
         daemon.settings = daemon;
       };
+      # (not the login screen's user, nor other accounts; over its "!root")
+      systemd.user.services.docker.unitConfig.ConditionUser = lib.mkForce config.dotnix.core.user.name;
     })
     (lib.mkIf cfg.podman.enable {
       virtualisation.podman.enable = true;

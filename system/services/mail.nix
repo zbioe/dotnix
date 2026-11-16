@@ -26,6 +26,8 @@ in
         ];
       };
       systemd.user.services.protonmail-bridge = {
+        # (not the login screen's user, nor other accounts)
+        unitConfig.ConditionUser = config.dotnix.core.user.name;
         wants = [ "gpg-agent.service" ];
         after = [
           "gpg-agent.service"
