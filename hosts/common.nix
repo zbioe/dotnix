@@ -64,7 +64,6 @@
       mango.enable = true;
       default = "mango";
       greeter = "gdm";
-      autoLogin = true;
       inputMethod = "fcitx5";
       secrets = "gnome-keyring";
       fonts.enable = true;
