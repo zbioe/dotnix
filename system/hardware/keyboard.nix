@@ -7,6 +7,49 @@
 let
   cfg = config.dotnix.hardware.keyboard;
   inherit (lib) types mkOption mkIf;
+  remaps = lib.attrNames config.services.kanata.keyboards;
+  # whether the account in front of the screen keeps the remaps
+  allowed = pkgs.writeShellApplication {
+    name = "dotnix-kanata-allowed";
+    runtimeInputs = [ config.systemd.package ];
+    text = ''
+      session=$(loginctl show-seat seat0 -p ActiveSession --value)
+      [ -n "$session" ] || exit 0
+      user=$(loginctl show-session "$session" -p Name --value)
+      off=(${lib.escapeShellArgs cfg.kanata.offFor})
+      for name in "''${off[@]}"; do
+        [ "$user" != "$name" ] || exit 1
+      done
+    '';
+  };
+  # off and back on as the screen changes hands (logind's seat says when)
+  follow = pkgs.writeShellApplication {
+    name = "dotnix-kanata-follow";
+    runtimeInputs = [
+      config.systemd.package
+      pkgs.glib
+    ];
+    text = ''
+      shopt -s nullglob
+      apply() {
+        if ${lib.getExe allowed}; then
+          ${lib.concatMapStrings (name: ''
+            devices=(${toString config.services.kanata.keyboards.${name}.devices})
+            for device in "''${devices[@]}"; do
+              [ -e "$device" ] && systemctl start --no-block kanata-${name}.service
+            done
+          '') remaps}
+          :
+        else
+          systemctl stop ${toString (map (name: "kanata-${name}.service") remaps)}
+        fi
+      }
+      apply
+      gdbus monitor --system --dest org.freedesktop.login1 \
+        --object-path /org/freedesktop/login1/seat/seat0 |
+        while read -r _event; do apply; done
+    '';
+  };
 in
 {
   options.dotnix.hardware.keyboard = with types; {
@@ -29,6 +72,12 @@ in
     kanata = {
       internal.enable = lib.mkEnableOption "kanata on the laptop's keyboard";
       external.enable = lib.mkEnableOption "kanata on external keyboards";
+      offFor = mkOption {
+        type = listOf str;
+        default = [ ];
+        example = [ "amanda" ];
+        description = "Accounts that get the plain keyboard (caps lock is caps lock) while theirs is the session on screen.";
+      };
     };
   };
   config = mkIf cfg.enable {
@@ -51,6 +100,24 @@ in
     services.udev.extraRules = mkIf cfg.kanata.external.enable ''
       ACTION=="add", KERNEL=="event*", SUBSYSTEM=="input", ATTRS{name}=="RK61RGB 5.0 Keyboard", SYMLINK+="input/rk61_bt", TAG+="systemd", ENV{SYSTEMD_WANTS}+="kanata-external.service"
     '';
+
+    systemd.services = mkIf (cfg.kanata.offFor != [ ] && remaps != [ ]) (
+      lib.genAttrs (map (name: "kanata-${name}") remaps) (_: {
+        # (+: outside the unit's sandbox, to ask logind)
+        serviceConfig.ExecCondition = "+${lib.getExe allowed}";
+      })
+      // {
+        dotnix-kanata-follow = {
+          description = "Key remaps off for the accounts without them";
+          wantedBy = [ "multi-user.target" ];
+          after = [ "systemd-logind.service" ];
+          serviceConfig = {
+            ExecStart = lib.getExe follow;
+            Restart = "always";
+          };
+        };
+      }
+    );
 
     services.kanata = {
       enable = cfg.kanata.internal.enable || cfg.kanata.external.enable;
