@@ -70,11 +70,11 @@ lib.mkIf (cfg.enable && cfg.greeter == "gdm") {
   services.displayManager.gdm = {
     enable = true;
     # the greeter only looks in these (and gnome-shell's own) data dirs
-    extraPackages = [
-      mode
-      pkgs.bibata-cursors
-    ];
+    extraPackages = [ mode ];
   };
+  # the cursor it is set to below (gnome-shell finds cursors in the
+  # system's icons, not the data dirs)
+  environment.systemPackages = [ pkgs.bibata-cursors ];
   security.pam.services.gdm-password.enableGnomeKeyring = cfg.secrets == "gnome-keyring";
 
   # the greeter's shell (org.gnome.Shell@gdm, run by GDM's dynamic greeter
