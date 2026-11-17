@@ -83,6 +83,9 @@ in
 
   config = lib.mkIf (cfg.enable && cfg.gnome.enable) {
     services.desktopManager.gnome.enable = true;
+    # GNOME's own pick of portals (the camera's permission, the dialogs) in
+    # GNOME sessions; mango's list replaced it, leaving them to guesswork
+    xdg.portal.configPackages = [ pkgs.gnome-session ];
     environment.systemPackages = extensions;
     # only the session is the system's: GNOME's apps (and their file
     # associations) go to the accounts below, and what it would run or
