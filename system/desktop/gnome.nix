@@ -113,6 +113,7 @@ in
         gnome-system-monitor
         gnome-console
         snapshot # camera
+        cameractrls-gtk4 # its color, brightness and focus
         tela-icon-theme
         bibata-cursors
         adw-gtk3 # GTK3 apps looking like the rest
