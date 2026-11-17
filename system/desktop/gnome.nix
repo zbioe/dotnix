@@ -138,6 +138,20 @@ in
       '';
     };
 
+    # the camera app allowed without asking (the portal refused it
+    # without a prompt), at each login of theirs
+    systemd.user.services.dotnix-camera-allowed = lib.mkIf (cfg.gnome.windowsLike != [ ]) {
+      description = "The camera app allowed to use the camera";
+      wantedBy = [ "gnome-session-initialized.target" ];
+      after = [ "gnome-session-initialized.target" ];
+      # (|: any of them)
+      unitConfig.ConditionUser = map (name: "|${name}") cfg.gnome.windowsLike;
+      serviceConfig = {
+        Type = "oneshot";
+        ExecStart = "${lib.getExe pkgs.flatpak} permission-set devices camera org.gnome.Snapshot yes";
+      };
+    };
+
     programs.dconf.profiles.${profile}.databases = [
       {
         # what makes it this layout holds even over what the extensions
@@ -148,6 +162,8 @@ in
           "/org/gnome/shell/extensions/arcmenu/menu-button-icon"
           # the ThinkPad's layout, whose right Ctrl is the ? key
           "/org/gnome/desktop/input-sources/sources"
+          # the camera on (its privacy switch)
+          "/org/gnome/desktop/privacy/disable-camera"
         ];
         settings = {
           "org/gnome/shell" = {
@@ -193,6 +209,7 @@ in
           };
           "org/gnome/desktop/screensaver".picture-uri = "file://${wallpapers.nineish.gnomeFilePath}";
           "org/gnome/desktop/peripherals/touchpad".tap-to-click = true;
+          "org/gnome/desktop/privacy".disable-camera = false;
           "org/gnome/desktop/input-sources".sources = [
             (lib.gvariant.mkTuple [
               "xkb"
