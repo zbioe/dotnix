@@ -146,6 +146,8 @@ in
           "/org/gnome/shell/extensions/dash-to-panel/panel-element-positions"
           "/org/gnome/shell/extensions/arcmenu/menu-layout"
           "/org/gnome/shell/extensions/arcmenu/menu-button-icon"
+          # the ThinkPad's layout, whose right Ctrl is the ? key
+          "/org/gnome/desktop/input-sources/sources"
         ];
         settings = {
           "org/gnome/shell" = {
@@ -212,6 +214,11 @@ in
         "d ${home name}/.config/environment.d 0755 ${name} users -"
         "f+ ${home name}/.config/environment.d/10-dotnix.conf 0644 ${name} users - DCONF_PROFILE=${profile}"
         "d ${home name}/.config/autostart 0755 ${name} users -"
+        # GNOME's portal choice where the portal always looks (its own config
+        # dir): started early by the shell, it missed the system's (the
+        # camera was refused without asking)
+        "d ${home name}/.config/xdg-desktop-portal 0755 ${name} users -"
+        "L+ ${home name}/.config/xdg-desktop-portal/gnome-portals.conf - - - - ${pkgs.gnome-session}/share/xdg-desktop-portal/gnome-portals.conf"
       ]
       ++ map (
         entry:
