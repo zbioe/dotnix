@@ -10,6 +10,7 @@
     ./compat.nix
     ./home-activation.nix
     ./updates.nix
+    ./crashes.nix
   ];
 
   # compressed swap in RAM first (the disk swap stays as overflow), and
