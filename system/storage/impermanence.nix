@@ -123,6 +123,9 @@ in
         "/var/lib/NetworkManager"
         # firmware updates waiting for the next boot
         "/var/lib/fwupd"
+        # whether the battery's charge limit is UPower's (the bar's and
+        # GNOME's switch), and the charge history
+        "/var/lib/upower"
       ]
       # enrolled fingerprints (fprintd comes on with a reader, see facter)
       ++ lib.optional config.services.fprintd.enable {
