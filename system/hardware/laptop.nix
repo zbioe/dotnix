@@ -24,6 +24,12 @@ in
         CPU_BOOST_ON_BAT = 0;
         PLATFORM_PROFILE_ON_AC = "performance";
         PLATFORM_PROFILE_ON_BAT = "low-power";
+        # no adaptive backlight (ABM): on te's panel it flickers non-stop, on
+        # battery (TLP's default 1) and in power saver (3); the rest of the
+        # saving stays
+        AMDGPU_ABM_LEVEL_ON_AC = 0;
+        AMDGPU_ABM_LEVEL_ON_BAT = 0;
+        AMDGPU_ABM_LEVEL_ON_SAV = 0;
       };
     };
     # (nixos-hardware's laptop profiles may turn it on; tlp-pd takes its place)
