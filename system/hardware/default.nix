@@ -22,4 +22,11 @@
     percentageAction = 3;
     criticalPowerAction = "PowerOff";
   };
+  # it reads the battery's charge limit (udev's CHARGE_LIMIT) once, when it
+  # starts: started before udev got to the battery, it took the limit as
+  # unsupported and the bar's and GNOME's switch went grey
+  systemd.services.upower = {
+    wants = [ "systemd-udev-settle.service" ];
+    after = [ "systemd-udev-settle.service" ];
+  };
 }
