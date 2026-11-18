@@ -73,7 +73,22 @@ in
     };
 
     services.gnome.gnome-keyring.enable = cfg.secrets == "gnome-keyring";
-    services.displayManager.defaultSession = mkIf (cfg.default != null) sessions.${cfg.default};
+    # GDM would set it as every account's session each time it starts (its
+    # set-session), over the GNOME the other accounts get: there it is the
+    # main account's own, in its AccountsService file below
+    services.displayManager.defaultSession = mkIf (
+      cfg.default != null && cfg.greeter != "gdm"
+    ) sessions.${cfg.default};
+    systemd.tmpfiles.rules = mkIf (cfg.greeter == "gdm") (
+      [
+        "d /var/lib/AccountsService 0775 root root -"
+        "d /var/lib/AccountsService/users 0700 root root -"
+      ]
+      # (/ goes back to empty at boot: written again each time)
+      ++
+        lib.optional (cfg.default != null)
+          "f /var/lib/AccountsService/users/${config.dotnix.core.user.name} 0600 root root - [User]\\nSession=${sessions.${cfg.default}}\\n"
+    );
     services.displayManager.autoLogin = mkIf cfg.autoLogin {
       enable = true;
       user = config.dotnix.core.user.name;

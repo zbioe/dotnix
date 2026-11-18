@@ -220,11 +220,7 @@ in
       }
     ];
 
-    systemd.tmpfiles.rules = [
-      "d /var/lib/AccountsService 0775 root root -"
-      "d /var/lib/AccountsService/users 0700 root root -"
-    ]
-    ++ lib.concatMap (
+    systemd.tmpfiles.rules = lib.concatMap (
       name:
       [
         "d ${home name}/.config 0700 ${name} users -"
