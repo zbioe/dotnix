@@ -1,0 +1,175 @@
+diff -ru a/assets/translations/en.json b/assets/translations/en.json
+--- a/assets/translations/en.json	2026-11-18 15:08:26.003513944 -0300
++++ b/assets/translations/en.json	2026-11-18 15:08:26.091514263 -0300
+@@ -464,7 +464,9 @@
+         "title": "Battery charging",
+         "unreadable": "Unavailable",
+         "unsupported": "Charge thresholds are not supported",
+-        "use-thresholds": "Use charge thresholds"
++        "use-thresholds": "Use charge thresholds",
++        "charge-below": "Charge again below",
++        "stop-at": "Stop at"
+       },
+       "design-capacity": "Of design capacity",
+       "health": "Battery Health",
+diff -ru a/assets/translations/pt-BR.json b/assets/translations/pt-BR.json
+--- a/assets/translations/pt-BR.json	2026-11-18 15:08:26.026514028 -0300
++++ b/assets/translations/pt-BR.json	2026-11-18 15:08:26.099514293 -0300
+@@ -463,7 +463,9 @@
+         "title": "Bateria carregando",
+         "unreadable": "Indisponível",
+         "unsupported": "Limites de carga não são suportados",
+-        "use-thresholds": "Usar limites de carga"
++        "use-thresholds": "Usar limites de carga",
++        "charge-below": "Carregar abaixo de",
++        "stop-at": "Parar em"
+       },
+       "design-capacity": "Da capacidade padrão",
+       "health": "Saúde da Bateria",
+diff -ru a/src/shell/control_center/tabs/power_tab.cpp b/src/shell/control_center/tabs/power_tab.cpp
+--- a/src/shell/control_center/tabs/power_tab.cpp	2026-11-18 15:08:25.954513766 -0300
++++ b/src/shell/control_center/tabs/power_tab.cpp	2026-11-18 15:08:26.087197467 -0300
+@@ -6,6 +6,9 @@
+ #include "render/core/renderer.h"
+ #include "time/time_format.h"
+ #include "ui/builders.h"
++#include "core/deferred_call.h"
++#include "system/process.h"
++#include "ui/controls/stepper.h"
+ #include "ui/controls/toggle.h"
+ #include "ui/palette.h"
+ 
+@@ -529,6 +532,45 @@
+               })
+           )
+       );
++      // dotnix: where it charges again and where it stops, kept by
++      // dotnix-charge-limit-set (UPower's switch above turns them on and off)
++      const std::size_t rowIndex = m_chargeLimitRows.size();
++      row->addChild(
++          ui::row(
++              {.out = &entry.limitsRow, .align = FlexAlign::Center, .gap = Style::spaceSm * scale, .visible = false},
++              ui::label({
++                  .text = i18n::tr("control-center.power.charging.charge-below"),
++                  .fontSize = Style::fontSizeCaption * scale,
++                  .color = colorSpecFromRole(ColorRole::OnSurface),
++                  .flexGrow = 1.0F,
++              }),
++              ui::stepper({
++                  .out = &entry.startStepper,
++                  .minValue = 20,
++                  .maxValue = 95,
++                  .step = 5,
++                  .value = 75,
++                  .scale = scale,
++                  .valueSuffix = "%",
++                  .onValueCommitted = [this, rowIndex](int) { commitChargeLimits(rowIndex, true); },
++              }),
++              ui::label({
++                  .text = i18n::tr("control-center.power.charging.stop-at"),
++                  .fontSize = Style::fontSizeCaption * scale,
++                  .color = colorSpecFromRole(ColorRole::OnSurface),
++              }),
++              ui::stepper({
++                  .out = &entry.endStepper,
++                  .minValue = 50,
++                  .maxValue = 100,
++                  .step = 5,
++                  .value = 80,
++                  .scale = scale,
++                  .valueSuffix = "%",
++                  .onValueCommitted = [this, rowIndex](int) { commitChargeLimits(rowIndex, false); },
++              })
++          )
++      );
+       row->addChild(
+           ui::label({
+               .out = &entry.managementLabel,
+@@ -616,6 +658,19 @@
+       row.toggle->setEnabled(control.enabled);
+     }
+ 
++    const bool limitsEditable = control.visible && mode != ChargeLimitMode::ExternallyManaged;
++    row.limitsRow->setVisible(limitsEditable);
++    if (limitsEditable && !state.requestPending) {
++      const int start = static_cast<int>(state.configuredStart.value_or(state.effectiveStart.value_or(75U)));
++      const int end = static_cast<int>(state.configuredEnd.value_or(state.effectiveEnd.value_or(80U)));
++      if (start != row.shownStart || end != row.shownEnd) {
++        row.shownStart = start;
++        row.shownEnd = end;
++        row.startStepper->setValue(start);
++        row.endStepper->setValue(end);
++      }
++    }
++
+     const bool hasError = state.operationError != ChargeLimitOperationError::None;
+     row.errorLabel->setVisible(hasError);
+     if (hasError) {
+@@ -630,6 +685,41 @@
+   }
+ }
+ 
++void PowerTab::commitChargeLimits(std::size_t rowIndex, bool startChanged) {
++  if (rowIndex >= m_chargeLimitRows.size() || m_upower == nullptr) {
++    return;
++  }
++  auto& row = m_chargeLimitRows[rowIndex];
++  int start = row.startStepper->value();
++  int end = row.endStepper->value();
++  // the start always below the end: the other one moves out of the way
++  if (start >= end) {
++    if (startChanged) {
++      end = std::min(100, start + 5);
++      row.endStepper->setValue(end);
++    } else {
++      start = std::max(20, end - 5);
++      row.startStepper->setValue(start);
++    }
++  }
++  if (start == row.shownStart && end == row.shownEnd) {
++    return;
++  }
++  row.shownStart = start;
++  row.shownEnd = end;
++
++  // pkexec, not run0: the polkit rule lets the active session run this one
++  // helper without a password
++  UPowerService* upower = m_upower;
++  (void)process::runAsync(
++      std::string("/run/wrappers/bin/pkexec /run/current-system/sw/bin/dotnix-charge-limit-set ")
++          + std::to_string(start) + " " + std::to_string(end),
++      process::RunCallbacks{
++          .onExit = [upower](process::RunResult) { DeferredCall::callLater([upower] { upower->refresh(); }); },
++      }
++  );
++}
++
+ void PowerTab::syncBatteryStatus() {
+   if (m_statusCard == nullptr || m_upower == nullptr) {
+     return;
+diff -ru a/src/shell/control_center/tabs/power_tab.h b/src/shell/control_center/tabs/power_tab.h
+--- a/src/shell/control_center/tabs/power_tab.h	2026-11-18 15:08:25.979513857 -0300
++++ b/src/shell/control_center/tabs/power_tab.h	2026-11-18 15:08:26.085553779 -0300
+@@ -12,6 +12,7 @@
+ class ProgressBar;
+ class Renderer;
+ class Segmented;
++class Stepper;
+ class Toggle;
+ class UPowerService;
+ class PowerProfilesService;
+@@ -93,7 +94,14 @@
+     Flex* controlRow = nullptr;
+     Label* controlLabel = nullptr;
+     Toggle* toggle = nullptr;
++    // dotnix: the limit's values (dotnix-charge-limit-set)
++    Flex* limitsRow = nullptr;
++    Stepper* startStepper = nullptr;
++    Stepper* endStepper = nullptr;
++    int shownStart = -1;
++    int shownEnd = -1;
+   };
++  void commitChargeLimits(std::size_t rowIndex, bool startChanged);
+   std::vector<ChargeLimitRow> m_chargeLimitRows;
+   std::string m_lastChargeLimitKey;
+ 

@@ -17,6 +17,9 @@ _final: prev: {
       # the lock screen's password field: the accent ring while typing, red
       # after a wrong password
       ./patches/noctalia-lock-input-state.patch
+      # the battery's charge limit values on the Power tab, next to UPower's
+      # switch (dotnix-charge-limit-set, system/hardware/laptop.nix)
+      ./patches/noctalia-charge-limit-values.patch
     ];
   });
 }

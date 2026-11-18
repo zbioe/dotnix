@@ -16,7 +16,7 @@ let
   # them on and off in the bar and in GNOME
   limitFile = "/var/lib/upower/dotnix-charge-limit";
 
-  # root's side: checks the numbers, keeps them, and applies them now if the
+  # checks the numbers, keeps them, and applies them now if the
   # limit is on; UPower restarts to take them for its switch
   setLimit = pkgs.writeShellApplication {
     name = "dotnix-charge-limit-set";
@@ -53,37 +53,6 @@ let
     '';
   };
 
-  # the user's side: two sliders, then the change as root (allowed below)
-  limitApp = pkgs.writeShellApplication {
-    name = "dotnix-charge-limit";
-    runtimeInputs = [
-      pkgs.coreutils
-      pkgs.zenity
-    ];
-    text = ''
-      start=75 end=80
-      if [ -r ${limitFile} ]; then
-        IFS=, read -r start end < <(cut -d= -f2 ${limitFile})
-      fi
-      start=$(zenity --scale --title="Limite de carga da bateria" \
-        --text="Voltar a carregar quando estiver abaixo de (%)" \
-        --min-value=20 --max-value=95 --step=5 --value="$start") || exit 0
-      end=$(zenity --scale --title="Limite de carga da bateria" \
-        --text="Parar de carregar em (%)" \
-        --min-value=50 --max-value=100 --step=5 --value="$end") || exit 0
-      if ((start >= end)); then
-        zenity --error --title="Limite de carga da bateria" \
-          --text="O início ($start%) precisa ser menor que o fim ($end%)."
-        exit 1
-      fi
-      if ! err=$(pkexec ${lib.getExe setLimit} "$start" "$end" 2>&1); then
-        zenity --error --title="Limite de carga da bateria" --text="Não foi possível mudar: $err"
-        exit 1
-      fi
-      zenity --info --title="Limite de carga da bateria" \
-        --text="Carrega quando cair abaixo de $start% e para em $end%.\nLigue ou desligue o limite no painel da bateria."
-    '';
-  };
 in
 {
   options.dotnix.hardware.laptop.enable =
@@ -122,25 +91,14 @@ in
     security.polkit.extraConfig = ''
       polkit.addRule(function (action, subject) {
         if (action.id == "org.freedesktop.policykit.exec" &&
-            action.lookup("program") == "${lib.getExe setLimit}" &&
+            (action.lookup("program") == "${lib.getExe setLimit}" ||
+             action.lookup("program") == "/run/current-system/sw/bin/dotnix-charge-limit-set") &&
             subject.local && subject.active) {
           return polkit.Result.YES;
         }
       });
     '';
-    environment.systemPackages = [
-      limitApp
-      (pkgs.makeDesktopItem {
-        name = "dotnix-charge-limit";
-        desktopName = "Limite de carga da bateria";
-        comment = "Onde a bateria volta a carregar e onde para";
-        exec = lib.getExe limitApp;
-        icon = "battery-good-charging";
-        categories = [
-          "Settings"
-          "HardwareSettings"
-        ];
-      })
-    ];
+    # the bar's Power tab runs it (overlays/patches/noctalia-charge-limit-values.patch)
+    environment.systemPackages = [ setLimit ];
   };
 }
