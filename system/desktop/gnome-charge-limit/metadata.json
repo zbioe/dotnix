@@ -1,0 +1,6 @@
+{
+  "uuid": "dotnix-charge-limit@dotnix",
+  "name": "Charge limit",
+  "description": "The battery's charge limit in Quick Settings: on, off and its values (dotnix-charge-limit-set)",
+  "shell-version": ["50"]
+}

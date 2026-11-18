@@ -14,12 +14,26 @@
 let
   cfg = config.dotnix.desktop;
   profile = "dotnix-windows-like";
-  extensions = with pkgs.gnomeExtensions; [
-    dash-to-panel # the taskbar
-    arcmenu # its start menu
-    appindicator # tray icons
-    desktop-icons-ng-ding # files on the desktop
-  ];
+  # the battery's charge limit and its values in Quick Settings (as the
+  # bar's Power tab under mango)
+  chargeLimit =
+    pkgs.runCommand "gnome-shell-extension-dotnix-charge-limit"
+      { passthru.extensionUuid = "dotnix-charge-limit@dotnix"; }
+      ''
+        dir=$out/share/gnome-shell/extensions/dotnix-charge-limit@dotnix
+        mkdir -p $dir
+        cp ${./gnome-charge-limit/metadata.json} $dir/metadata.json
+        cp ${./gnome-charge-limit/extension.js} $dir/extension.js
+      '';
+  extensions =
+    with pkgs.gnomeExtensions;
+    [
+      dash-to-panel # the taskbar
+      arcmenu # its start menu
+      appindicator # tray icons
+      desktop-icons-ng-ding # files on the desktop
+    ]
+    ++ lib.optional config.dotnix.hardware.laptop.enable chargeLimit;
   browsers = {
     brave = "brave-browser.desktop";
     chromium = "chromium-browser.desktop";
