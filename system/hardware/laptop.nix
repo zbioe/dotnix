@@ -78,6 +78,10 @@ in
         AMDGPU_ABM_LEVEL_ON_AC = 0;
         AMDGPU_ABM_LEVEL_ON_BAT = 0;
         AMDGPU_ABM_LEVEL_ON_SAV = 0;
+        # the GPU's power level left to the driver (its own default, auto):
+        # te froze twice within 2 s of TLP rewriting it on a power switch
+        RADEON_DPM_PERF_LEVEL_ON_AC = "";
+        RADEON_DPM_PERF_LEVEL_ON_BAT = "";
       };
     };
     # (nixos-hardware's laptop profiles may turn it on; tlp-pd takes its place)
