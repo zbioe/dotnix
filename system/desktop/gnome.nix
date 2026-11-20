@@ -4,7 +4,10 @@
 # buttons, with NixOS's logo and wallpaper, Inter, the Tela icons and the
 # Bibata cursor. Those are defaults of a dconf profile of their own, picked by an
 # environment.d file in their home, so they stay free to change them and
-# the other accounts see none of it.
+# the other accounts see none of it. The pointer is drawn by GNOME itself,
+# not by te's cursor plane: closing the lid, GNOME's update of that plane
+# was refused by amdgpu each time (EINVAL), and the next wake-up came back
+# broken or froze the machine.
 {
   config,
   lib,
@@ -239,7 +242,7 @@ in
       [
         "d ${home name}/.config 0700 ${name} users -"
         "d ${home name}/.config/environment.d 0755 ${name} users -"
-        "f+ ${home name}/.config/environment.d/10-dotnix.conf 0644 ${name} users - DCONF_PROFILE=${profile}"
+        "f+ ${home name}/.config/environment.d/10-dotnix.conf 0644 ${name} users - DCONF_PROFILE=${profile}\\nMUTTER_DEBUG_DISABLE_HW_CURSORS=1"
         "d ${home name}/.config/autostart 0755 ${name} users -"
         # GNOME's portal choice where the portal always looks (its own config
         # dir): started early by the shell, it missed the system's (the
