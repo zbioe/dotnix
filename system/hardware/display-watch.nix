@@ -96,6 +96,8 @@ in
       description = "Watch the display engine for underflows";
       wantedBy = [ "multi-user.target" ];
       after = [ "sys-kernel-debug.mount" ];
+      # (skipped, not failed, until a boot has debugfs)
+      unitConfig.ConditionPathExistsGlob = "/sys/kernel/debug/dri/*/amdgpu_dm_dtn_log";
       serviceConfig = {
         ExecStart = lib.getExe watch;
         Restart = "on-failure";
