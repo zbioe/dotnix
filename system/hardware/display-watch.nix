@@ -75,7 +75,7 @@ let
         awk '
           /^HUBP:  format/ { intable = 1; next }
           intable && /^[[:space:]]*$/ { exit }
-          intable && /^\[/ { gsub(/\[ +/, "["); if ($10 == 1) printf "%s ", $3 }
+          intable && /^\[/ { gsub(/\[ +/, "["); if ($11 == 1) printf "%s ", $3 }
         ' "$dtn"
       }
 
