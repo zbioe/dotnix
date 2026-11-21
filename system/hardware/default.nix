@@ -1,6 +1,7 @@
 {
   imports = [
     ./graphics.nix
+    ./display-watch.nix
     ./audio.nix
     ./bluetooth.nix
     ./keyboard.nix

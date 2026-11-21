@@ -26,7 +26,11 @@ in
         "page_alloc.shuffle=1"
         "randomize_kstack_offset=on"
         "vsyscall=none"
-        "debugfs=off"
+      ]
+      # (root-only debugfs while the display is diagnosed:
+      # dotnix.hardware.graphics.amd.displayWatch)
+      ++ lib.optional (!config.dotnix.hardware.graphics.amd.displayWatch.enable) "debugfs=off"
+      ++ [
         # devices can't read memory through DMA without the IOMMU
         "iommu=force"
         "iommu.passthrough=0"

@@ -61,6 +61,10 @@
       graphics.amd.initrdFirmware = [ "yellow_carp_*" ];
       # its panel flickered faintly on some pages (2x32 GB DDR5 SODIMM)
       graphics.amd.srLatencyFix.enable = true;
+      # its screen flickering and breaking up in use (GNOME), without a log:
+      # each underflow saved to /var/log/display-watch. Off once diagnosed
+      # (it keeps debugfs on)
+      graphics.amd.displayWatch.enable = true;
     };
     storage = {
       # its partitions by label; the device (and swap size) only matter to
