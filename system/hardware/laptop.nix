@@ -71,11 +71,7 @@ in
         CPU_BOOST_ON_AC = 1;
         CPU_BOOST_ON_BAT = 0;
         PLATFORM_PROFILE_ON_AC = "performance";
-        # not low-power, on battery nor in power saver: its lower memory
-        # clocks starve te's panel (DCN31, DDR5), which flickers non-stop
-        # under load (a video call); the CPU still saves (EPP, no boost)
-        PLATFORM_PROFILE_ON_BAT = "balanced";
-        PLATFORM_PROFILE_ON_SAV = "balanced";
+        PLATFORM_PROFILE_ON_BAT = "low-power";
         # no adaptive backlight (ABM): on te's panel it flickers non-stop, on
         # battery (TLP's default 1) and in power saver (3); the rest of the
         # saving stays
