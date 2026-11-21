@@ -68,6 +68,17 @@ let
         ' "$dtn"
       }
 
+      # the address high bits of the shown pipes' surfaces: f4h is the
+      # carve-out (VRAM), anything else the surface came from system memory
+      # (the white screen and the noise of 2026-11-21)
+      addrs() {
+        awk '
+          /^HUBP:  format/ { intable = 1; next }
+          intable && /^[[:space:]]*$/ { exit }
+          intable && /^\[/ { gsub(/\[ +/, "["); if ($10 == 1) printf "%s ", $3 }
+        ' "$dtn"
+      }
+
       first=$(snapshot start)
       if [ -z "$(underflow)" ]; then
         echo "no underflow column in the DTN log: see $first" >&2
@@ -75,7 +86,18 @@ let
       echo "watching $dtn, state at start in $first"
 
       last=0
+      lastaddr=""
       while sleep 1; do
+        a=$(addrs)
+        outside=0
+        for hi in $a; do
+          [ "$hi" = f4h ] || outside=1
+        done
+        if [ "$outside" = 1 ] && [ "$a" != "$lastaddr" ]; then
+          f=$(snapshot outside-vram)
+          echo "SCANOUT OUTSIDE VRAM (addr_hi $a): $(state | tr '\n' ' ') -> $f"
+        fi
+        lastaddr=$a
         u=$(underflow)
         [ -n "$u" ] || continue
         if [ "$u" != "$last" ] && [ "$u" != 0 ]; then
