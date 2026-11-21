@@ -68,9 +68,10 @@ let
         ' "$dtn"
       }
 
-      # the address high bits of the shown pipes' surfaces: f4h is the
-      # carve-out (VRAM), anything else the surface came from system memory
-      # (the white screen and the noise of 2026-11-21)
+      # the address high bits of the shown pipes' surfaces: inside the
+      # carve-out (VRAM: f4h with 1 GB, f4h-f5h with 8 GB, as amdgpu logs
+      # it), or from system memory (GART, from 0: the white screen and the
+      # noise of 2026-11-21)
       addrs() {
         awk '
           /^HUBP:  format/ { intable = 1; next }
@@ -78,6 +79,9 @@ let
           intable && /^\[/ { gsub(/\[ +/, "["); if ($11 == 1) printf "%s ", $3 }
         ' "$dtn"
       }
+
+      read -r vlo vhi < <(journalctl -k -b -o cat | sed -n 's/.*VRAM: [0-9]*M 0x\([0-9A-Fa-f]*\) - 0x\([0-9A-Fa-f]*\).*/\1 \2/p' | head -1)
+      vlo=$((0x$vlo >> 32)) vhi=$((0x$vhi >> 32))
 
       first=$(snapshot start)
       if [ -z "$(underflow)" ]; then
@@ -91,7 +95,8 @@ let
         a=$(addrs)
         outside=0
         for hi in $a; do
-          [ "$hi" = f4h ] || outside=1
+          hi=$((0x''${hi%h}))
+          ((hi >= vlo && hi <= vhi)) || outside=1
         done
         if [ "$outside" = 1 ] && [ "$a" != "$lastaddr" ]; then
           f=$(snapshot outside-vram)

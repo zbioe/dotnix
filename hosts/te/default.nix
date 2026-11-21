@@ -11,13 +11,11 @@
   networking.hostName = "te";
 
   # the panel's self refresh (PSR) flashes white on bursts of redraws, like a
-  # theme change
-  # the panel's self refresh (PSR) flashes white on bursts of redraws, like a
-  # theme change
-  # scanout from VRAM only: with its 1 GB carve-out nearly full, amdgpu put
-  # GNOME's new screen buffers in system memory (HUBP addr_hi 0 instead of
-  # f4), and the panel showed them white or as noise (and flickered when
-  # only some of them were there); measured 2026-11-21
+  # theme change. Scanout from the carve-out (VRAM) only: amdgpu put GNOME's
+  # screen buffers in system memory when the carve-out filled up, and the
+  # panel showed them white or as noise (HUBP addr_hi 0, measured
+  # 2026-11-21; AMD's white screen with >= 64 GB, back on 7.3). Its BIOS
+  # carve-out (UMA frame buffer) is 8 GB since
   boot.kernelParams = [
     "amdgpu.dcdebugmask=0x10"
     "amdgpu.sg_display=0"
@@ -68,10 +66,6 @@
       graphics.amd.initrdFirmware = [ "yellow_carp_*" ];
       # its panel flickered faintly on some pages (2x32 GB DDR5 SODIMM)
       graphics.amd.srLatencyFix.enable = true;
-      # its screen flickering and breaking up in use (GNOME), without a log:
-      # each underflow saved to /var/log/display-watch. Off once diagnosed
-      # (it keeps debugfs on)
-      graphics.amd.displayWatch.enable = true;
     };
     storage = {
       # its partitions by label; the device (and swap size) only matter to

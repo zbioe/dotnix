@@ -10,11 +10,12 @@
   config = lib.mkIf config.dotnix.core.crashes.enable {
     boot.kernelParams = [
       "nmi_watchdog=1"
-      "hardlockup_panic=1"
       "softlockup_panic=1"
       # back up 10 s after the panic, instead of waiting for the power button
       "panic=10"
     ];
+    # (not a boot parameter on this kernel: it went to user space unread)
+    boot.kernel.sysctl."kernel.hardlockup_panic" = 1;
     # TLP turns the lockup watchdog off to save power
     services.tlp.settings.NMI_WATCHDOG = lib.mkIf config.services.tlp.enable 1;
     environment.persistence."/persist".directories =

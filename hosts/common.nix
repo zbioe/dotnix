@@ -19,8 +19,6 @@
         coreDumps.block = true;
       };
       time.nts.enable = true;
-      # a freeze reboots and keeps its log (system/core/crashes.nix)
-      crashes.enable = true;
     };
 
     hardware = {
