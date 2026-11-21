@@ -14,7 +14,14 @@
   # theme change
   # the panel's self refresh (PSR) flashes white on bursts of redraws, like a
   # theme change
-  boot.kernelParams = [ "amdgpu.dcdebugmask=0x10" ];
+  # scanout from VRAM only: with its 1 GB carve-out nearly full, amdgpu put
+  # GNOME's new screen buffers in system memory (HUBP addr_hi 0 instead of
+  # f4), and the panel showed them white or as noise (and flickered when
+  # only some of them were there); measured 2026-11-21
+  boot.kernelParams = [
+    "amdgpu.dcdebugmask=0x10"
+    "amdgpu.sg_display=0"
+  ];
   # the ACPI alarm device takes rtc0 (Linux 7.1+): chrony's RTC tracking
   # runs on its alarm, whose expired status is never cleared and powers the
   # laptop back on right after a shutdown. Without it the CMOS clock is rtc0
