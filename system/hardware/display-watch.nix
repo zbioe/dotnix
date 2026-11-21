@@ -55,14 +55,15 @@ let
         echo "$f"
       }
 
-      # the HUBP table's underflow column, its highest value over the pipes;
-      # empty when the table has no such column
+      # the underflow columns of the pipes' tables (HUBP: the memory side,
+      # OTG: the panel's timing), their highest value; empty when neither
+      # table has one
       underflow() {
         awk '
-          /^HUBP:/ { col = 0; for (i = 1; i <= NF; i++) if ($i == "underflow") col = i; intable = col > 0; next }
+          /^(HUBP|OTG):/ { col = 0; for (i = 1; i <= NF; i++) if ($i == "underflow") col = i; intable = col > 0; next }
           intable && /^[[:space:]]*$/ { intable = 0 }
           # (rows start "[ 0]:", made one field like the header "HUBP:")
-          intable && /^\[/ { gsub(/\[ +/, "["); v = $col; if (v + 0 > max) max = v + 0; seen = 1 }
+          intable && /^\[/ { gsub(/\[ +/, "["); v = $col; sub(/h$/, "", v); if (v + 0 > max) max = v + 0; seen = 1 }
           END { if (seen) print max + 0 }
         ' "$dtn"
       }
