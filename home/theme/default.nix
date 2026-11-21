@@ -217,6 +217,12 @@ in
       readOnly = true;
       default = themeCmd;
     };
+    index = mkOption {
+      type = types.package;
+      readOnly = true;
+      default = index;
+      description = "Every theme/mode pair rendered (<theme>-<mode>/): what `theme` links, and the system's GNOME themes (system/desktop/gnome-themes.nix).";
+    };
     noctaliaPalettes = mkOption {
       type = types.attrsOf types.anything;
       readOnly = true;

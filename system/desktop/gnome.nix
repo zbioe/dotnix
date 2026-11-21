@@ -35,8 +35,10 @@ let
       arcmenu # its start menu
       appindicator # tray icons
       desktop-icons-ng-ding # files on the desktop
+      rounded-window-corners-reborn # round windows, as the rest
     ]
-    ++ lib.optional config.dotnix.hardware.laptop.enable chargeLimit;
+    ++ lib.optional config.dotnix.hardware.laptop.enable chargeLimit
+    ++ cfg.gnome.extensions;
   browsers = {
     brave = "brave-browser.desktop";
     chromium = "chromium-browser.desktop";
@@ -51,27 +53,34 @@ let
     "org.gnome.TextEditor.desktop"
     "org.gnome.Calculator.desktop"
   ];
-  # the taskbar: the menu, the windows, then the tray, the clock and the
-  # desktop's corner; its own apps button gives way to the menu (keyed by
-  # monitor: by index, which it falls back to)
+  # the taskbar as Windows 11's: the menu and the windows in the middle,
+  # the tray, the clock and the desktop's corner on the right; its own apps
+  # button gives way to the menu (keyed by monitor: by index, which it
+  # falls back to)
   taskbar = lib.genAttrs [ "0" "1" "2" "3" ] (
     _:
-    lib.imap0
-      (i: element: {
+    map
+      (element: {
         inherit element;
         visible =
           !lib.elem element [
             "showAppsButton"
             "activitiesButton"
           ];
-        position = if i < 4 then "stackedTL" else "stackedBR";
+        position =
+          if element == "leftBox" || element == "showAppsButton" || element == "activitiesButton" then
+            "stackedTL"
+          else if element == "centerBox" || element == "taskbar" then
+            "centered"
+          else
+            "stackedBR";
       })
       [
         "showAppsButton"
         "activitiesButton"
         "leftBox"
-        "taskbar"
         "centerBox"
+        "taskbar"
         "rightBox"
         "dateMenu"
         "systemMenu"
@@ -90,6 +99,12 @@ in
 {
   options.dotnix.desktop.gnome = {
     enable = lib.mkEnableOption "the GNOME session";
+    extensions = lib.mkOption {
+      type = lib.types.listOf lib.types.package;
+      default = [ ];
+      internal = true;
+      description = "More GNOME Shell extensions on for those accounts (gnome-themes.nix).";
+    };
     windowsLike = lib.mkOption {
       type = lib.types.listOf lib.types.str;
       default = [ ];
@@ -177,6 +192,7 @@ in
           "/org/gnome/shell/extensions/dash-to-panel/panel-element-positions"
           "/org/gnome/shell/extensions/arcmenu/menu-layout"
           "/org/gnome/shell/extensions/arcmenu/menu-button-icon"
+          "/org/gnome/shell/extensions/arcmenu/position-in-panel"
           # the ThinkPad's layout, whose right Ctrl is the ? key
           "/org/gnome/desktop/input-sources/sources"
           # the camera on (its privacy switch)
@@ -194,12 +210,19 @@ in
             animate-appicon-hover = true;
             appicon-margin = lib.gvariant.mkInt32 4;
             appicon-padding = lib.gvariant.mkInt32 6;
+            # floating, round, a little off the edges
+            panel-size = lib.gvariant.mkInt32 52;
+            panel-side-margins = lib.gvariant.mkInt32 8;
+            panel-top-bottom-margins = lib.gvariant.mkInt32 6;
+            global-border-radius = lib.gvariant.mkInt32 4;
+            dot-style-focused = "DASHES";
+            dot-style-unfocused = "DOTS";
           };
           "org/gnome/shell/extensions/arcmenu" = {
-            # (its own layout is the menu Zorin's came from)
-            menu-layout = "arcmenu";
-            # the categories first, then their apps
-            default-menu-view = "Categories_List";
+            # Windows 11's menu, next to the windows in the middle
+            menu-layout = "11";
+            position-in-panel = "Center";
+            menu-border-radius = lib.gvariant.mkInt32 18;
             menu-button-icon = logo;
             menu-button-icon-size = lib.gvariant.mkInt32 28;
             pinned-apps = map (id: [ (lib.gvariant.mkDictionaryEntry "id" id) ]) (

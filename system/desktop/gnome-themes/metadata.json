@@ -1,0 +1,6 @@
+{
+  "uuid": "dotnix-themes@dotnix",
+  "name": "Themes",
+  "description": "dotnix's themes in Quick Settings: pick one, and dark or light, for the whole session (dotnix-gnome-theme)",
+  "shell-version": ["50"]
+}

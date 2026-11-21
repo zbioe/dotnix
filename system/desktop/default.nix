@@ -20,6 +20,7 @@ in
     ./sddm.nix
     ./gdm.nix
     ./gnome.nix
+    ./gnome-themes.nix
     ./fonts.nix
     ./browsers
     ./boot-screens.nix
