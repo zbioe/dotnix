@@ -10,6 +10,7 @@
     ./localsend.nix
     ./wayvnc.nix
     ./bitcoin.nix
+    ./kolide.nix
     ./cache.nix
     ./install-test.nix
   ];

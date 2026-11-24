@@ -96,6 +96,7 @@
       };
       # what it builds, for the other hosts (zbioe.cachix.org)
       cache.push.enable = true;
+      kolide.enable = true;
       # the phone, with AVNC's SSH tunnel
       wayvnc = {
         enable = true;

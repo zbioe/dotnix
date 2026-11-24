@@ -93,5 +93,13 @@
       url = "github:zbioe/chix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    # 1Password Device Trust (system/services/kolide.nix)
+    kolide-launcher = {
+      url = "github:kolide/nix-agent/main";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        flake-compat.follows = "git-hooks/flake-compat";
+      };
+    };
   };
 }

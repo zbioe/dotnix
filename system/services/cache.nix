@@ -31,12 +31,7 @@ in
     push.enable = lib.mkEnableOption "pushing this host's builds to zbioe.cachix.org";
     skip = lib.mkOption {
       type = lib.types.listOf lib.types.str;
-      # downloaded data, nothing built: fetching it again costs nothing
-      default = [
-        "mbrola-voices" # speech synthesis voices (~590 MB)
-        "index-x86_64-linux" # nix-index's database (~110 MB)
-        "t1-256x10-distilled-swa-2432500.pb.gz" # lc0's network (~40 MB)
-      ];
+      default = [ ];
       description = "Store path names (before the version) kept off the cache, with what refers to them, like the unfree packages.";
     };
     warnAt = lib.mkOption {
@@ -48,6 +43,13 @@ in
   };
 
   config = lib.mkIf cfg.push.enable {
+    # downloaded data, nothing built: fetching it again costs nothing
+    dotnix.services.cache.skip = [
+      "mbrola-voices" # speech synthesis voices (~590 MB)
+      "index-x86_64-linux" # nix-index's database (~110 MB)
+      "t1-256x10-distilled-swa-2432500.pb.gz" # lc0's network (~40 MB)
+    ];
+
     assertions = [
       {
         assertion = config.dotnix.core.secrets.enable;
