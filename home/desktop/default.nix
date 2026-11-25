@@ -56,7 +56,6 @@
           tectonic = "texstudio";
           noctalia = "preferences-desktop";
           input-keyboard = "preferences-desktop-keyboard";
-          blueman-device = "blueman";
           freelens = "kontena-lens";
           mtkclient = "android-file-transfer";
         };

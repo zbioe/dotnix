@@ -11,6 +11,7 @@
     ./wayvnc.nix
     ./bitcoin.nix
     ./kolide.nix
+    ./1password.nix
     ./cache.nix
     ./install-test.nix
   ];

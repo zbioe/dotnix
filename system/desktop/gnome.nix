@@ -87,10 +87,9 @@ let
         "desktopButton"
       ]
   );
-  # what the system starts for every session and GNOME already does itself
-  # (Bluetooth), or that is the main account's (its phone, its input method)
+  # what the system starts for every session and is the main account's
+  # (its phone, its input method)
   notStarted = [
-    "blueman"
     "org.fcitx.Fcitx5"
     "org.kde.kdeconnect.daemon"
   ];
@@ -275,7 +274,7 @@ in
       ]
       ++ map (
         entry:
-        "f+ ${home name}/.config/autostart/${entry}.desktop 0644 ${name} users - [Desktop Entry]\\nHidden=true\\n"
+        "f+ ${home name}/.config/autostart/${entry}.desktop 0644 ${name} users - [Desktop Entry]\\nType=Application\\nName=${entry}\\nHidden=true\\nX-GNOME-Autostart-enabled=false\\n"
       ) notStarted
       ++ [
         # the session the login screen picks for them (not kept across boots)

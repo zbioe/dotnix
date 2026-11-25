@@ -26,7 +26,6 @@
       audio = {
         enable = true;
         server = "pipewire";
-        noiseSuppression.enable = true;
       };
       bluetooth = {
         enable = true;
@@ -72,7 +71,7 @@
         librewolf.enable = true;
         chromium.enable = true;
         brave.enable = true;
-        default = "brave";
+        default = "chromium";
         protonPass.enable = true;
       };
       # what the time goes to, local only (home/desktop/activity)

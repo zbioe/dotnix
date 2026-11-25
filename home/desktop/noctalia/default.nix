@@ -340,12 +340,10 @@ in
           };
           brightness.show_label = false;
 
-          # fcitx's "us" says nothing (fixed layout); network and bluetooth
-          # already have their own widgets
+          # fcitx's "us" says nothing (fixed layout); network already has its own widget
           tray.hidden = [
             "fcitx"
             "nm-applet"
-            "blueman"
           ];
 
           # shield lit while a VPN is up: the dotnix/vpn panel, right click toggles

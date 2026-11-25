@@ -344,7 +344,6 @@ in
           "is_floating:1,width:900,height:520,app_id:^emacs$,title:^capture$"
           "is_floating:1,app_id:^org.pulseaudio.pavucontrol$"
           "is_floating:1,app_id:^nm-connection-editor$"
-          "is_floating:1,app_id:^.blueman-manager-wrapped$"
           # `rebuild` (home/desktop/rebuild.nix): over whatever is open
           "is_floating:1,width:1100,height:700,app_id:^dotnix-rebuild$"
           # its password prompt and log window (zenity)
