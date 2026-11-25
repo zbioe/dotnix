@@ -35,7 +35,7 @@ let
     refBase.config.system.build.toplevel
     refSecure.config.system.build.toplevel
     # the home too swaps GTK4 in (lib/default.nix)
-    dotnix.homeConfigurations.bx.config.home.activationPackage
+    dotnix.homeConfigurations.te.config.home.activationPackage
   ]
   ++ lib.concatMap (
     p: map (o: p.${o}) (lib.intersectLists (p.outputs or [ "out" ]) outputs)
@@ -68,7 +68,7 @@ in
       model = "br";
       variant = "br";
     };
-    # the home of `nh home switch -c bx`, applied at every boot
+    # the home of `nh home switch -c te`, applied at every boot
     core.homeActivation = {
       enable = true;
       always = true;

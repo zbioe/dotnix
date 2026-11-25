@@ -1,7 +1,7 @@
 # Dotnix
 
-My NixOS setup, system and home in one flake: `bx` (desktop) and `te`
-(laptop). [mango](https://github.com/DreamMaoMao/mangowc) with
+My NixOS setup, system and home in one flake (`te`).
+[mango](https://github.com/DreamMaoMao/mangowc) with
 [noctalia](https://github.com/noctalia-dev/noctalia-shell); LUKS and btrfs,
 unlocked by a key hidden on a USB stick.
 
@@ -81,7 +81,7 @@ checks/   flake checks and VM tests      iso/  install images
 ```
 
 An option's name is its file's path (`dotnix.storage.backup` is
-`system/storage/backup.nix`); all off by default. `nix run .#options -- bx`
+`system/storage/backup.nix`); all off by default. `nix run .#options -- te`
 lists a host's.
 
 ## Install
@@ -93,12 +93,12 @@ dd if=result/iso/*.iso of=/dev/sdX bs=4M conv=fsync
 
 1. Boot it, run `dotnix-install`: disk, host, Secure Boot (firmware in Setup
    Mode), all offline from the full ISO.
-2. On bx: `dotnix-adopt ADDRESS` (the new host into the flake and secrets).
+2. On te: `dotnix-adopt ADDRESS` (the new host into the flake and secrets).
 3. The new host rebuilds itself once online and asks for a reboot.
 4. `backup setup`, then restore.
 
 `rebuild` after that. `dotnix-diff` shows what `/` got that impermanence will
-wipe. What bx builds goes to [zbioe.cachix.org](https://zbioe.cachix.org).
+wipe. What te builds goes to [zbioe.cachix.org](https://zbioe.cachix.org).
 
 A host installed before this layout: name its partitions
 (`sgdisk -c 2:dotnix-efi -c 3:dotnix-swap -c 4:dotnix-luks`), and zero any

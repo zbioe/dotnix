@@ -1,5 +1,4 @@
-# The dotnix desktop: bx and te are the same machine, so everything they
-# run is here; hosts/<host> only adds its hardware
+# The shared dotnix desktop; hosts/<host> only adds its hardware
 { pkgs, ... }:
 {
   dotnix = {

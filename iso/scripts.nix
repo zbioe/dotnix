@@ -179,7 +179,7 @@ let
       if [ "$reinstall" = false ]; then
         echo
         echo "Root filesystem:"
-        echo "  1) impermanence, like bx: / is wiped at every boot, state in /persist (default)"
+        echo "  1) impermanence, like te: / is wiped at every boot, state in /persist (default)"
         echo "  2) persistent: / keeps what is written to it"
         case $(ask "Choice [1]:" 1) in
           2) impermanence=false ;;
@@ -223,7 +223,7 @@ let
         echo "  4) no Secure Boot"
         choice=$(ask "Choice [1]:" 1)
         case $choice in
-          2) dotnix-sbctl-keys backup "$(ask "Machine whose backup has them [bx]:" bx)" || true ;;
+          2) dotnix-sbctl-keys backup "$(ask "Machine whose backup has them [te]:" te)" || true ;;
           3) dotnix-sbctl-keys new || true ;;
           4) ;;
           *) dotnix-sbctl-keys ssh || true ;;
@@ -437,7 +437,7 @@ let
         echo
         echo "''${bold}Done.''${off} Remove the USB and reboot. hosts/$host/install.nix and its hardware files are new;"
         echo "Once it boots, online:"
-        echo "  1. on a machine with your age key (bx): dotnix-adopt ADDRESS-OF-$host: it takes"
+        echo "  1. on a machine with your age key (te): dotnix-adopt ADDRESS-OF-$host: it takes"
         echo "     those files and $host's new SSH key into secrets/, then push"
         echo "  2. here, nothing: the first rebuild waits for that, then asks for a reboot"
         echo "  3. backup restore, if you want your files back"
@@ -445,7 +445,7 @@ let
       fi
       echo "''${bold}Done.''${off} Remove the USB and reboot. The flake is in ~/dotnix (hosts/$host);"
       echo "Once it boots, online:"
-      echo "  1. on a machine with your age key (bx): dotnix-adopt ADDRESS-OF-$host, unless"
+      echo "  1. on a machine with your age key (te): dotnix-adopt ADDRESS-OF-$host, unless"
       echo "     it is running already (hosts/$host and its key for secrets/, pushed)"
       echo "  2. here, nothing: the first rebuild runs by itself once hosts/$host is upstream"
       echo "     (with hosts/$host/hardware.nix: $hw), then asks for a reboot;"

@@ -102,7 +102,7 @@ in
     package = mkOption {
       type = package;
       default = homeActivation;
-      defaultText = lib.literalExpression "homeConfigurations.bx.activationPackage";
+      defaultText = lib.literalExpression "homeConfigurations.te.activationPackage";
       description = "The home-manager activation package (homeConfigurations.<host>.activationPackage).";
     };
     always = mkOption {

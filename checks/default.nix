@@ -13,7 +13,7 @@ let
   unswapped =
     host:
     host.extendModules {
-      specialArgs.homeActivation = self.homeConfigurations.bx.config.home.activationPackage;
+      specialArgs.homeActivation = self.homeConfigurations.te.config.home.activationPackage;
       modules = [ { system.replaceDependencies.replacements = lib.mkForce [ ]; } ];
     };
   sources =

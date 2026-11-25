@@ -56,7 +56,7 @@ let
     inherit (home.packages.${system}) home-manager;
     home-module = home.nixosModules.home-manager;
     # the home every host shares, activated at boot by new installs and the live ISO
-    homeActivation = self.homeConfigurations.bx.activationPackage;
+    homeActivation = self.homeConfigurations.te.activationPackage;
     # every host's home, for what a host does with its own (system/services/cache.nix)
     homes = self.homeConfigurations;
   };
